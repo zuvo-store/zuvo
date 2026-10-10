@@ -1,0 +1,4 @@
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Connection timed out during banner exchange
+Connection to UNKNOWN port 65535 timed out
+SSH_EXIT=255
