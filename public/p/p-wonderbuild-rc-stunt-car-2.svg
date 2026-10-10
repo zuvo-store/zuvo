@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="WonderBuild RC Stunt Car">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="hsl(202,68%,62%)"/>
+      <stop offset="1" stop-color="hsl(247,70%,44%)"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#g)"/>
+  <circle cx="110" cy="130" r="185" fill="#ffffff" opacity="0.12"/>
+  <circle cx="705" cy="630" r="225" fill="#ffffff" opacity="0.10"/>
+  <circle cx="650" cy="110" r="95" fill="#000000" opacity="0.08"/>
+  <circle cx="140" cy="690" r="125" fill="#000000" opacity="0.06"/>
+  <circle cx="400" cy="400" r="300" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.15"/>
+  <text x="400" y="445" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="250" font-weight="bold" fill="#ffffff" opacity="0.45">WR</text>
+  <rect x="0" y="688" width="800" height="112" fill="#000000" opacity="0.28"/>
+  <text x="400" y="740" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="40" font-weight="bold" fill="#ffffff">WonderBuild RC Stunt Car</text>
+  <text x="400" y="776" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="26" fill="#ffffff" opacity="0.85">WonderBuild</text>
+</svg>

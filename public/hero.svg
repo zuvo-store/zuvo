@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-label="Abstract warm orange promo artwork">
+  <defs>
+    <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="55%" stop-color="#ffedd5"/>
+      <stop offset="100%" stop-color="#fed7aa"/>
+    </linearGradient>
+    <radialGradient id="blobA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fb923c" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blobB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#f97316" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blobC" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fdba74" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fdba74" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="heroGrid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#ea580c" stroke-opacity="0.12" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="500" fill="url(#heroBg)"/>
+  <rect width="1200" height="500" fill="url(#heroGrid)"/>
+
+  <circle cx="950" cy="140" r="230" fill="url(#blobB)"/>
+  <circle cx="180" cy="380" r="260" fill="url(#blobA)"/>
+  <circle cx="600" cy="90" r="180" fill="url(#blobC)"/>
+  <circle cx="420" cy="330" r="120" fill="url(#blobC)"/>
+
+  <!-- concentric ring accents -->
+  <g fill="none" stroke="#c2410c" stroke-opacity="0.25">
+    <circle cx="950" cy="140" r="90" stroke-width="2"/>
+    <circle cx="950" cy="140" r="130" stroke-width="1.5"/>
+    <circle cx="180" cy="380" r="70" stroke-width="2"/>
+    <circle cx="600" cy="90" r="60" stroke-width="1.5"/>
+  </g>
+
+  <!-- floating rounded squares -->
+  <g>
+    <rect x="700" y="300" width="90" height="90" rx="22" fill="#f97316" fill-opacity="0.85" transform="rotate(14 745 345)"/>
+    <rect x="90" y="90" width="64" height="64" rx="16" fill="#fb923c" fill-opacity="0.7" transform="rotate(-10 122 122)"/>
+    <rect x="1050" y="330" width="52" height="52" rx="14" fill="#ea580c" fill-opacity="0.6" transform="rotate(20 1076 356)"/>
+    <rect x="470" y="200" width="44" height="44" rx="12" fill="#fdba74" fill-opacity="0.9" transform="rotate(-16 492 222)"/>
+    <rect x="830" y="60" width="38" height="38" rx="10" fill="#f97316" fill-opacity="0.5" transform="rotate(8 849 79)"/>
+    <rect x="300" y="430" width="34" height="34" rx="9" fill="#ea580c" fill-opacity="0.55" transform="rotate(24 317 447)"/>
+  </g>
+
+  <!-- small dot accents -->
+  <g fill="#9a3412" fill-opacity="0.3">
+    <circle cx="380" cy="120" r="6"/>
+    <circle cx="760" cy="420" r="5"/>
+    <circle cx="1120" cy="220" r="7"/>
+    <circle cx="240" cy="230" r="4"/>
+    <circle cx="560" cy="440" r="5"/>
+  </g>
+</svg>

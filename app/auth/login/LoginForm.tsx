@@ -1,0 +1,109 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { btnPrimary, inputCls, cardCls, Field, FormError } from "@/components/ui";
+
+export default function LoginForm({ nextPath }: { nextPath: string }) {
+  const router = useRouter();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password, remember }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Could not sign you in. Please try again.");
+        return;
+      }
+      router.push(nextPath);
+      router.refresh();
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className={cardCls}>
+      <h1 className="text-2xl font-bold text-zinc-900">Sign in</h1>
+      <p className="mt-1 text-sm text-zinc-600">Welcome back to ZUVO.</p>
+
+      <div className="mt-6 space-y-4">
+        <Field label="Email or username">
+          <input
+            className={inputCls}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            autoComplete="username"
+            placeholder="you@example.com"
+            required
+          />
+        </Field>
+
+        <Field label="Password">
+          <input
+            className={inputCls}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="Your password"
+            required
+          />
+        </Field>
+
+        <div className="flex items-center justify-between text-sm">
+          <label className="flex items-center gap-2 text-zinc-700">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 accent-brand-600"
+            />
+            Remember me
+          </label>
+          <Link href="/auth/forgot-password" className="font-medium text-brand-700 underline">
+            Forgot password?
+          </Link>
+        </div>
+
+        {error && <FormError message={error} />}
+
+        <button type="submit" disabled={pending} className={`${btnPrimary} w-full`}>
+          {pending ? "Signing you in…" : "Sign in"}
+        </button>
+
+        <Link
+          href="/"
+          className="inline-flex w-full justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+        >
+          Continue as Guest — no account needed
+        </Link>
+        <p className="text-xs text-zinc-500">
+          Guest shopping works fully: you can fill your cart and check out without an account.
+        </p>
+
+        <p className="text-center text-sm text-zinc-600">
+          New to ZUVO?{" "}
+          <Link href="/auth/signup" className="font-medium text-brand-700 underline">
+            Create an account
+          </Link>
+        </p>
+      </div>
+    </form>
+  );
+}
