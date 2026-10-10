@@ -7,6 +7,7 @@ import { formatUSD } from "@/lib/money";
 import { toListItem } from "@/app/_shop/query";
 import ProductCard from "@/components/ProductCard";
 import RewardPopup from "@/components/RewardPopup";
+import GuestRewardBanner from "@/components/GuestRewardBanner";
 import { SectionTitle, cardCls } from "@/components/ui";
 
 export const metadata = {
@@ -78,6 +79,8 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Slim welcome nudge for guests only (signed-in users get the claimable RewardPopup below) */}
+      {!user && <GuestRewardBanner />}
       {/* (a) Hero */}
       <section className="relative mt-6 overflow-hidden rounded-2xl bg-zinc-900 text-white">
         <img

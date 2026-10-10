@@ -42,7 +42,22 @@ export default function BuyPanel({
     return [...map.entries()];
   }, [variants]);
 
-  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<Record<string, string>>(() => {
+    // Professional default: pre-select the first in-stock option per group so
+    // "Add to cart" always works on first tap (like major marketplaces do).
+    const init: Record<string, string> = {};
+    const map = new Map<string, BuyVariant[]>();
+    for (const v of variants) {
+      const list = map.get(v.name);
+      if (list) list.push(v);
+      else map.set(v.name, [v]);
+    }
+    for (const [name, options] of map) {
+      const first = options.find((o) => o.stock > 0) ?? options[0];
+      if (first) init[name] = first.id;
+    }
+    return init;
+  });
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

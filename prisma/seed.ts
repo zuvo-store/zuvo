@@ -11,7 +11,7 @@
  * Run:  npx tsx prisma/seed.ts
  *   or  npm run db:seed   (prisma db seed)
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
@@ -1000,11 +1000,12 @@ async function main() {
     });
 
     for (const [idx, p] of cat.products.entries()) {
-      const hue = cat.hue + (idx % 3) * 18 - 18;
-      const images: string[] = [];
-      for (let i = 1; i <= p.images; i++) {
-        images.push(writeArt(`p-${p.slug}-${i}.svg`, hue + (i - 1) * 12, p.name, p.brand));
-      }
+      // Real product photo (generated into public/p/<slug>.jpg). Falls back to
+      // generated SVG art only if the photo file is missing.
+      const photoFile = join(HERE, "..", "public", "p", `${p.slug}.jpg`);
+      const images: string[] = existsSync(photoFile)
+        ? [`/p/${p.slug}.jpg`]
+        : [writeArt(`p-${p.slug}-1.svg`, cat.hue, p.name, p.brand)];
       const variantStock = (p.variants ?? []).reduce((s, v) => s + v.stock, 0);
       const rating = 3.9 + ((productCount * 7) % 11) / 10;
       const seededReviewCount = 8 + ((productCount * 53) % 110);
