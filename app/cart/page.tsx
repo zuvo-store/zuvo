@@ -1,7 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getCart, estimateShipping, FREE_SHIPPING_THRESHOLD_CENTS } from "@/lib/cart";
+
+export const metadata: Metadata = { title: "Cart — ZUVO" };
 import { formatUSD } from "@/lib/money";
 import EmptyState from "@/components/EmptyState";
 import { cardCls, btn } from "@/components/ui";
@@ -56,8 +59,8 @@ export default async function CartPage() {
                 </p>
               ) : (
                 <p className="mb-2 text-sm text-zinc-600">
-                  <span className="font-semibold text-zinc-900">{formatUSD(remaining)}</span> away
-                  from FREE shipping
+                  <span className="font-semibold text-zinc-900">{formatUSD(remaining)}</span>{" "}
+                  away from FREE shipping
                 </p>
               )}
               <div
@@ -70,7 +73,7 @@ export default async function CartPage() {
               >
                 <div
                   className="h-full rounded-full bg-orange-500 transition-all"
-                  style={{ width: `${progress * 100}%` }}
+                  style={{ width: `${freeShipping ? 100 : Math.floor(progress * 100)}%` }}
                 />
               </div>
             </div>
