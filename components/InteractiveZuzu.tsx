@@ -48,6 +48,7 @@ export default function InteractiveZuzu({
   const [reaction, setReaction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [hearts, setHearts] = useState<Heart[]>([]);
+  const [popping, setPopping] = useState(false);
   const [taps, setTaps] = useState(0);
   const [sleeping, setSleeping] = useState(false);
   const [swaying, setSwaying] = useState(true);
@@ -59,9 +60,9 @@ export default function InteractiveZuzu({
   const reactionRef = useRef<string | null>(null);
 
   const sizes = {
-    sm: "h-24 w-24",
-    md: "h-48 w-48",
-    lg: "h-64 w-64 sm:h-80 sm:w-80",
+    sm: "h-20 w-20",
+    md: "h-32 w-32",
+    lg: "h-44 w-44",
   };
 
   function showMessage(msg: string, ms = 2500) {
@@ -120,6 +121,8 @@ export default function InteractiveZuzu({
     }
 
     resetSleepTimer();
+    // Zuzu pops OUT of the circle!
+    setPopping(true);
     setReaction((prev) => {
       const pool = REACTIONS.filter((r) => r !== prev);
       const next = pool[Math.floor(Math.random() * pool.length)];
@@ -181,23 +184,26 @@ export default function InteractiveZuzu({
         ))}
       </div>
 
-      {/* Zuzu — free and open, no circular prison! */}
+      {/* Zuzu in a circle — pops OUT on tap! */}
       <button
         type="button"
         onClick={tap}
         aria-label={sleeping ? "Wake up Zuzu" : "Say hi to Zuzu"}
         title={sleeping ? "Wake Zuzu up!" : "Tap Zuzu!"}
-        className="group relative cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-orange-300 rounded-3xl"
+        className="group relative cursor-pointer rounded-full outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
       >
         <img
           src="/zuvo-mascot.jpg"
           alt="Zuzu, the ZUVO mascot"
           draggable={false}
-          className={`${sizes[size]} rounded-3xl object-cover shadow-xl shadow-orange-500/25 transition-transform group-active:scale-95 ${imgCls}`}
-          onAnimationEnd={onAnimationEnd}
+          className={`${sizes[size]} rounded-full object-cover shadow-xl shadow-orange-500/25 ring-4 ring-white transition-transform group-active:scale-95 ${popping ? "zuzu-popout" : imgCls}`}
+          onAnimationEnd={() => { if (popping) setPopping(false); else onAnimationEnd(); }}
         />
-        {!sleeping && (
-          <span aria-hidden="true" className="pointer-events-none absolute inset-0 animate-ping rounded-3xl bg-orange-400/20 [animation-duration:2.5s]" />
+        {popping && (
+          <span aria-hidden="true" className="zuzu-ring-burst pointer-events-none absolute inset-0 rounded-full ring-4 ring-orange-400" />
+        )}
+        {!sleeping && !popping && (
+          <span aria-hidden="true" className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-orange-400/20 [animation-duration:2.5s]" />
         )}
       </button>
 
