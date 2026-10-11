@@ -77,7 +77,7 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className={cardCls}>
+    <form onSubmit={onSubmit} className={`${cardCls} p-6 sm:p-8`}>
       <h1 className="text-2xl font-bold text-zinc-900">Create your account</h1>
       <p className="mt-1 text-sm text-zinc-600">
         Join ZUVO to check out faster, track orders, and earn rewards.

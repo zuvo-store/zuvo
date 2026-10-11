@@ -14,7 +14,7 @@ type Props = { searchParams: Promise<{ token?: string; verified?: string; error?
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10">
-      <div className={cardCls}>{children}</div>
+      <div className={`${cardCls} p-6 sm:p-8`}>{children}</div>
     </div>
   );
 }

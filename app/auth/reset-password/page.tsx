@@ -21,7 +21,7 @@ export default async function ResetPasswordPage({
   if (!token) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-10">
-        <div className={cardCls}>
+        <div className={`${cardCls} p-6 sm:p-8`}>
           <h1 className="text-2xl font-bold text-zinc-900">Invalid reset link</h1>
           <p className="mt-2 text-sm text-zinc-600">
             This password reset link is missing or incomplete. Reset links also expire 60 minutes

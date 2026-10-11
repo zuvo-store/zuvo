@@ -36,7 +36,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
   if (done) {
     return (
-      <div className={cardCls}>
+      <div className={`${cardCls} p-6 sm:p-8`}>
         <h1 className="text-2xl font-bold text-zinc-900">Password updated</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Your password has been changed. You have been signed out of all devices for security.
@@ -49,7 +49,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className={cardCls}>
+    <form onSubmit={onSubmit} className={`${cardCls} p-6 sm:p-8`}>
       <h1 className="text-2xl font-bold text-zinc-900">Choose a new password</h1>
       <p className="mt-1 text-sm text-zinc-600">Enter a new password for your account.</p>
 

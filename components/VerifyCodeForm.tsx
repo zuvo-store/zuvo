@@ -100,7 +100,7 @@ export default function VerifyCodeForm({
   }
 
   return (
-    <div className={cardCls}>
+    <div className={`${cardCls} p-6 sm:p-8`}>
       <h1 className="text-2xl font-bold text-zinc-900">{title}</h1>
       <p className="mt-2 text-sm text-zinc-600">
         We sent a <span className="font-semibold text-zinc-900">6-digit verification code</span> to{" "}

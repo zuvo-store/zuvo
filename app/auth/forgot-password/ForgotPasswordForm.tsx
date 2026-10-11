@@ -31,7 +31,7 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <div className={cardCls}>
+    <div className={`${cardCls} p-6 sm:p-8`}>
       <h1 className="text-2xl font-bold text-zinc-900">Reset your password</h1>
       {!done ? (
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
