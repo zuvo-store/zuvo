@@ -30,7 +30,7 @@ export default async function SiteHeader() {
         </div>
       ) : null}
       <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
-        <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-4">
+        <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <MobileMenu />
           <Logo tagline="Discover More. Shop Smarter." />
           <SearchBox className="hidden min-w-0 flex-1 md:block" />
@@ -45,7 +45,7 @@ export default async function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
             <Link
               href="/wishlist"
               aria-label="Wishlist"

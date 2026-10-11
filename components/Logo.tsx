@@ -13,7 +13,7 @@ export default function Logo({
     <Link
       href="/"
       aria-label="ZUVO home"
-      className={`flex shrink-0 items-center gap-2 ${className}`}
+      className={`flex min-w-0 shrink items-center gap-2 ${className}`}
     >
       <svg
         width="36"
@@ -43,12 +43,12 @@ export default function Logo({
         </text>
       </svg>
       {!compact && (
-        <span className="flex flex-col leading-none">
+        <span className="flex min-w-0 flex-col leading-none">
           <span className="text-xl font-extrabold tracking-tight text-zinc-900">
             ZUVO
           </span>
           {tagline ? (
-            <span className="mt-0.5 text-[10px] font-medium tracking-wide text-zinc-500">
+            <span className="mt-0.5 hidden truncate text-[10px] font-medium tracking-wide text-zinc-500 sm:block">
               {tagline}
             </span>
           ) : null}

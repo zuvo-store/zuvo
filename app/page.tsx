@@ -81,8 +81,8 @@ export default async function HomePage() {
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Slim welcome nudge for guests only (signed-in users get the claimable RewardPopup below) */}
       {!user && <GuestRewardBanner />}
-      {/* (a) Hero */}
-      <section className="relative mt-6 overflow-hidden rounded-2xl bg-zinc-900 text-white">
+      {/* (a) Hero — light artwork background, so dark text for contrast */}
+      <section className="relative mt-6 overflow-hidden rounded-2xl bg-orange-100 text-zinc-900">
         <img
           src="/hero.svg"
           alt=""
@@ -90,13 +90,13 @@ export default async function HomePage() {
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         <div className="relative flex flex-col items-start gap-5 px-6 py-16 sm:px-12 sm:py-24">
-          <p className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-orange-300 ring-1 ring-orange-400/40">
+          <p className="rounded-full bg-orange-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-orange-700 ring-1 ring-orange-600/30">
             Demo marketplace
           </p>
           <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
             Discover More. Shop Smarter.
           </h1>
-          <p className="max-w-lg text-base text-zinc-200 sm:text-lg">
+          <p className="max-w-lg text-base text-zinc-700 sm:text-lg">
             Thousands of products across electronics, fashion, home and more —
             with deals refreshed daily and a simulated checkout that is safe to explore.
           </p>
@@ -109,7 +109,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/deals"
-              className="rounded-xl bg-white/10 px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/20"
+              className="rounded-xl bg-white/70 px-6 py-3 text-sm font-semibold text-zinc-900 ring-1 ring-zinc-900/10 backdrop-blur hover:bg-white"
             >
               Explore Deals
             </Link>

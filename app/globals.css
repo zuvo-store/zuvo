@@ -26,6 +26,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Safety net: never allow horizontal page scroll from an overflowing child. */
+html,
+body {
+  overflow-x: clip;
+}
+
 /* Visible keyboard focus rings */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--color-brand-600);
