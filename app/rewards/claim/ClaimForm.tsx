@@ -67,15 +67,30 @@ export default function ClaimForm({
 
   if (claimed) {
     return (
-      <div className={cardCls}>
-        <h1 className="text-2xl font-bold text-zinc-900">Reward claimed</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Your {formatUSD(amountCents)} welcome reward is now marked as claimed on your account.
-          This is a simulated demonstration — no real money was paid out or charged.
-        </p>
-        <Link href="/account/rewards" className={`${btnPrimary} mt-6 inline-flex`}>
-          View in your account
-        </Link>
+      <div className="overflow-hidden rounded-2xl shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 px-6 py-8 text-center text-white">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+            <svg width="28" height="28" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <p className="mt-3 text-sm font-bold uppercase tracking-[0.2em] text-green-100">Claimed!</p>
+          <p className="mt-1 text-4xl font-extrabold">{formatUSD(amountCents)}</p>
+          <p className="mt-1 text-sm text-green-100">Added to your credit balance 🎉</p>
+        </div>
+        <div className="border-t-2 border-dashed border-green-200 bg-white px-6 py-4">
+          <p className="text-center text-sm text-zinc-600">
+            This is a simulated demonstration — no real money was paid out or charged.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Link href="/account" className={`${btnPrimary} inline-flex flex-1 justify-center`}>
+              View wallet
+            </Link>
+            <Link href="/deals" className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+              Shop deals
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

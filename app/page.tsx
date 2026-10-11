@@ -176,7 +176,50 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* (c) Today's Deals */}
+      {/* (c) Discount banners */}
+      <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Link
+          href="/deals"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 p-5 text-white shadow-sm transition hover:shadow-md"
+        >
+          <p className="text-3xl font-extrabold">Up to 50% off</p>
+          <p className="mt-1 text-sm text-white/90">Clearance deals · limited stock</p>
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold">
+            Shop now
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="transition group-hover:translate-x-0.5">
+              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </Link>
+        <Link
+          href="/rewards/claim"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-5 text-white shadow-sm transition hover:shadow-md"
+        >
+          <p className="text-3xl font-extrabold">$20 reward</p>
+          <p className="mt-1 text-sm text-white/90">Free welcome voucher · claim once</p>
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold">
+            Claim now
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="transition group-hover:translate-x-0.5">
+              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </Link>
+        <Link
+          href="/categories"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-5 text-white shadow-sm transition hover:shadow-md"
+        >
+          <p className="text-3xl font-extrabold">New arrivals</p>
+          <p className="mt-1 text-sm text-white/80">Fresh picks across 8 categories</p>
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold">
+            Explore
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="transition group-hover:translate-x-0.5">
+              <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </Link>
+      </section>
+
+      {/* (d) Today's Deals */}
       {deals.length > 0 && (
         <section className="mt-12">
           <SectionTitle
