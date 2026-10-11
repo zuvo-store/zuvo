@@ -51,6 +51,8 @@ export default function InteractiveZuzu({
   const [message, setMessage] = useState<string | null>(null);
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [taps, setTaps] = useState(0);
+  const [winking, setWinking] = useState(false);
+  const winkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [popping, setPopping] = useState(false);
   const [points, setPoints] = useState<number | null>(null);
   const [earned, setEarned] = useState<number | null>(null);
@@ -100,6 +102,9 @@ export default function InteractiveZuzu({
   }
 
   useEffect(() => {
+    // Preload wink image so there's no flicker
+    const img = new Image();
+    img.src = "/zuvo-mascot-wink.jpg";
     resetSleepTimer();
     scheduleAutoMove();
     if (greet) {
@@ -167,7 +172,16 @@ export default function InteractiveZuzu({
     setTimeout(() => {
       setHearts((h) => h.filter((x) => !newHearts.some((n) => n.id === x.id)));
     }, 1500);
-    setTaps((t) => t + 1);
+    setTaps((t) => {
+      const next = t + 1;
+      // Wink every 5th tap (not every tap — keeps it special!)
+      if (next % 5 === 0 && !sleepingRef.current) {
+        setWinking(true);
+        if (winkTimer.current) clearTimeout(winkTimer.current);
+        winkTimer.current = setTimeout(() => setWinking(false), 900);
+      }
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -221,7 +235,7 @@ export default function InteractiveZuzu({
         className="group relative cursor-pointer rounded-full outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
       >
         <img
-          src="/zuvo-mascot.jpg"
+          src={winking ? "/zuvo-mascot-wink.jpg" : "/zuvo-mascot.jpg"}
           alt="Zuzu, the ZUVO mascot"
           draggable={false}
           className={`${sizes[size]} rounded-full object-cover shadow-xl shadow-orange-500/25 ring-4 ring-white transition-transform group-active:scale-95 ${popping ? "zuzu-popout" : imgCls}`}
