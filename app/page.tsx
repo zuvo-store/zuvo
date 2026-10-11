@@ -186,14 +186,14 @@ export default async function HomePage() {
               <Link
                 key={c.id}
                 href={`/category/${c.slug}`}
-                className={`${cardFlushCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
+                className={`${cardFlushCls} group flex flex-col overflow-hidden`}
               >
-                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-zinc-100">
+                <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
                   {cardImage ? (
                     <img
                       src={cardImage}
                       alt={c.name}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-110 group-hover:rotate-1"
                       loading="lazy"
                     />
                   ) : (
@@ -201,9 +201,10 @@ export default async function HomePage() {
                       {c.name.charAt(0)}
                     </span>
                   )}
+                  <span aria-hidden="true" className="shimmer pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-zinc-900 group-hover:text-orange-600">
+                  <h3 className="font-bold text-zinc-900 transition-colors group-hover:text-orange-600">
                     {c.name}
                   </h3>
                   {c.description && (

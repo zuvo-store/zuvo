@@ -3,13 +3,13 @@ import type { ReactNode } from "react";
 
 // ------------------------------------------------------------------ class strings
 export const btnPrimary =
-  "inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "btn-3d inline-flex items-center justify-center rounded-full bg-gradient-to-b from-orange-500 to-orange-600 px-6 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50";
 
 export const btnSecondary =
-  "inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-6 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50";
 
 export const btnGhost =
-  "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 /** Base button class (alias of primary) for quick use. */
 export const btn = btnPrimary;
@@ -20,10 +20,10 @@ export const inputCls =
 export const labelCls = "mb-1.5 block text-sm font-medium text-zinc-700";
 
 export const cardCls =
-  "rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6";
+  "card-3d rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm sm:p-6";
 
 // For cards with full-bleed content (images, banners) — no outer padding.
-export const cardFlushCls = "rounded-xl border border-zinc-200 bg-white shadow-sm";
+export const cardFlushCls = "card-3d rounded-2xl border border-zinc-100 bg-white shadow-sm";
 
 // ------------------------------------------------------------------ Field
 export function Field({

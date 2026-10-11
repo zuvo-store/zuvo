@@ -21,24 +21,26 @@ export default function ProductCard({ product }: { product: ProductCardProduct }
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="card-3d group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm"
     >
-      <div className="relative aspect-square overflow-hidden bg-zinc-100">
+      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-zinc-50 to-zinc-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
           alt={product.name}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 group-hover:rotate-1"
         />
+        {/* shimmer sweep on hover */}
+        <span aria-hidden="true" className="shimmer pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         {pct != null ? (
-          <span className="absolute left-2 top-2 rounded-full bg-brand-600 px-2 py-0.5 text-xs font-bold text-white">
+          <span className="badge-3d absolute left-2.5 top-2.5 rounded-full bg-gradient-to-br from-orange-500 to-red-500 px-2.5 py-1 text-xs font-extrabold text-white">
             -{pct}%
           </span>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-zinc-900 group-hover:text-brand-700">
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 transition-colors group-hover:text-orange-600">
           {product.name}
         </h3>
         <span className="flex items-center gap-1.5">

@@ -14,25 +14,12 @@ export default function EmptyState({
 }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
-      <svg
-        width="96"
-        height="96"
-        viewBox="0 0 96 96"
-        role="img"
-        aria-label="Empty illustration"
-        className="text-zinc-200"
-      >
-        <rect x="12" y="28" width="72" height="48" rx="8" fill="currentColor" />
-        <path
-          d="M12 40 L48 60 L84 40"
-          stroke="#ffffff"
-          strokeWidth="4"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <rect x="38" y="18" width="20" height="14" rx="3" fill="#fdba74" />
-      </svg>
+      <img
+        src="/zuvo-mascot.jpg"
+        alt="ZUVO mascot"
+        loading="lazy"
+        className="animate-float-soft h-28 w-28 rounded-3xl object-cover shadow-xl shadow-orange-500/20"
+      />
       <h2 className="mt-5 text-lg font-bold text-zinc-900">{title}</h2>
       <p className="mt-2 text-sm text-zinc-500">{message}</p>
       {actionHref && actionLabel ? (
