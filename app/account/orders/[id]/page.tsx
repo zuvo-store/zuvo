@@ -91,7 +91,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <section className={cardCls}>
           <h2 className="mb-4 text-lg font-semibold text-zinc-900">Items</h2>
           <ul className="divide-y divide-zinc-100">

@@ -34,7 +34,7 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
         </Link>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className={`${cardCls} p-5`}>
           <h2 className="mb-3 text-base font-bold text-zinc-900">Account info</h2>
           <dl className="space-y-2 text-sm">

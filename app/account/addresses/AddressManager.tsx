@@ -191,7 +191,7 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
           <h2 className="mb-4 text-lg font-semibold text-zinc-900">
             {editingId ? "Edit address" : "New address"}
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="addr-label" className={fieldLabel}>Label</label>
               <input id="addr-label" className={inputCls} value={form.label} onChange={set("label")}

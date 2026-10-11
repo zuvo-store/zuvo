@@ -44,7 +44,7 @@ export default function SiteFooter() {
   return (
     <footer className="border-t border-zinc-200 bg-zinc-50">
       <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <Logo tagline="Discover More. Shop Smarter." />
             <p className="mt-4 max-w-xs text-sm text-zinc-500">

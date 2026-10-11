@@ -42,10 +42,10 @@ export default async function CartPage() {
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
         <CartLines initialLines={cart.lines} />
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className={`${cardCls} p-6`}>
             <h2 className="mb-4 text-lg font-semibold text-zinc-900">Order summary</h2>
 

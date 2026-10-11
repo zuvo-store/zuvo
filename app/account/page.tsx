@@ -63,7 +63,7 @@ export default async function AccountDashboard() {
       </div>
 
       <h2 className="mb-4 text-lg font-semibold text-zinc-900">Manage your account</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {QUICK_LINKS.map((l) => (
           <Link
             key={l.href}

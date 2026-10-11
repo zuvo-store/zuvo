@@ -134,7 +134,7 @@ export default function CheckoutForm({
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className={sectionTitle}>Contact information</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="co-name" className={fieldLabel}>Full name</label>
             <input id="co-name" className={inputCls} value={contact.name} onChange={setC("name")}
@@ -174,7 +174,7 @@ export default function CheckoutForm({
             </select>
           )}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="co-country" className={fieldLabel}>Country</label>
             <input id="co-country" className={inputCls} value={address.country} onChange={setA("country")}
@@ -210,7 +210,7 @@ export default function CheckoutForm({
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className={sectionTitle}>Delivery method</h2>
-        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Delivery method">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Delivery method">
           {(
             [
               { value: "STANDARD", title: "Standard", price: "$4.99 · FREE on orders over $50", time: "5–8 business days (illustrative)" },

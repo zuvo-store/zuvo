@@ -125,7 +125,7 @@ export default async function AdminReportsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Top products */}
         <div className={`${cardCls} p-5`}>
           <h2 className="mb-3 text-base font-bold text-zinc-900">Top products by units sold</h2>

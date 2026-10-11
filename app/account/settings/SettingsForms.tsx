@@ -51,7 +51,7 @@ export function PasswordForm() {
           {message.text}
         </p>
       )}
-      <div className="grid max-w-md gap-4">
+      <div className="grid max-w-md grid-cols-1 gap-4">
         <div>
           <label htmlFor="pw-current" className={fieldLabel}>Current password</label>
           <input id="pw-current" type="password" className={inputCls} value={currentPassword}
@@ -136,7 +136,7 @@ export function DeleteAccountForm({ email }: { email: string }) {
             Type your email (<span className="font-mono">{email}</span>) and enter your password to
             confirm deletion.
           </p>
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label htmlFor="del-email" className={fieldLabel}>Email</label>
               <input id="del-email" type="email" className={inputCls} value={typedEmail}
