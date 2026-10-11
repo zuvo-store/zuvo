@@ -45,6 +45,14 @@ export default async function HomePage() {
       where: { active: true },
       orderBy: { sortOrder: "asc" },
       take: 8,
+      include: {
+        products: {
+          where: { active: true },
+          orderBy: { sortOrder: "asc" },
+          take: 1,
+          select: { images: true },
+        },
+      },
     }),
     db.product.findMany({
       where: { active: true, deal: true },
@@ -125,36 +133,41 @@ export default async function HomePage() {
           actionLabel="All categories"
         />
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/category/${c.slug}`}
-              className={`${cardCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
-            >
-              <div className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-zinc-100">
-                {c.image ? (
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="text-4xl font-extrabold text-orange-500">
-                    {c.name.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-zinc-900 group-hover:text-orange-600">
-                  {c.name}
-                </h3>
-                {c.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{c.description}</p>
-                )}
-              </div>
-            </Link>
-          ))}
+          {categories.map((c) => {
+            const productImage = c.products[0]?.images?.[0];
+            const cardImage =
+              productImage && !productImage.endsWith(".svg") ? productImage : c.image;
+            return (
+              <Link
+                key={c.id}
+                href={`/category/${c.slug}`}
+                className={`${cardCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
+              >
+                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-zinc-100">
+                  {cardImage ? (
+                    <img
+                      src={cardImage}
+                      alt={c.name}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-4xl font-extrabold text-orange-500">
+                      {c.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-zinc-900 group-hover:text-orange-600">
+                    {c.name}
+                  </h3>
+                  {c.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{c.description}</p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
