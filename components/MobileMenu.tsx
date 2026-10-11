@@ -9,6 +9,7 @@ const SHOP_LINKS = [
     href: "/",
     label: "Home",
     desc: "Back to the homepage",
+    gradient: "from-orange-400 to-amber-500",
     icon: (
       <path d="M3 10.5 10 3l7 7.5M5 9.5V17h4v-4h6v4h4V9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -17,6 +18,7 @@ const SHOP_LINKS = [
     href: "/categories",
     label: "Categories",
     desc: "Browse every department",
+    gradient: "from-violet-400 to-purple-500",
     icon: (
       <path d="M4 4h6v6H4zM10 4h6v4h-6zM4 10h6v6H4zM10 10h6v6h-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
     ),
@@ -25,6 +27,7 @@ const SHOP_LINKS = [
     href: "/deals",
     label: "Deals",
     desc: "Today's best discounts",
+    gradient: "from-rose-400 to-red-500",
     icon: (
       <path d="M3 12V4h8l9 9-8 8-9-9ZM7.5 8.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -33,6 +36,7 @@ const SHOP_LINKS = [
     href: "/rewards",
     label: "Rewards",
     desc: "Your $20 welcome reward",
+    gradient: "from-emerald-400 to-green-500",
     icon: (
       <path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18.4 5.6l-2.1 2.1M21 12h-3M7 20h10l-1-7a4 4 0 1 0-8 0l-1 7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -41,6 +45,7 @@ const SHOP_LINKS = [
     href: "/track-order",
     label: "Track Order",
     desc: "Follow your delivery",
+    gradient: "from-sky-400 to-blue-500",
     icon: (
       <path d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.5 1.5 0 1 0 0-.01M17 18a1.5 1.5 0 1 0 0-.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     ),
@@ -76,45 +81,73 @@ export default function MobileMenu() {
         )}
       </button>
       {open ? (
-        <div className="absolute inset-x-0 top-full z-50 max-h-[80vh] overflow-y-auto border-b border-zinc-200 bg-white px-4 pb-6 pt-3 shadow-xl">
+        <div className="absolute inset-x-0 top-full z-50 max-h-[85vh] overflow-y-auto bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
           <SearchBox className="mb-4" />
+
+          {/* Mascot banner */}
+          <Link
+            href="/rewards"
+            onClick={() => setOpen(false)}
+            className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30"
+          >
+            <img
+              src="/zuvo-mascot.jpg"
+              alt=""
+              aria-hidden="true"
+              className="h-16 w-16 rounded-2xl object-cover shadow-md"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-extrabold">Hey, welcome to ZUVO! 👋</span>
+              <span className="block truncate text-xs text-white/90">Claim your $20 welcome reward →</span>
+            </span>
+            <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-xl" />
+          </Link>
+
           <nav aria-label="Mobile">
-            <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <p className="px-2 pb-2 text-xs font-bold uppercase tracking-widest text-zinc-400">
               Shop
             </p>
-            <ul className="space-y-1">
+            <ul className="grid grid-cols-1 gap-2">
               {SHOP_LINKS.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-zinc-100"
+                    className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm transition active:scale-[0.98]"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-brand-700">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${item.gradient} text-white shadow-md`}
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         {item.icon}
                       </svg>
                     </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-zinc-900">{item.label}</span>
-                      <span className="block text-xs text-zinc-500">{item.desc}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-zinc-900">{item.label}</span>
+                      <span className="block truncate text-xs text-zinc-500">{item.desc}</span>
                     </span>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 text-zinc-300">
+                      <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </Link>
                 </li>
               ))}
             </ul>
-            <p className="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <p className="px-2 pb-2 pt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">
               Account
             </p>
-            <ul className="space-y-1">
-              {ACCOUNT_LINKS.map((item) => (
-                <li key={item.href}>
+            <ul className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+              {ACCOUNT_LINKS.map((item, i) => (
+                <li key={item.href} className={i > 0 ? "border-t border-zinc-100" : ""}>
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+                    className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-zinc-700 transition active:bg-zinc-50"
                   >
                     {item.label}
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="text-zinc-300">
+                      <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </Link>
                 </li>
               ))}
