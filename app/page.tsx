@@ -152,7 +152,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="relative mx-auto flex w-full max-w-md flex-col items-center justify-center py-8 lg:max-w-none">
-            <InteractiveZuzu size="lg" />
+            <InteractiveZuzu size="lg" greet />
             {/* floating deal badge */}
             <div className="absolute left-0 top-6 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 sm:left-4">
               <p className="text-xs font-bold text-zinc-500">UP TO</p>

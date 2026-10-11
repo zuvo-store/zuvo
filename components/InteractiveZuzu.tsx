@@ -39,10 +39,12 @@ type Heart = { id: number; left: number; delay: number };
 export default function InteractiveZuzu({
   size = "md",
   showName = true,
+  greet = false,
   className = "",
 }: {
   size?: "sm" | "md" | "lg";
   showName?: boolean;
+  greet?: boolean;
   className?: string;
 }) {
   const [reaction, setReaction] = useState<string | null>(null);
@@ -100,6 +102,15 @@ export default function InteractiveZuzu({
   useEffect(() => {
     resetSleepTimer();
     scheduleAutoMove();
+    if (greet) {
+      const t = setTimeout(() => showMessage("Hi! I am Zuzu! 👋", 4000), 1200);
+      return () => {
+        clearTimeout(t);
+        if (sleepTimer.current) clearTimeout(sleepTimer.current);
+        if (autoTimer.current) clearTimeout(autoTimer.current);
+        if (msgTimer.current) clearTimeout(msgTimer.current);
+      };
+    }
     return () => {
       if (sleepTimer.current) clearTimeout(sleepTimer.current);
       if (autoTimer.current) clearTimeout(autoTimer.current);
@@ -179,12 +190,12 @@ export default function InteractiveZuzu({
         </div>
       )}
 
-      {/* Zzz when sleeping */}
+      {/* Zzz when sleeping — big and dreamy */}
       {sleeping && (
-        <div aria-hidden="true" className="pointer-events-none absolute -top-4 right-2 z-10">
-          <span className="zuzu-zzz absolute text-xl">💤</span>
-          <span className="zuzu-zzz absolute text-lg [animation-delay:0.9s]">💤</span>
-          <span className="zuzu-zzz absolute text-sm [animation-delay:1.8s]">💤</span>
+        <div aria-hidden="true" className="pointer-events-none absolute -top-6 right-0 z-10">
+          <span className="zuzu-zzz absolute text-4xl">💤</span>
+          <span className="zuzu-zzz absolute text-3xl [animation-delay:0.9s]">💤</span>
+          <span className="zuzu-zzz absolute text-2xl [animation-delay:1.8s]">💤</span>
         </div>
       )}
 
