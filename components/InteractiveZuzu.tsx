@@ -255,18 +255,14 @@ export default function InteractiveZuzu({
           <p className="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-1.5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/30">
             ⭐ {points.toLocaleString()} ZUZU
           </p>
-          <p className="max-w-[220px] text-center text-xs leading-relaxed text-zinc-500">
-            👆 Tap-tap Zuzu to collect <span className="font-bold text-amber-600">ZUZU coins</span> & get discount!
-            <span className="mt-0.5 block rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
-              1,000 ZUZ = $1 off 🛍️
-            </span>
+          <p className="text-center text-[11px] font-medium text-zinc-500">
+            👆 Tap to earn • <span className="font-bold text-amber-600">1,000 = $1 off</span>
           </p>
         </div>
       )}
       {points === null && (
-        <p className="mt-2 max-w-[220px] text-center text-xs leading-relaxed text-zinc-400">
-          👆 Tap Zuzu to collect <span className="font-bold text-amber-600">ZUZU coins</span> —{" "}
-          <span className="font-bold">1,000 = $1</span> discount!
+        <p className="mt-2 text-center text-[11px] font-medium text-zinc-500">
+          👆 Tap Zuzu to earn coins • <span className="font-bold text-amber-600">1,000 = $1 off</span>
         </p>
       )}
     </div>
