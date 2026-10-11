@@ -11,6 +11,7 @@ import GuestRewardBanner from "@/components/GuestRewardBanner";
 import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
+import InteractiveZuzu from "@/components/InteractiveZuzu";
 import { Suspense } from "react";
 
 export const metadata = {
@@ -150,19 +151,14 @@ export default async function HomePage() {
               </span>
             </div>
           </div>
-          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <img
-              src="/zuvo-mascot.jpg"
-              alt="ZUVO shopping mascot"
-              className="w-full rounded-3xl object-cover shadow-2xl shadow-orange-500/20 transition-transform duration-500 hover:scale-[1.02]"
-              loading="eager"
-            />
+          <div className="relative mx-auto flex w-full max-w-md flex-col items-center justify-center py-8 lg:max-w-none">
+            <InteractiveZuzu size="lg" />
             {/* floating deal badge */}
-            <div className="absolute -left-3 top-6 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 sm:-left-6">
+            <div className="absolute left-0 top-6 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 sm:left-4">
               <p className="text-xs font-bold text-zinc-500">UP TO</p>
               <p className="text-xl font-extrabold text-orange-600">50% OFF</p>
             </div>
-            <div className="absolute -right-2 bottom-8 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 [animation-delay:0.5s] sm:-right-4">
+            <div className="absolute bottom-8 right-0 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 [animation-delay:0.5s] sm:right-4">
               <p className="text-xs font-bold text-zinc-500">NEW USER</p>
               <p className="text-xl font-extrabold text-green-600">$20 REWARD</p>
             </div>

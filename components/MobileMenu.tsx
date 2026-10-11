@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import SearchBox from "@/components/SearchBox";
+import InteractiveZuzu from "@/components/InteractiveZuzu";
 
 const SHOP_LINKS = [
   {
@@ -84,24 +85,19 @@ export default function MobileMenu() {
         <div className="absolute inset-x-0 top-full z-50 max-h-[85vh] overflow-y-auto bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
           <SearchBox className="mb-4" />
 
-          {/* Mascot banner */}
-          <Link
-            href="/rewards"
-            onClick={() => setOpen(false)}
-            className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30"
-          >
-            <img
-              src="/zuvo-mascot.jpg"
-              alt=""
-              aria-hidden="true"
-              className="h-16 w-16 rounded-2xl object-cover shadow-md"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-extrabold">Hey, welcome to ZUVO! 👋</span>
-              <span className="block truncate text-xs text-white/90">Claim your $20 welcome reward →</span>
-            </span>
+          {/* Zuzu banner — tap for a surprise! */}
+          <div className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30">
+            <InteractiveZuzu size="sm" showName={false} className="shrink-0" />
+            <Link
+              href="/rewards"
+              onClick={() => setOpen(false)}
+              className="min-w-0 flex-1"
+            >
+              <span className="block text-sm font-extrabold">Hey, I'm Zuzu! 👋</span>
+              <span className="block truncate text-xs text-white/90">Tap me! Then claim your $20 reward →</span>
+            </Link>
             <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-xl" />
-          </Link>
+          </div>
 
           <nav aria-label="Mobile">
             <p className="px-2 pb-2 text-xs font-bold uppercase tracking-widest text-zinc-400">
