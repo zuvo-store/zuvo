@@ -78,6 +78,7 @@ export default function SiteFooter() {
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-zinc-200 pt-6 text-xs text-zinc-500 sm:flex-row">
           <p>© 2026 ZUVO demo. All rights reserved.</p>
+          <p className="font-medium text-zinc-600">Built by Haider Malik &amp; Usman Anwar</p>
           <p>Demo marketplace — no real transactions. Payments: DEMO only.</p>
         </div>
       </div>

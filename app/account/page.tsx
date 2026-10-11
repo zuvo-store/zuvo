@@ -44,12 +44,20 @@ export default async function AccountDashboard() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <Link key={s.label} href={s.href} className={`${cardCls} transition hover:shadow-md`}>
-            <p className="text-sm text-zinc-500">{s.label}</p>
-            <p className={`mt-1 text-xl font-bold text-zinc-900 ${s.mono ? "font-mono tracking-widest" : ""}`}>
+          <Link
+            key={s.label}
+            href={s.href}
+            className={`${cardCls} block p-5 transition hover:-translate-y-0.5 hover:shadow-md`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{s.label}</p>
+            <p
+              className={`mt-2 text-2xl font-extrabold text-zinc-900 ${
+                s.mono ? "font-mono text-lg tracking-widest" : ""
+              }`}
+            >
               {s.value}
             </p>
-            {s.sub && <p className="mt-1 text-xs text-zinc-500">{s.sub}</p>}
+            {s.sub && <p className="mt-1.5 text-xs text-zinc-500">{s.sub}</p>}
           </Link>
         ))}
       </div>
@@ -57,7 +65,11 @@ export default async function AccountDashboard() {
       <h2 className="mb-4 text-lg font-semibold text-zinc-900">Manage your account</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {QUICK_LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className={`${cardCls} transition hover:shadow-md`}>
+          <Link
+            key={l.href}
+            href={l.href}
+            className={`${cardCls} block p-5 transition hover:-translate-y-0.5 hover:shadow-md`}
+          >
             <p className="font-semibold text-zinc-900">{l.title}</p>
             <p className="mt-1 text-sm text-zinc-500">{l.desc}</p>
           </Link>
