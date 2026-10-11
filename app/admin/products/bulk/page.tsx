@@ -17,6 +17,12 @@ const HEADERS = [
   "stock",
   "short_desc",
   "description",
+  "images",
+  "attributes",
+  "variant_name",
+  "variant_values",
+  "variant_price_deltas",
+  "variant_stocks",
   "active",
   "featured",
   "deal",
@@ -76,6 +82,55 @@ function parseCsv(text: string): string[][] {
 function toBool(v: string | undefined, fallback: boolean): boolean {
   if (v == null || v.trim() === "") return fallback;
   return ["1", "true", "yes", "y"].includes(v.trim().toLowerCase());
+}
+
+/** Pipe-separated image paths: "/p/a.jpg|/p/b.jpg" -> ["...","..."] */
+function parseImages(v: string | undefined): string[] {
+  if (!v) return [];
+  return v
+    .split("|")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** Pipe-separated key:value pairs: "color:Red|material:Cotton" -> {color:"Red",...} */
+function parseAttributes(v: string | undefined): Record<string, string> | undefined {
+  if (!v) return undefined;
+  const obj: Record<string, string> = {};
+  for (const part of v.split("|")) {
+    const i = part.indexOf(":");
+    if (i > 0) {
+      const k = part.slice(0, i).trim();
+      const val = part.slice(i + 1).trim();
+      if (k && val) obj[k] = val;
+    }
+  }
+  return Object.keys(obj).length > 0 ? obj : undefined;
+}
+
+/**
+ * Single-dimension variants, e.g.:
+ *   variant_name=Size, variant_values="S|M|L",
+ *   variant_price_deltas="0|2.00|4.00" (dollars), variant_stocks="10|20|15"
+ */
+function parseVariants(
+  row: string[],
+  idx: (h: string) => number,
+  fallbackStock: number
+): { name: string; value: string; priceDeltaCents: number; stock: number }[] {
+  const name = (row[idx("variant_name")] ?? "").trim();
+  const valuesRaw = (row[idx("variant_values")] ?? "").trim();
+  if (!name || !valuesRaw) return [];
+  const values = valuesRaw.split("|").map((s) => s.trim()).filter(Boolean);
+  if (values.length === 0) return [];
+  const deltas = (row[idx("variant_price_deltas")] ?? "").split("|");
+  const stocks = (row[idx("variant_stocks")] ?? "").split("|");
+  return values.map((value, i) => ({
+    name,
+    value,
+    priceDeltaCents: Math.round(Number(deltas[i] ?? "0") * 100) || 0,
+    stock: Math.max(0, Math.round(Number(stocks[i] ?? String(fallbackStock)) || 0)),
+  }));
 }
 
 async function uploadCsv(formData: FormData) {
@@ -158,9 +213,14 @@ async function uploadCsv(formData: FormData) {
           stock,
           shortDesc: (row[idx("short_desc")] ?? "").trim() || null,
           description: (row[idx("description")] ?? "").trim() || null,
+          images: parseImages(row[idx("images")]),
+          attributes: parseAttributes(row[idx("attributes")]),
           active: toBool(row[idx("active")], true),
           featured: toBool(row[idx("featured")], false),
           deal: toBool(row[idx("deal")], false),
+          variants: {
+            create: parseVariants(row, idx, stock),
+          },
         },
       });
       created++;
@@ -268,6 +328,9 @@ export default async function BulkUploadPage({
           <li>Rows with an existing slug are skipped (no duplicates).</li>
           <li>Empty <code>slug</code> → auto-generated from the product name.</li>
           <li>Unknown <code>category_slug</code> rows are skipped with a warning.</li>
+          <li><code>images</code>: pipe-separated paths, e.g. <code>/p/a.jpg|/p/b.jpg</code></li>
+          <li><code>attributes</code>: pipe-separated <code>key:value</code>, e.g. <code>color:Red|material:Cotton</code></li>
+          <li><code>variant_name</code> + <code>variant_values</code> (pipe-separated, e.g. <code>S|M|L</code>) create size/color variants. Optional <code>variant_price_deltas</code> (dollars) and <code>variant_stocks</code> per value.</li>
           <li>Max file size 2 MB.</li>
         </ul>
       </section>
