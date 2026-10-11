@@ -99,6 +99,7 @@ model Product {
   brand              String?
   priceCents         Int
   originalPriceCents Int?
+  costCents          Int      @default(0) // unit cost for profit reports
   currency           String   @default("USD")
   stock              Int      @default(0)
   sku                String?  @unique

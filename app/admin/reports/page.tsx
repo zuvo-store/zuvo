@@ -99,6 +99,76 @@ export default async function AdminReportsPage() {
   const inventoryValueCents = invProducts.reduce((s, p) => s + p.stock * p.priceCents, 0);
   const inventoryUnits = invAgg._sum.stock ?? 0;
 
+  // --- Profit report: revenue - cost of goods sold (non-cancelled orders) ---
+  const soldItems = await db.orderItem.findMany({
+    where: {
+      productId: { not: null },
+      order: { status: { notIn: ["CANCELLED", "DRAFT", "PENDING_PAYMENT", "REFUNDED"] } },
+    },
+    select: { qty: true, lineTotalCents: true, productId: true },
+  });
+  const soldProductIds = [...new Set(soldItems.map((i) => i.productId).filter((x): x is string => Boolean(x)))];
+  const soldProducts = await db.product.findMany({
+    where: { id: { in: soldProductIds } },
+    select: { id: true, costCents: true },
+  });
+  const costMap = new Map(soldProducts.map((p) => [p.id, p.costCents]));
+  let profitRevenue = 0;
+  let profitCost = 0;
+  for (const item of soldItems) {
+    profitRevenue += item.lineTotalCents;
+    profitCost += (costMap.get(item.productId ?? "") ?? 0) * item.qty;
+  }
+  const profitNet = profitRevenue - profitCost;
+  const profitMargin = profitRevenue > 0 ? (profitNet / profitRevenue) * 100 : 0;
+
+  // --- Refunds report ---
+  const refundedOrders = await db.order.findMany({
+    where: { status: "REFUNDED" },
+    orderBy: { updatedAt: "desc" },
+    take: 10,
+    select: { id: true, orderNumber: true, totalCents: true, updatedAt: true },
+  });
+  const refundAgg = await db.order.aggregate({
+    where: { status: "REFUNDED" },
+    _sum: { totalCents: true },
+    _count: { id: true },
+  });
+
+  // --- Top customers by spending ---
+  const topCustomers = await db.order.groupBy({
+    by: ["userId"],
+    where: {
+      userId: { not: null },
+      status: { notIn: ["CANCELLED", "DRAFT", "PENDING_PAYMENT", "REFUNDED"] },
+    },
+    _sum: { totalCents: true },
+    _count: { id: true },
+    orderBy: { _sum: { totalCents: "desc" } },
+    take: 10,
+  });
+  const topCustIds = topCustomers.map((c) => c.userId).filter((x): x is string => Boolean(x));
+  const topCustUsers = await db.user.findMany({
+    where: { id: { in: topCustIds } },
+    select: { id: true, name: true, email: true },
+  });
+  const topCustMap = new Map(topCustUsers.map((u) => [u.id, u]));
+
+  // --- Coupon / promo usage ---
+  const promos = await db.promotion.findMany({
+    orderBy: { usedCount: "desc" },
+    take: 10,
+    select: { id: true, code: true, title: true, discountType: true, discountValue: true, usedCount: true, active: true },
+  });
+  const couponDiscountAgg = await db.order.aggregate({
+    where: {
+      promoCode: { not: null },
+      status: { notIn: ["CANCELLED", "DRAFT", "PENDING_PAYMENT", "REFUNDED"] },
+    },
+    _sum: { discountCents: true },
+    _count: { id: true },
+  });
+
   return (
     <div>
       <SectionTitle title="Reports" />
@@ -280,6 +350,154 @@ export default async function AdminReportsPage() {
           <p className="mt-2 text-xs text-zinc-500">
             Generated {fmtDate(now)} · aggregates only, no personal data.
           </p>
+        </div>
+      </div>
+
+      {/* Second row: profit, refunds, customers, coupons */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Profit report */}
+        <div className={`${cardCls} p-5`}>
+          <h2 className="mb-1 text-base font-bold text-zinc-900">💸 Profit report</h2>
+          <p className="mb-3 text-xs text-zinc-500">Revenue minus cost of goods sold (completed orders).</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl bg-zinc-50 p-3">
+              <p className="text-xs text-zinc-500">Revenue</p>
+              <p className="text-lg font-extrabold text-zinc-900">{formatUSD(profitRevenue)}</p>
+            </div>
+            <div className="rounded-xl bg-zinc-50 p-3">
+              <p className="text-xs text-zinc-500">Cost</p>
+              <p className="text-lg font-extrabold text-zinc-900">{formatUSD(profitCost)}</p>
+            </div>
+            <div className={`rounded-xl p-3 ${profitNet >= 0 ? "bg-green-50" : "bg-red-50"}`}>
+              <p className="text-xs text-zinc-500">Profit</p>
+              <p className={`text-lg font-extrabold ${profitNet >= 0 ? "text-green-700" : "text-red-700"}`}>
+                {formatUSD(profitNet)}
+              </p>
+              <p className="text-xs text-zinc-500">{profitMargin.toFixed(1)}% margin</p>
+            </div>
+          </div>
+          {profitCost === 0 && profitRevenue > 0 && (
+            <p className="mt-2 text-xs text-amber-600">
+              ⚠️ Product costs are 0 — set <code>cost</code> via bulk upload or product edit for accurate profit.
+            </p>
+          )}
+        </div>
+
+        {/* Refunds */}
+        <div className={`${cardCls} p-5`}>
+          <h2 className="mb-1 text-base font-bold text-zinc-900">🔄 Returns & refunds</h2>
+          <p className="mb-3 text-xs text-zinc-500">
+            <span className="font-extrabold text-zinc-900">{refundAgg._count.id}</span> refunded ·{" "}
+            <span className="font-extrabold text-zinc-900">{formatUSD(refundAgg._sum.totalCents ?? 0)}</span> total
+          </p>
+          {refundedOrders.length === 0 ? (
+            <p className="text-sm text-zinc-500">No refunds yet. 🎉</p>
+          ) : (
+            <div className={tableWrapCls}>
+              <table className={tableCls}>
+                <thead>
+                  <tr>
+                    <th className={thCls}>Order</th>
+                    <th className={thCls}>Amount</th>
+                    <th className={thCls}>Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {refundedOrders.map((o) => (
+                    <tr key={o.id}>
+                      <td className={tdCls}>
+                        <Link href={`/admin/orders/${o.id}`} className="font-medium hover:underline">
+                          {o.orderNumber}
+                        </Link>
+                      </td>
+                      <td className={tdCls}>{formatUSD(o.totalCents)}</td>
+                      <td className={tdCls}>{fmtDate(o.updatedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Top customers */}
+        <div className={`${cardCls} p-5`}>
+          <h2 className="mb-3 text-base font-bold text-zinc-900">👤 Top customers</h2>
+          {topCustomers.length === 0 ? (
+            <p className="text-sm text-zinc-500">No customer orders yet.</p>
+          ) : (
+            <div className={tableWrapCls}>
+              <table className={tableCls}>
+                <thead>
+                  <tr>
+                    <th className={thCls}>Customer</th>
+                    <th className={thCls}>Orders</th>
+                    <th className={thCls}>Spent</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {topCustomers.map((c) => {
+                    const u = c.userId ? topCustMap.get(c.userId) : undefined;
+                    return (
+                      <tr key={c.userId ?? "guest"}>
+                        <td className={tdCls}>
+                          {u ? (
+                            <Link href={`/admin/customers/${u.id}`} className="font-medium hover:underline">
+                              {u.name ?? u.email}
+                            </Link>
+                          ) : (
+                            <span className="text-zinc-500">Guest</span>
+                          )}
+                        </td>
+                        <td className={tdCls}>{c._count.id}</td>
+                        <td className={tdCls}>{formatUSD(c._sum.totalCents ?? 0)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Coupon usage */}
+        <div className={`${cardCls} p-5`}>
+          <h2 className="mb-1 text-base font-bold text-zinc-900">🏷️ Coupon usage</h2>
+          <p className="mb-3 text-xs text-zinc-500">
+            <span className="font-extrabold text-zinc-900">{couponDiscountAgg._count.id}</span> orders used a
+            coupon · <span className="font-extrabold text-zinc-900">{formatUSD(couponDiscountAgg._sum.discountCents ?? 0)}</span> total
+            discounts given
+          </p>
+          {promos.length === 0 ? (
+            <p className="text-sm text-zinc-500">No promotions yet.</p>
+          ) : (
+            <div className={tableWrapCls}>
+              <table className={tableCls}>
+                <thead>
+                  <tr>
+                    <th className={thCls}>Code</th>
+                    <th className={thCls}>Discount</th>
+                    <th className={thCls}>Used</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {promos.map((p) => (
+                    <tr key={p.id}>
+                      <td className={tdCls}>
+                        <span className="font-mono font-bold">{p.code ?? "auto"}</span>{" "}
+                        <span className="text-xs text-zinc-500">{p.title}</span>{" "}
+                        {!p.active && <Badge tone="zinc">off</Badge>}
+                      </td>
+                      <td className={tdCls}>
+                        {p.discountType === "PERCENT" ? `${p.discountValue}%` : formatUSD(p.discountValue)}
+                      </td>
+                      <td className={tdCls}>{p.usedCount}×</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
