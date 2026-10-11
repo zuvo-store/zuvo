@@ -9,6 +9,8 @@ import ProductCard from "@/components/ProductCard";
 import RewardPopup from "@/components/RewardPopup";
 import GuestRewardBanner from "@/components/GuestRewardBanner";
 import { SectionTitle, cardCls } from "@/components/ui";
+import VerifiedBanner from "@/components/VerifiedBanner";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "ZUVO — Discover More. Shop Smarter.",
@@ -87,6 +89,9 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <Suspense fallback={null}>
+        <VerifiedBanner />
+      </Suspense>
       {/* Slim welcome nudge for guests only (signed-in users get the claimable RewardPopup below) */}
       {!user && <GuestRewardBanner />}
       {/* (a) Hero — light artwork background, so dark text for contrast */}

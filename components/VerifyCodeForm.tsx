@@ -13,10 +13,13 @@ export default function VerifyCodeForm({
   email,
   demoCode,
   title = "Check your email",
+  mode = "login",
 }: {
   email: string;
   demoCode?: string | null;
   title?: string;
+  /** "signup" shows an account-created welcome; "login" shows email-verified. */
+  mode?: "signup" | "login";
 }) {
   const router = useRouter();
   const [code, setCode] = useState(demoCode ?? "");
@@ -64,7 +67,7 @@ export default function VerifyCodeForm({
         setError(data.error || "Could not verify the code. Please try again.");
         return;
       }
-      router.push("/");
+      router.push(`/?verified=${mode}`);
       router.refresh();
     } catch {
       setError("Network error. Please check your connection and try again.");

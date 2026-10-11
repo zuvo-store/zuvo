@@ -73,7 +73,7 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
   }
 
   if (verifyEmail) {
-    return <VerifyCodeForm email={verifyEmail} demoCode={demoCode} title="Verify your email" />;
+    return <VerifyCodeForm email={verifyEmail} demoCode={demoCode} title="Verify your email" mode="signup" />;
   }
 
   return (
