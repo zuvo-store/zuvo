@@ -16,6 +16,7 @@ export default function WishlistButton({
   const pathname = usePathname();
   const [active, setActive] = useState(initialActive);
   const [pending, setPending] = useState(false);
+  const [popping, setPopping] = useState(false);
 
   async function toggle() {
     if (pending) return;
@@ -32,7 +33,12 @@ export default function WishlistButton({
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) return;
-      setActive(!active);
+      const next = !active;
+      setActive(next);
+      if (next) {
+        setPopping(true);
+        setTimeout(() => setPopping(false), 500);
+      }
       router.refresh();
     } catch {
       /* stay as-is */
@@ -48,13 +54,13 @@ export default function WishlistButton({
       disabled={pending}
       aria-pressed={active}
       aria-label={active ? "Remove from wishlist" : "Add to wishlist"}
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition-colors disabled:opacity-60 ${
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-all disabled:opacity-60 ${
         active
-          ? "border-brand-200 bg-brand-50 text-brand-600"
-          : "border-zinc-300 bg-white text-zinc-500 hover:text-brand-600"
-      } ${className}`}
+          ? "border-red-200 bg-red-50 text-red-500 shadow-red-100"
+          : "border-zinc-200 bg-white text-zinc-400 hover:scale-110 hover:text-red-400"
+      } ${popping ? "animate-heart-pop" : ""} ${className}`}
     >
-      <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill={active ? "currentColor" : "none"}>
+      <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill={active ? "currentColor" : "none"} className={popping ? "drop-shadow-md" : ""}>
         <path
           d="M10 17.5S3 12.6 3 7.9C3 5.2 5.1 3.5 7.4 3.5c1.1 0 2 .5 2.6 1.3.6-.8 1.5-1.3 2.6-1.3 2.3 0 4.4 1.7 4.4 4.4 0 4.7-7 9.6-7 9.6z"
           stroke="currentColor"

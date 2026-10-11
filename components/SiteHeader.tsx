@@ -7,6 +7,7 @@ import SearchBox from "@/components/SearchBox";
 import AccountMenu from "@/components/AccountMenu";
 import MobileMenu from "@/components/MobileMenu";
 import CartIconButton from "@/components/CartIconButton";
+import DealsTicker from "@/components/DealsTicker";
 
 const NAV = [
   { href: "/categories", label: "Categories" },
@@ -25,12 +26,8 @@ export default async function SiteHeader() {
 
   return (
     <>
-      {announcement ? (
-        <div className="bg-brand-600 px-4 py-1.5 text-center text-xs font-medium text-white">
-          {announcement}
-        </div>
-      ) : null}
-      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      <DealsTicker />
+      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 shadow-lg shadow-zinc-900/5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
         <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <MobileMenu />
           <Logo tagline="Discover More. Shop Smarter." />

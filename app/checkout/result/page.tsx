@@ -9,6 +9,7 @@ import CheckoutSteps from "@/components/CheckoutSteps";
 import EmptyState from "@/components/EmptyState";
 import { cardCls, btn } from "@/components/ui";
 import { PendingConfirmButton } from "./ResultActions";
+import Confetti from "@/components/Confetti";
 
 const STATUS_COPY: Record<string, { tone: string; title: string; body: string }> = {
   SUCCEEDED: {
@@ -102,6 +103,7 @@ export default async function ResultPage({
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
+      {confirmed ? <Confetti /> : null}
       <div className="mb-8">
         <CheckoutSteps current={4} />
       </div>

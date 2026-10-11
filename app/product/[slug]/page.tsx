@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import RatingStars from "@/components/RatingStars";
 import Price from "@/components/Price";
 import WishlistButton from "@/components/WishlistButton";
+import StickyBuyBar from "@/components/StickyBuyBar";
 import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import ProductGallery from "./ProductGallery";
 import BuyPanel from "./BuyPanel";
@@ -149,7 +150,7 @@ export default async function ProductPage({
             <p className="mt-4 leading-relaxed text-zinc-600">{product.shortDesc}</p>
           )}
 
-          <div className="mt-6">
+          <div className="mt-6" id="buy-panel">
             <BuyPanel
               productId={product.id}
               basePriceCents={product.priceCents}
@@ -278,6 +279,11 @@ export default async function ProductPage({
           </div>
         </div>
       </section>
+      <StickyBuyBar
+        productName={product.name}
+        priceCents={product.priceCents}
+        image={productImages(product.images)[0] ?? "/p/placeholder.svg"}
+      />
     </div>
   );
 }
