@@ -151,16 +151,16 @@ export default async function HomePage() {
               </span>
             </div>
           </div>
-          <div className="relative mx-auto flex w-full max-w-md flex-col items-center justify-center py-8 lg:max-w-none">
+          <div className="relative mx-auto flex w-full max-w-md flex-col items-center justify-center px-10 py-8 lg:max-w-none">
             <InteractiveZuzu size="lg" greet />
             {/* floating deal badge */}
-            <div className="absolute left-0 top-6 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 sm:left-4">
-              <p className="text-xs font-bold text-zinc-500">UP TO</p>
-              <p className="text-xl font-extrabold text-orange-600">50% OFF</p>
+            <div className="absolute left-0 top-2 animate-bounce rounded-xl bg-white px-3 py-1.5 shadow-lg ring-1 ring-zinc-100 sm:left-2">
+              <p className="text-[10px] font-bold text-zinc-500">UP TO</p>
+              <p className="text-base font-extrabold text-orange-600">50% OFF</p>
             </div>
-            <div className="absolute bottom-8 right-0 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 [animation-delay:0.5s] sm:right-4">
-              <p className="text-xs font-bold text-zinc-500">NEW USER</p>
-              <p className="text-xl font-extrabold text-green-600">$20 REWARD</p>
+            <div className="absolute bottom-2 right-0 animate-bounce rounded-xl bg-white px-3 py-1.5 shadow-lg ring-1 ring-zinc-100 [animation-delay:0.5s] sm:right-2">
+              <p className="text-[10px] font-bold text-zinc-500">NEW USER</p>
+              <p className="text-base font-extrabold text-green-600">$20 REWARD</p>
             </div>
           </div>
         </div>
