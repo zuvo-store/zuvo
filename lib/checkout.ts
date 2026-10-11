@@ -177,6 +177,19 @@ export async function rebuildDraftOrder(orderId: string) {
 
   const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents);
 
+  // ZUZU points redemption: 1000 pts = $1 (100 cents), capped by balance & total
+  let zuzuPointsRedeemed = 0;
+  let zuzuDiscountCents = 0;
+  if (order.zuzuPointsRedeemed > 0 && order.userId) {
+    const u = await db.user.findUnique({ where: { id: order.userId }, select: { zuzuPoints: true } });
+    const balance = u?.zuzuPoints ?? 0;
+    const usable = Math.min(order.zuzuPointsRedeemed, balance);
+    const maxDiscount = Math.max(0, totalCents);
+    zuzuDiscountCents = Math.min(Math.floor(usable / 1000) * 100, maxDiscount);
+    zuzuPointsRedeemed = Math.floor(zuzuDiscountCents / 100) * 1000;
+  }
+  const finalTotalCents = Math.max(0, totalCents - zuzuDiscountCents);
+
   await db.$transaction(async (tx) => {
     await tx.orderItem.deleteMany({ where: { orderId } });
     await tx.orderItem.createMany({
@@ -194,7 +207,7 @@ export async function rebuildDraftOrder(orderId: string) {
     });
     await tx.order.update({
       where: { id: orderId },
-      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents, currency: "USD" },
+      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents },
     });
   });
 

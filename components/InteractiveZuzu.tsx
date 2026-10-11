@@ -48,8 +48,10 @@ export default function InteractiveZuzu({
   const [reaction, setReaction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [hearts, setHearts] = useState<Heart[]>([]);
-  const [popping, setPopping] = useState(false);
   const [taps, setTaps] = useState(0);
+  const [popping, setPopping] = useState(false);
+  const [points, setPoints] = useState<number | null>(null);
+  const [earned, setEarned] = useState<number | null>(null);
   const [sleeping, setSleeping] = useState(false);
   const [swaying, setSwaying] = useState(true);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,6 +125,21 @@ export default function InteractiveZuzu({
     resetSleepTimer();
     // Zuzu pops OUT of the circle!
     setPopping(true);
+
+    // Earn points (logged-in users)
+    fetch("/api/zuzu/tap", { method: "POST" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) {
+          setPoints(d.balance);
+          setEarned(d.earned);
+          setTimeout(() => setEarned(null), 1500);
+        } else if (d.dailyCap) {
+          showMessage("Daily limit reached! 🎉", 2000);
+        }
+      })
+      .catch(() => {});
+
     setReaction((prev) => {
       const pool = REACTIONS.filter((r) => r !== prev);
       const next = pool[Math.floor(Math.random() * pool.length)];
@@ -207,12 +224,24 @@ export default function InteractiveZuzu({
         )}
       </button>
 
+      {/* Points earned popup */}
+      {earned !== null && (
+        <div className="zuzu-bubble pointer-events-none absolute -right-2 top-4 z-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1 text-sm font-extrabold text-white shadow-lg">
+          +{earned} pts!
+        </div>
+      )}
+
       {showName && (
         <p className="mt-2 text-sm font-extrabold tracking-wide text-zinc-700">
           Zuzu
           <span className="ml-1.5 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-600">
             {sleeping ? "💤 sleeping…" : taps === 0 ? "tap me!" : `${taps} tap${taps === 1 ? "" : "s"}`}
           </span>
+        </p>
+      )}
+      {points !== null && (
+        <p className="mt-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+          ⭐ {points.toLocaleString()} ZUZU points
         </p>
       )}
     </div>

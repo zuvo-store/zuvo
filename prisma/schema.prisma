@@ -217,6 +217,8 @@ model Order {
   deliveryMethod String?  // STANDARD | EXPRESS
   deliveryLabel  String?
   promoCode      String?
+  zuzuPointsRedeemed Int @default(0) // points applied as discount
+  zuzuDiscountCents  Int @default(0) // discount from points (1000 pts = $1)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

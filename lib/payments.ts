@@ -58,6 +58,17 @@ async function confirmPendingDemoPayment(orderId: string, actorId?: string): Pro
     }
     await tx.payment.update({ where: { id: payment.id }, data: { status: "SUCCEEDED" } });
     await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "SUCCEEDED", status: "CONFIRMED" } });
+    // Deduct redeemed ZUZU points
+    const confirmedOrder = await tx.order.findUnique({ where: { id: orderId }, select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true } });
+    if (confirmedOrder?.userId && confirmedOrder.zuzuPointsRedeemed > 0) {
+      await tx.user.update({
+        where: { id: confirmedOrder.userId },
+        data: {
+          zuzuPoints: { decrement: confirmedOrder.zuzuPointsRedeemed },
+          zuzuPointsLogs: { create: { amount: -confirmedOrder.zuzuPointsRedeemed, kind: "REDEEM", note: `Redeemed on order ${confirmedOrder.orderNumber}` } },
+        },
+      });
+    }
   });
   await audit("payment.demo", { actorId, entity: "Order", entityId: orderId, meta: { scenario: "pending-confirmed", demo: true } });
   await clearCartForOrder(order);
@@ -118,6 +129,17 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
           }
           await tx.payment.create({ data: { ...base, status: "SUCCEEDED", resultJson: { demo: true, scenario } } });
           await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "SUCCEEDED", status: "CONFIRMED" } });
+          // Deduct redeemed ZUZU points
+          const ok2 = await tx.order.findUnique({ where: { id: orderId }, select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true } });
+          if (ok2?.userId && ok2.zuzuPointsRedeemed > 0) {
+            await tx.user.update({
+              where: { id: ok2.userId },
+              data: {
+                zuzuPoints: { decrement: ok2.zuzuPointsRedeemed },
+                zuzuPointsLogs: { create: { amount: -ok2.zuzuPointsRedeemed, kind: "REDEEM", note: `Redeemed on order ${ok2.orderNumber}` } },
+              },
+            });
+          }
         });
         await audit("payment.demo", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { scenario, transactionRef } });
         await clearCartForOrder(order);

@@ -26,11 +26,13 @@ function Chevron() {
 
 export default async function AccountDashboard() {
   const user = await requireUser();
-  const [orderCount, wishlistCount, reward] = await Promise.all([
+  const [orderCount, wishlistCount, reward, dbUser] = await Promise.all([
     db.order.count({ where: { userId: user.id, status: { not: "DRAFT" } } }),
     db.wishlistItem.count({ where: { userId: user.id } }),
     getUserReward(user.id),
+    db.user.findUnique({ where: { id: user.id }, select: { zuzuPoints: true } }),
   ]);
+  const zuzuPoints = dbUser?.zuzuPoints ?? 0;
 
   const creditCents = reward?.status === "CLAIMED" ? reward.amountCents : 0;
   const initial = (user.name || user.email || "U").charAt(0).toUpperCase();
@@ -144,8 +146,8 @@ export default async function AccountDashboard() {
         </Link>
       </div>
 
-      {/* Credit balance + coupons */}
-      <div className="grid grid-cols-2 divide-x divide-zinc-200 rounded-2xl border border-zinc-200 bg-white py-4 shadow-sm">
+      {/* Credit balance + coupons + ZUZU points */}
+      <div className="grid grid-cols-3 divide-x divide-zinc-200 rounded-2xl border border-zinc-200 bg-white py-4 shadow-sm">
         <Link href="/account/rewards" className="px-4 text-center">
           <p className="text-2xl font-extrabold text-zinc-900">{formatUSD(creditCents)}</p>
           <p className="mt-0.5 text-sm text-zinc-600">Credit balance</p>
@@ -154,6 +156,11 @@ export default async function AccountDashboard() {
           <p className="text-2xl font-extrabold text-zinc-900">2</p>
           <p className="mt-0.5 text-sm text-zinc-600">Coupons & offers</p>
         </Link>
+        <div className="px-4 text-center">
+          <p className="text-2xl font-extrabold text-amber-600">⭐ {zuzuPoints.toLocaleString()}</p>
+          <p className="mt-0.5 text-sm text-zinc-600">ZUZU points</p>
+          <p className="mt-0.5 text-[11px] text-zinc-400">1000 pts = $1</p>
+        </div>
       </div>
 
       {/* Coupon bundle banner */}

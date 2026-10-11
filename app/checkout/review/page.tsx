@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { getOrCreateDraftOrder, rebuildDraftOrder } from "@/lib/checkout";
 import { formatUSD } from "@/lib/money";
 import CheckoutSteps from "@/components/CheckoutSteps";
+import ZuzuPointsToggle from "@/components/ZuzuPointsToggle";
 import { cardCls, btn } from "@/components/ui";
+import { db } from "@/lib/db";
 
 export default async function ReviewPage() {
   const draft = await getOrCreateDraftOrder();
@@ -16,6 +18,10 @@ export default async function ReviewPage() {
     redirect("/checkout");
   }
   if (!order.contactJson || !order.addressJson) redirect("/checkout");
+
+  const zuzuBalance = order.userId
+    ? (await db.user.findUnique({ where: { id: order.userId }, select: { zuzuPoints: true } }))?.zuzuPoints ?? 0
+    : 0;
 
   const contact = order.contactJson as { name?: string; email?: string; phone?: string };
   const address = order.addressJson as {
@@ -112,6 +118,12 @@ export default async function ReviewPage() {
               <dd className="font-medium">−{formatUSD(order.discountCents)}</dd>
             </div>
           )}
+          {order.zuzuDiscountCents > 0 && (
+            <div className="flex justify-between text-green-700">
+              <dt>⭐ ZUZU points ({order.zuzuPointsRedeemed.toLocaleString()} pts)</dt>
+              <dd className="font-medium">−{formatUSD(order.zuzuDiscountCents)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-zinc-600">Shipping</dt>
             <dd className="font-medium text-zinc-900">
@@ -123,6 +135,14 @@ export default async function ReviewPage() {
             <dd className="font-bold text-zinc-900">{formatUSD(order.totalCents)}</dd>
           </div>
         </dl>
+        {order.userId && (
+          <ZuzuPointsToggle
+            orderId={order.id}
+            balance={zuzuBalance}
+            redeemed={order.zuzuPointsRedeemed}
+            discountCents={order.zuzuDiscountCents}
+          />
+        )}
       </section>
 
       <div className="flex flex-wrap gap-3">
