@@ -6,6 +6,7 @@ import Logo from "@/components/Logo";
 import SearchBox from "@/components/SearchBox";
 import AccountMenu from "@/components/AccountMenu";
 import MobileMenu from "@/components/MobileMenu";
+import CartIconButton from "@/components/CartIconButton";
 
 const NAV = [
   { href: "/categories", label: "Categories" },
@@ -60,28 +61,7 @@ export default async function SiteHeader() {
                 />
               </svg>
             </Link>
-            <Link
-              href="/cart"
-              aria-label={`Cart, ${cart.count} ${cart.count === 1 ? "item" : "items"}`}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-zinc-700 hover:bg-zinc-100"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M3 4h2l2.2 10.5a1 1 0 0 0 1 .8h7.6a1 1 0 0 0 1-.8L18.5 8H6"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="8.5" cy="17" r="1.2" fill="currentColor" />
-                <circle cx="15" cy="17" r="1.2" fill="currentColor" />
-              </svg>
-              {cart.count > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
-                  {cart.count > 99 ? "99+" : cart.count}
-                </span>
-              ) : null}
-            </Link>
+            <CartIconButton count={cart.count} />
             <AccountMenu
               user={user ? { name: user.name, email: user.email, role: user.role } : null}
             />
