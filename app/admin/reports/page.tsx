@@ -78,6 +78,27 @@ export default async function AdminReportsPage() {
   }
   const maxSignups = Math.max(1, ...sdays.map((d) => d.count));
 
+  // --- Low stock alert (stock <= 10, active products) ---
+  const LOW_STOCK_THRESHOLD = 10;
+  const lowStock = await db.product.findMany({
+    where: { active: true, stock: { lte: LOW_STOCK_THRESHOLD } },
+    orderBy: { stock: "asc" },
+    take: 20,
+    select: { id: true, name: true, slug: true, stock: true, priceCents: true },
+  });
+
+  // --- Inventory value (active products) ---
+  const invAgg = await db.product.aggregate({
+    where: { active: true },
+    _sum: { stock: true },
+  });
+  const invProducts = await db.product.findMany({
+    where: { active: true },
+    select: { stock: true, priceCents: true },
+  });
+  const inventoryValueCents = invProducts.reduce((s, p) => s + p.stock * p.priceCents, 0);
+  const inventoryUnits = invAgg._sum.stock ?? 0;
+
   return (
     <div>
       <SectionTitle title="Reports" />
@@ -126,6 +147,62 @@ export default async function AdminReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Low stock alert */}
+        <div className={`${cardCls} p-5`}>
+          <h2 className="mb-1 text-base font-bold text-zinc-900">⚠️ Low stock alert</h2>
+          <p className="mb-3 text-xs text-zinc-500">
+            Products with {LOW_STOCK_THRESHOLD} or fewer units left — restock soon!
+          </p>
+          {lowStock.length === 0 ? (
+            <p className="text-sm text-green-700">✅ All stocked up! Nothing running low.</p>
+          ) : (
+            <div className={tableWrapCls}>
+              <table className={tableCls}>
+                <thead>
+                  <tr>
+                    <th className={thCls}>Product</th>
+                    <th className={thCls}>Stock</th>
+                    <th className={thCls}>Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {lowStock.map((p) => (
+                    <tr key={p.id}>
+                      <td className={tdCls}>
+                        <Link
+                          href={`/admin/products/${p.id}`}
+                          className="font-medium text-zinc-900 hover:text-orange-700 hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      </td>
+                      <td className={tdCls}>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                            p.stock === 0
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {p.stock === 0 ? "OUT" : `${p.stock} left`}
+                        </span>
+                      </td>
+                      <td className={tdCls}>{formatUSD(p.stock * p.priceCents)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-4 rounded-xl bg-zinc-50 p-4">
+            <h3 className="text-sm font-bold text-zinc-900">📦 Total inventory</h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              <span className="font-extrabold text-zinc-900">{inventoryUnits.toLocaleString()}</span> units
+              worth <span className="font-extrabold text-zinc-900">{formatUSD(inventoryValueCents)}</span>
+            </p>
+          </div>
+        </div>
+
         {/* Top products */}
         <div className={`${cardCls} p-5`}>
           <h2 className="mb-3 text-base font-bold text-zinc-900">Top products by units sold</h2>
