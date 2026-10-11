@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { SectionTitle, cardCls } from "@/components/ui";
+import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 
 export const metadata = { title: "Categories — ZUVO" };
 
@@ -35,7 +35,7 @@ export default async function CategoriesPage() {
             <Link
               key={c.id}
               href={`/category/${c.slug}`}
-              className={`${cardCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
+              className={`${cardFlushCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
             >
               <div className="flex aspect-[16/9] items-center justify-center overflow-hidden bg-zinc-100">
                 {cardImage ? (

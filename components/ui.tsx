@@ -20,7 +20,10 @@ export const inputCls =
 export const labelCls = "mb-1.5 block text-sm font-medium text-zinc-700";
 
 export const cardCls =
-  "rounded-xl border border-zinc-200 bg-white shadow-sm";
+  "rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6";
+
+// For cards with full-bleed content (images, banners) — no outer padding.
+export const cardFlushCls = "rounded-xl border border-zinc-200 bg-white shadow-sm";
 
 // ------------------------------------------------------------------ Field
 export function Field({

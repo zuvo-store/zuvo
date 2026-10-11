@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getActiveSignupCampaign, ensureRewardForUser, getRewardHistory } from "@/lib/rewards";
 import { formatUSD } from "@/lib/money";
-import { btnPrimary, cardCls, Badge } from "@/components/ui";
+import { btnPrimary, cardCls, cardFlushCls, Badge } from "@/components/ui";
 import EmptyState from "@/components/EmptyState";
 
 export const metadata = { title: "Rewards — ZUVO" };
@@ -34,7 +34,7 @@ export default async function RewardsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       {/* Promo card */}
-      <section className={`${cardCls} overflow-hidden`}>
+      <section className={`${cardFlushCls} overflow-hidden`}>
         <div className="bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-8 text-white">
           <Badge>{campaign.label}</Badge>
           <h1 className="mt-3 text-3xl font-bold">

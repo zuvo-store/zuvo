@@ -9,7 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import RatingStars from "@/components/RatingStars";
 import Price from "@/components/Price";
 import WishlistButton from "@/components/WishlistButton";
-import { SectionTitle, cardCls } from "@/components/ui";
+import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import ProductGallery from "./ProductGallery";
 import BuyPanel from "./BuyPanel";
 import ReviewForm from "./ReviewForm";
@@ -178,7 +178,7 @@ export default async function ProductPage({
         <section className="mt-12">
           <SectionTitle title="Details" />
           {Object.keys(attributes).length > 0 && (
-            <div className={`${cardCls} mt-4 overflow-hidden`}>
+            <div className={`${cardFlushCls} mt-4 overflow-hidden`}>
               <table className="w-full text-sm">
                 <tbody>
                   {Object.entries(attributes).map(([k, v]) => (

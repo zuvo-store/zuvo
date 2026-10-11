@@ -8,7 +8,7 @@ import { toListItem } from "@/app/_shop/query";
 import ProductCard from "@/components/ProductCard";
 import RewardPopup from "@/components/RewardPopup";
 import GuestRewardBanner from "@/components/GuestRewardBanner";
-import { SectionTitle, cardCls } from "@/components/ui";
+import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { Suspense } from "react";
 
@@ -146,7 +146,7 @@ export default async function HomePage() {
               <Link
                 key={c.id}
                 href={`/category/${c.slug}`}
-                className={`${cardCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
+                className={`${cardFlushCls} group flex flex-col overflow-hidden transition hover:shadow-md`}
               >
                 <div className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-zinc-100">
                   {cardImage ? (
