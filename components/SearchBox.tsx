@@ -107,7 +107,7 @@ export default function SearchBox({ className = "" }: { className?: string }) {
           aria-expanded={open}
           aria-controls={`${listId}-list`}
           aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
-          className="block w-full rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand-600 focus:bg-white focus:outline-none"
+          className="block w-full rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 pl-10 pr-12 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand-600 focus:bg-white focus:outline-none"
         />
         <svg
           width="18"
@@ -120,6 +120,17 @@ export default function SearchBox({ className = "" }: { className?: string }) {
           <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
           <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
+        {/* Clickable search button (Temu-style) */}
+        <button
+          type="submit"
+          aria-label="Search"
+          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:bg-zinc-700 active:scale-95"
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
+            <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
       </form>
       {open && suggestions.length > 0 ? (
         <ul
