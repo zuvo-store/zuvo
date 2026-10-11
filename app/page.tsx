@@ -12,6 +12,7 @@ import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
+import Reveal from "@/components/Reveal";
 import { Suspense } from "react";
 
 export const metadata = {
@@ -167,6 +168,7 @@ export default async function HomePage() {
       </section>
 
       {/* (b) Category grid */}
+      <Reveal>
       <section className="mt-12">
         <SectionTitle
           title="Shop by category"
@@ -212,8 +214,10 @@ export default async function HomePage() {
           })}
         </div>
       </section>
+      </Reveal>
 
       {/* (c) Discount banners */}
+      <Reveal>
       <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Link
           href="/deals"
@@ -255,9 +259,11 @@ export default async function HomePage() {
           </span>
         </Link>
       </section>
+      </Reveal>
 
       {/* (d) Today's Deals */}
       {deals.length > 0 && (
+        <Reveal>
         <section className="mt-12">
           <SectionTitle
             title="Today's Deals"
@@ -271,10 +277,12 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+        </Reveal>
       )}
 
       {/* (d) Recommended */}
       {recommended.length > 0 && (
+        <Reveal>
         <section className="mt-12">
           <SectionTitle
             title="Recommended for you"
@@ -286,10 +294,12 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+        </Reveal>
       )}
 
       {/* (e) New Arrivals */}
       {newest.length > 0 && (
+        <Reveal>
         <section className="mt-12">
           <SectionTitle title="New arrivals" subtitle="The latest additions to ZUVO" />
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -298,9 +308,11 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+        </Reveal>
       )}
 
       {/* (f) Rewards promo */}
+      <Reveal>
       <section className="mt-12 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white">
         <div className="flex flex-col items-start gap-4 px-6 py-10 sm:px-12">
           <span className="rounded-md bg-black/25 px-2 py-1 text-[11px] font-bold uppercase tracking-wider">
@@ -321,8 +333,10 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+      </Reveal>
 
       {/* (g) Trust & support */}
+      <Reveal>
       <section className="mt-12 mb-16">
         <SectionTitle title="Trust & support" subtitle="How this demo marketplace works" />
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -341,6 +355,7 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      </Reveal>
 
       {/* (h) Reward popup for eligible signed-in users */}
       {reward && reward.status === "AVAILABLE" && (

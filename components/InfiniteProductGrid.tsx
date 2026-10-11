@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ProductCard from "./ProductCard";
+import Reveal from "./Reveal";
+import CountUp from "./CountUp";
 import type { ProductListItem } from "@/app/_shop/query";
 
 type Filters = {
@@ -94,8 +96,8 @@ export default function InfiniteProductGrid({
     <div>
       {/* Product counter */}
       <p className="mt-4 text-sm text-zinc-500" role="status">
-        Showing <span className="font-semibold text-zinc-900">{shownCount}</span> of{" "}
-        <span className="font-semibold text-zinc-900">{total}</span> products
+        Showing <CountUp value={shownCount} className="font-semibold text-zinc-900" /> of{" "}
+        <CountUp value={total} className="font-semibold text-zinc-900" /> products
       </p>
 
       {batches.map((batch, bi) => (
@@ -115,8 +117,10 @@ export default function InfiniteProductGrid({
               bi === 0 ? "mt-4" : "animate-page-slide"
             }`}
           >
-            {batch.items.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {batch.items.map((p, pi) => (
+              <Reveal key={p.id} delay={bi === 0 ? Math.min(pi, 7) * 50 : 0} direction="up">
+                <ProductCard product={p} />
+              </Reveal>
             ))}
           </div>
         </div>

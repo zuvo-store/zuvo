@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getUserReward } from "@/lib/rewards";
 import { formatUSD } from "@/lib/money";
+import Reveal from "@/components/Reveal";
 
 const QUICK_LINKS = [
   { href: "/account/profile", title: "Profile", desc: "Name and email settings" },
@@ -147,6 +148,7 @@ export default async function AccountDashboard() {
       </div>
 
       {/* Credit balance + coupons + ZUZU points */}
+      <Reveal>
       <div className="grid grid-cols-3 divide-x divide-zinc-200 rounded-2xl border border-zinc-200 bg-white py-4 shadow-sm">
         <Link href="/account/rewards" className="px-4 text-center">
           <p className="text-2xl font-extrabold text-zinc-900">{formatUSD(creditCents)}</p>
@@ -162,8 +164,10 @@ export default async function AccountDashboard() {
           <p className="mt-0.5 text-[11px] text-zinc-400">1000 pts = $1</p>
         </div>
       </div>
+      </Reveal>
 
       {/* Coupon bundle banner */}
+      <Reveal delay={100}>
       <div className="mt-3 flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-lg font-extrabold text-amber-700">
           $
@@ -179,6 +183,7 @@ export default async function AccountDashboard() {
           {reward?.status === "CLAIMED" ? "Claimed" : "Get"}
         </Link>
       </div>
+      </Reveal>
 
       {/* Menu rows */}
       <nav className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm" aria-label="Account">

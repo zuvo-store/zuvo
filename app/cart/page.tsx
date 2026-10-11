@@ -7,6 +7,7 @@ import { formatUSD } from "@/lib/money";
 import EmptyState from "@/components/EmptyState";
 import { cardCls, btn } from "@/components/ui";
 import CartLines from "./CartLines";
+import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = { title: "Cart — ZUVO" };
 
@@ -42,6 +43,7 @@ export default async function CartPage() {
         </p>
       </div>
 
+      <Reveal>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
         <CartLines initialLines={cart.lines} />
 
@@ -149,6 +151,7 @@ export default async function CartPage() {
           </div>
         </aside>
       </div>
+      </Reveal>
     </main>
   );
 }
