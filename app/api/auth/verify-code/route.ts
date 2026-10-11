@@ -73,7 +73,15 @@ export async function POST(req: NextRequest) {
     db.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } }),
   ]);
 
-  await createSession(user.id, false);
+  try {
+    await createSession(user.id, false);
+  } catch (e) {
+    console.error("verify-code: createSession failed", e);
+    return NextResponse.json(
+      { ok: false, error: "Something went wrong. Please try again." },
+      { status: 500 }
+    );
+  }
   try {
     await mergeGuestCartIntoUser(user.id, await getGuestToken());
   } catch {
