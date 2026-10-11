@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { dollarsToCentsParam, queryProducts } from "@/app/_shop/query";
-import ProductCard from "@/components/ProductCard";
-import Pagination from "@/components/Pagination";
+import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 import EmptyState from "@/components/EmptyState";
 import { SectionTitle } from "@/components/ui";
 import SearchFilters from "./SearchFilters";
@@ -121,16 +120,18 @@ export default async function SearchPage({
           />
         </div>
       ) : (
-        <>
-          <div key={page} className="animate-page-slide mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {result.items.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Pagination page={result.page} totalPages={result.totalPages} basePath="/search" />
-          </div>
-        </>
+        <InfiniteProductGrid
+          initialItems={result.items}
+          initialPage={result.page}
+          totalPages={result.totalPages}
+          filters={{
+            q: sp.q,
+            categorySlug: sp.category,
+            minCents: dollarsToCentsParam(sp.minPrice) ?? undefined,
+            maxCents: dollarsToCentsParam(sp.maxPrice) ?? undefined,
+            sort: sp.sort,
+          }}
+        />
       )}
     </div>
   );

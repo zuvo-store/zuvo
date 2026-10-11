@@ -3,8 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { dollarsToCentsParam, queryProducts } from "@/app/_shop/query";
-import ProductCard from "@/components/ProductCard";
-import Pagination from "@/components/Pagination";
+import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 import EmptyState from "@/components/EmptyState";
 import CategoryFilters from "./CategoryFilters";
 
@@ -109,20 +108,12 @@ export default async function CategoryPage({
           />
         </div>
       ) : (
-        <>
-          <div key={page} className="animate-page-slide mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {result.items.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Pagination
-              page={result.page}
-              totalPages={result.totalPages}
-              basePath={`/category/${slug}`}
-            />
-          </div>
-        </>
+        <InfiniteProductGrid
+          initialItems={result.items}
+          initialPage={result.page}
+          totalPages={result.totalPages}
+          filters={{ categorySlug: slug, sort: sp.sort }}
+        />
       )}
     </div>
   );

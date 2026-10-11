@@ -1,11 +1,10 @@
 export const dynamic = "force-dynamic";
 import { queryProducts } from "@/app/_shop/query";
-import ProductCard from "@/components/ProductCard";
-import Pagination from "@/components/Pagination";
 import EmptyState from "@/components/EmptyState";
 import { SectionTitle } from "@/components/ui";
 import DealsSort from "./DealsSort";
 import FlashSaleCountdown from "@/components/FlashSaleCountdown";
+import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 
 export const metadata = { title: "Today's Deals — ZUVO" };
 
@@ -42,16 +41,12 @@ export default async function DealsPage({
           />
         </div>
       ) : (
-        <>
-          <div key={page} className="animate-page-slide mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {result.items.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Pagination page={result.page} totalPages={result.totalPages} basePath="/deals" />
-          </div>
-        </>
+        <InfiniteProductGrid
+          initialItems={result.items}
+          initialPage={result.page}
+          totalPages={result.totalPages}
+          filters={{ deal: true, sort: sp.sort }}
+        />
       )}
     </div>
   );
