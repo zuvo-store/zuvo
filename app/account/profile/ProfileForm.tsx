@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { inputCls, btn } from "@/components/ui";
+import { inputCls, btn, cardCls } from "@/components/ui";
 
 type Props = {
   initialName: string;
@@ -66,7 +66,7 @@ export default function ProfileForm({ initialName, email, emailVerified }: Props
 
   return (
     <div className="space-y-6">
-      <form onSubmit={save} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={save} className={cardCls}>
         <h2 className="mb-4 text-lg font-semibold text-zinc-900">Profile</h2>
         {message && (
           <p
@@ -117,7 +117,7 @@ export default function ProfileForm({ initialName, email, emailVerified }: Props
       </form>
 
       {!emailVerified && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className={cardCls}>
           <h2 className="mb-2 text-lg font-semibold text-zinc-900">Verify your email</h2>
           <p className="mb-3 text-sm text-zinc-600">
             We sent a verification link to {email}. Verify your email to secure your account.

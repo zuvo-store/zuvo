@@ -49,15 +49,15 @@ export default async function AccountDashboard() {
             href={s.href}
             className={`${cardCls} block p-5 transition hover:-translate-y-0.5 hover:shadow-md`}
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{s.label}</p>
+            <p className="text-sm font-medium text-zinc-500">{s.label}</p>
             <p
-              className={`mt-2 text-2xl font-extrabold text-zinc-900 ${
-                s.mono ? "font-mono text-lg tracking-widest" : ""
+              className={`mt-1.5 text-xl font-bold text-zinc-900 ${
+                s.mono ? "font-mono text-base tracking-widest" : ""
               }`}
             >
               {s.value}
             </p>
-            {s.sub && <p className="mt-1.5 text-xs text-zinc-500">{s.sub}</p>}
+            {s.sub && <p className="mt-1 text-xs text-zinc-500">{s.sub}</p>}
           </Link>
         ))}
       </div>
