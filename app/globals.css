@@ -227,3 +227,27 @@ body {
 .zuzu-idle { animation: zuzu-blink 4s ease-in-out infinite, float-soft 4s ease-in-out infinite; }
 .zuzu-bubble { animation: bubble-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .zuzu-heart { animation: heart-float 1.2s ease-out forwards; }
+
+/* Zuzu sleep + autonomous life */
+@keyframes zuzu-sleep-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes zzz-float {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(18px, -46px) scale(1.15); opacity: 0; }
+}
+@keyframes zuzu-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes zuzu-peek {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-10px) rotate(-4deg); }
+  60% { transform: translateX(10px) rotate(4deg); }
+}
+.zuzu-sleeping { animation: zuzu-sleep-breathe 3s ease-in-out infinite; filter: brightness(0.92) saturate(0.85); }
+.zuzu-zzz { animation: zzz-float 2.8s ease-out infinite; }
+.zuzu-sway { animation: zuzu-sway 2.2s ease-in-out infinite; }
+.zuzu-peek { animation: zuzu-peek 1.6s ease-in-out; }
