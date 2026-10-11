@@ -44,7 +44,6 @@ export default function InfiniteProductGrid({
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPage < totalPages);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
   const shownCount = batches.reduce((s, b) => s + b.items.length, 0);
@@ -90,19 +89,6 @@ export default function InfiniteProductGrid({
     setHasMore(initialPage < totalPages);
   }, [initialItems, initialPage, totalPages]);
 
-  useEffect(() => {
-    if (!hasMore) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) void loadMore();
-      },
-      { rootMargin: "600px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [hasMore, loadMore]);
 
   return (
     <div>
@@ -136,9 +122,7 @@ export default function InfiniteProductGrid({
         </div>
       ))}
 
-      {/* Sentinel + status */}
-      <div ref={sentinelRef} aria-hidden="true" className="h-1" />
-
+      {/* Load-more status */}
       <div className="mt-6 flex flex-col items-center gap-3 pb-4">
         {loading && (
           <div className="flex items-center gap-2 text-sm text-zinc-500" role="status">
@@ -153,9 +137,12 @@ export default function InfiniteProductGrid({
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="rounded-full border border-zinc-300 bg-white px-8 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50"
+            className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-8 py-3 text-sm font-bold text-white shadow hover:bg-orange-600"
           >
-            Load page {page + 1}
+            Show more
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 7l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         )}
         {!hasMore && shownCount > 0 && (
