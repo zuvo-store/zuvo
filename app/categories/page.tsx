@@ -15,7 +15,7 @@ export default async function CategoriesPage() {
         where: { active: true },
         orderBy: { createdAt: "asc" },
         take: 1,
-        select: { images: true },
+        select: { slug: true, images: true },
       },
     },
   });
@@ -28,11 +28,9 @@ export default async function CategoriesPage() {
       />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((c) => {
-          const imgs = c.products[0]?.images;
-          const productImage =
-            Array.isArray(imgs) && typeof imgs[0] === "string" ? imgs[0] : null;
-          const cardImage =
-            productImage && !productImage.endsWith(".svg") ? productImage : c.image;
+          // Use the first product's real photo (all products have /p/<slug>.jpg).
+          const firstProduct = c.products[0];
+          const cardImage = firstProduct ? `/p/${firstProduct.slug}.jpg` : c.image;
           return (
             <Link
               key={c.id}
