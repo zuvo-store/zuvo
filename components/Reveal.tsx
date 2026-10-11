@@ -27,10 +27,8 @@ export default function Reveal({
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
+        // Re-trigger every time it enters viewport (no disconnect)
+        setVisible(!!entries[0]?.isIntersecting);
       },
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
     );
@@ -80,10 +78,8 @@ export function Stagger({
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
+        // Re-trigger every time it enters viewport
+        setVisible(!!entries[0]?.isIntersecting);
       },
       { threshold: 0.05 }
     );

@@ -21,24 +21,24 @@ export default function CountUp({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [display, setDisplay] = useState(0);
-  const started = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && !started.current) {
-          started.current = true;
+        if (entries[0]?.isIntersecting) {
+          // Re-count every time it enters viewport
           const start = performance.now();
           const tick = (now: number) => {
             const p = Math.min(1, (now - start) / duration);
-            const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+            const eased = 1 - Math.pow(1 - p, 3);
             setDisplay(Math.round(eased * value));
             if (p < 1) requestAnimationFrame(tick);
           };
           requestAnimationFrame(tick);
-          obs.disconnect();
+        } else {
+          setDisplay(0);
         }
       },
       { threshold: 0.3 }
