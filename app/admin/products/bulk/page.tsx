@@ -186,10 +186,10 @@ async function uploadCsv(formData: FormData) {
 export default async function BulkUploadPage({
   searchParams,
 }: {
-  searchParams: { [k: string]: string | string[] | undefined };
+  searchParams: Promise<{ [k: string]: string | string[] | undefined }>;
 }) {
   await requireAdminPage();
-  const sp = searchParams as Record<string, string | undefined>;
+  const sp = (await searchParams) as Record<string, string | undefined>;
   const err = typeof sp.error === "string" ? sp.error : undefined;
   const created = typeof sp.created === "string" ? sp.created : undefined;
   const skipped = typeof sp.skipped === "string" ? sp.skipped : undefined;
