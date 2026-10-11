@@ -5,6 +5,7 @@ import Pagination from "@/components/Pagination";
 import EmptyState from "@/components/EmptyState";
 import { SectionTitle } from "@/components/ui";
 import DealsSort from "./DealsSort";
+import FlashSaleCountdown from "@/components/FlashSaleCountdown";
 
 export const metadata = { title: "Today's Deals — ZUVO" };
 
@@ -28,6 +29,8 @@ export default async function DealsPage({
         />
         <DealsSort value={sp.sort ?? ""} />
       </div>
+
+      <FlashSaleCountdown />
 
       {result.items.length === 0 ? (
         <div className="mt-8">

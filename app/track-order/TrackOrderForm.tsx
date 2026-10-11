@@ -136,9 +136,19 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
                   const done = i < currentIndex;
                   const current = i === currentIndex;
                   return (
-                    <li key={s} className="flex flex-1 items-start gap-3 sm:flex-col sm:gap-1">
+                    <li key={s} className="relative flex flex-1 items-start gap-3 sm:flex-col sm:items-center sm:gap-1 sm:text-center">
+                      {/* Connector line */}
+                      {i > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className={`absolute left-4 top-4 hidden h-0.5 w-[calc(100%-2rem)] sm:block ${
+                            i <= currentIndex ? "bg-green-500" : "bg-zinc-200"
+                          }`}
+                          style={{ left: "calc(-50% + 1rem)", width: "calc(100% - 2rem)" }}
+                        />
+                      )}
                       <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-4 ring-white ${
                           done
                             ? "bg-green-600 text-white"
                             : current
@@ -146,11 +156,17 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
                               : "bg-zinc-200 text-zinc-500"
                         }`}
                       >
-                        {done ? "✓" : i + 1}
+                        {done ? (
+                          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : (
+                          i + 1
+                        )}
                       </span>
                       <span
                         className={`pb-4 text-xs font-medium sm:pb-0 ${
-                          current ? "text-orange-700" : done ? "text-zinc-700" : "text-zinc-400"
+                          current ? "font-bold text-orange-700" : done ? "text-zinc-700" : "text-zinc-400"
                         }`}
                       >
                         {statusLabel(s)}

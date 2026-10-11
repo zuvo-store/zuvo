@@ -10,6 +10,7 @@ import RewardPopup from "@/components/RewardPopup";
 import GuestRewardBanner from "@/components/GuestRewardBanner";
 import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
+import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { Suspense } from "react";
 
 export const metadata = {
@@ -309,6 +310,11 @@ export default async function HomePage() {
       {reward && reward.status === "AVAILABLE" && (
         <RewardPopup reward={{ amountCents: reward.amountCents, status: reward.status }} />
       )}
+
+      {/* (i) Recently viewed */}
+      <Suspense fallback={null}>
+        <RecentlyViewed />
+      </Suspense>
     </div>
   );
 }

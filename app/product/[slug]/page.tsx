@@ -13,6 +13,7 @@ import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import ProductGallery from "./ProductGallery";
 import BuyPanel from "./BuyPanel";
 import ReviewForm from "./ReviewForm";
+import RecordView from "@/components/RecordView";
 
 export async function generateMetadata({
   params,
@@ -82,6 +83,14 @@ export default async function ProductPage({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <RecordView
+        product={{
+          slug: product.slug,
+          name: product.name,
+          image: images[0] ?? null,
+          priceCents: product.priceCents,
+        }}
+      />
       <nav className="text-sm text-zinc-500">
         <Link href="/" className="hover:text-orange-600">
           Home
