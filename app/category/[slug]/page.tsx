@@ -110,7 +110,7 @@ export default async function CategoryPage({
         </div>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div key={page} className="animate-page-slide mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {result.items.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

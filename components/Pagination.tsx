@@ -55,7 +55,7 @@ function PaginationInner({
   return (
     <nav aria-label="Pagination" className="mt-8 flex items-center justify-center gap-1.5">
       {page > 1 ? (
-        <Link href={hrefFor(basePath, searchParams, page - 1)} className={itemCls(false)} aria-label="Previous page">
+        <Link scroll={false} href={hrefFor(basePath, searchParams, page - 1)} className={itemCls(false)} aria-label="Previous page">
           ←
         </Link>
       ) : (
@@ -65,7 +65,7 @@ function PaginationInner({
       )}
       {lo > 1 ? (
         <>
-          <Link href={hrefFor(basePath, searchParams, 1)} className={itemCls(false)} aria-label="Page 1">
+          <Link scroll={false} href={hrefFor(basePath, searchParams, 1)} className={itemCls(false)} aria-label="Page 1">
             1
           </Link>
           <span className="px-1 text-zinc-400" aria-hidden="true">
@@ -79,7 +79,7 @@ function PaginationInner({
             {p}
           </span>
         ) : (
-          <Link key={p} href={hrefFor(basePath, searchParams, p)} className={itemCls(false)} aria-label={`Page ${p}`}>
+          <Link scroll={false} key={p} href={hrefFor(basePath, searchParams, p)} className={itemCls(false)} aria-label={`Page ${p}`}>
             {p}
           </Link>
         ),
@@ -90,6 +90,7 @@ function PaginationInner({
             …
           </span>
           <Link
+            scroll={false}
             href={hrefFor(basePath, searchParams, totalPages)}
             className={itemCls(false)}
             aria-label={`Page ${totalPages}`}
@@ -99,7 +100,7 @@ function PaginationInner({
         </>
       ) : null}
       {page < totalPages ? (
-        <Link href={hrefFor(basePath, searchParams, page + 1)} className={itemCls(false)} aria-label="Next page">
+        <Link scroll={false} href={hrefFor(basePath, searchParams, page + 1)} className={itemCls(false)} aria-label="Next page">
           →
         </Link>
       ) : (

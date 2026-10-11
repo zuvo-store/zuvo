@@ -51,9 +51,12 @@ export default async function ClaimPage() {
               Each customer can claim the welcome reward once.
             </p>
             <div className="mt-4 flex gap-2">
-              <Link href="/account" className={`${btnPrimary} inline-flex flex-1 justify-center`}>
-                View wallet
-              </Link>
+              <span className="inline-flex flex-1 cursor-default items-center justify-center rounded-xl bg-green-100 px-4 py-2.5 text-sm font-bold text-green-700">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="mr-1.5">
+                  <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Already claimed
+              </span>
               <Link href="/deals" className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
                 Shop deals
               </Link>
