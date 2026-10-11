@@ -13,29 +13,41 @@ type Filters = {
   maxCents?: number;
 };
 
+type Batch = {
+  page: number;
+  items: ProductListItem[];
+};
+
 /**
- * Temu-style infinite scroll product grid. Loads more products automatically
- * as the user scrolls (IntersectionObserver), with a "Load more" fallback.
+ * Temu-style infinite scroll product grid with page-feel dividers.
+ * Loads more products automatically as the user scrolls, marking each
+ * batch with a "Page N" divider so page transitions are visible.
  */
 export default function InfiniteProductGrid({
   initialItems,
   initialPage,
   totalPages,
+  total,
   filters,
   perPage = 24,
 }: {
   initialItems: ProductListItem[];
   initialPage: number;
   totalPages: number;
+  total: number;
   filters: Filters;
   perPage?: number;
 }) {
-  const [items, setItems] = useState<ProductListItem[]>(initialItems);
+  const [batches, setBatches] = useState<Batch[]>([
+    { page: initialPage, items: initialItems },
+  ]);
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPage < totalPages);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
+
+  const shownCount = batches.reduce((s, b) => s + b.items.length, 0);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current) return;
@@ -54,11 +66,12 @@ export default function InfiniteProductGrid({
       const res = await fetch(`/api/products/list?${params.toString()}`);
       const data = await res.json();
       if (data.ok) {
-        setItems((prev) => {
-          const seen = new Set(prev.map((p) => p.id));
-          const fresh = (data.items as ProductListItem[]).filter((p) => !seen.has(p.id));
-          return [...prev, ...fresh];
-        });
+        const fresh = (data.items as ProductListItem[]).filter(
+          (p) => !batches.some((b) => b.items.some((x) => x.id === p.id))
+        );
+        if (fresh.length > 0) {
+          setBatches((prev) => [...prev, { page: data.page, items: fresh }]);
+        }
         setPage(data.page);
         setHasMore(Boolean(data.hasMore));
       }
@@ -68,11 +81,11 @@ export default function InfiniteProductGrid({
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [page, perPage, filters]);
+  }, [page, perPage, filters, batches]);
 
   // Reset when filters change (e.g. new search)
   useEffect(() => {
-    setItems(initialItems);
+    setBatches([{ page: initialPage, items: initialItems }]);
     setPage(initialPage);
     setHasMore(initialPage < totalPages);
   }, [initialItems, initialPage, totalPages]);
@@ -93,11 +106,35 @@ export default function InfiniteProductGrid({
 
   return (
     <div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {items.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </div>
+      {/* Product counter */}
+      <p className="mt-4 text-sm text-zinc-500" role="status">
+        Showing <span className="font-semibold text-zinc-900">{shownCount}</span> of{" "}
+        <span className="font-semibold text-zinc-900">{total}</span> products
+      </p>
+
+      {batches.map((batch, bi) => (
+        <div key={batch.page}>
+          {/* Page divider — gives the "next page" feel */}
+          {bi > 0 && (
+            <div className="my-6 flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-zinc-200" />
+              <span className="rounded-full bg-zinc-100 px-4 py-1 text-xs font-bold uppercase tracking-widest text-zinc-500">
+                Page {batch.page}
+              </span>
+              <span className="h-px flex-1 bg-zinc-200" />
+            </div>
+          )}
+          <div
+            className={`grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 ${
+              bi === 0 ? "mt-4" : "animate-page-slide"
+            }`}
+          >
+            {batch.items.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      ))}
 
       {/* Sentinel + status */}
       <div ref={sentinelRef} aria-hidden="true" className="h-1" />
@@ -109,7 +146,7 @@ export default function InfiniteProductGrid({
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" className="opacity-25" />
               <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            Loading more…
+            Loading page {page + 1}…
           </div>
         )}
         {!loading && hasMore && (
@@ -118,10 +155,10 @@ export default function InfiniteProductGrid({
             onClick={() => void loadMore()}
             className="rounded-full border border-zinc-300 bg-white px-8 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50"
           >
-            Load more
+            Load page {page + 1}
           </button>
         )}
-        {!hasMore && items.length > 0 && (
+        {!hasMore && shownCount > 0 && (
           <p className="text-sm text-zinc-400">You&apos;ve seen it all 🎉</p>
         )}
       </div>

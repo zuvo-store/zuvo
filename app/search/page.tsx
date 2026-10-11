@@ -124,6 +124,7 @@ export default async function SearchPage({
           initialItems={result.items}
           initialPage={result.page}
           totalPages={result.totalPages}
+          total={result.total}
           filters={{
             q: sp.q,
             categorySlug: sp.category,

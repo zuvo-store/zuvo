@@ -45,6 +45,7 @@ export default async function DealsPage({
           initialItems={result.items}
           initialPage={result.page}
           totalPages={result.totalPages}
+          total={result.total}
           filters={{ deal: true, sort: sp.sort }}
         />
       )}

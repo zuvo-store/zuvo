@@ -112,6 +112,7 @@ export default async function CategoryPage({
           initialItems={result.items}
           initialPage={result.page}
           totalPages={result.totalPages}
+          total={result.total}
           filters={{ categorySlug: slug, sort: sp.sort }}
         />
       )}
