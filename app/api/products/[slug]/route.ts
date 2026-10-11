@@ -14,7 +14,7 @@ export async function GET(
     where: { slug },
     include: {
       category: { select: { id: true, name: true, slug: true } },
-      variants: { orderBy: [{ name: "asc" }, { value: "asc" }] },
+      variants: { orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { value: "asc" }] },
       reviews: { orderBy: { createdAt: "desc" }, take: 10 },
     },
   });

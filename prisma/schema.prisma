@@ -113,6 +113,7 @@ model ProductVariant {
   priceDeltaCents Int     @default(0)
   stock           Int     @default(0)
   sku             String? @unique
+  sortOrder       Int     @default(0) // display order; lower = shown/selected first
   cartItems       CartItem[]
   orderItems      OrderItem[]
 }

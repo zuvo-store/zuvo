@@ -1032,12 +1032,13 @@ async function main() {
           active: true,
           variants: p.variants?.length
             ? {
-                create: p.variants.map((v) => ({
+                create: p.variants.map((v, i) => ({
                   name: v.name,
                   value: v.value,
                   priceDeltaCents: v.priceDeltaCents ?? 0,
                   stock: v.stock,
                   sku: v.sku,
+                  sortOrder: i,
                 })),
               }
             : undefined,

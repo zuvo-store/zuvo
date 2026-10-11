@@ -41,7 +41,7 @@ export default async function ProductPage({
     where: { slug },
     include: {
       category: true,
-      variants: { orderBy: [{ name: "asc" }, { value: "asc" }] },
+      variants: { orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { value: "asc" }] },
       reviews: { orderBy: { createdAt: "desc" }, take: 10 },
     },
   });
