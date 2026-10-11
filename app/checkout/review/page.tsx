@@ -105,44 +105,50 @@ export default async function ReviewPage() {
         </section>
       </div>
 
-      <section className={`${cardCls} mb-6`}>
-        <h2 className="mb-4 text-lg font-semibold text-zinc-900">Totals</h2>
-        <dl className="space-y-2 text-sm">
+      {/* ZUZU points redemption — above totals so user toggles first */}
+      {order.userId && (
+        <ZuzuPointsToggle
+          orderId={order.id}
+          balance={zuzuBalance}
+          redeemed={order.zuzuPointsRedeemed}
+          discountCents={order.zuzuDiscountCents}
+        />
+      )}
+
+      <section className={`${cardCls} mb-6 mt-4`}>
+        <h2 className="mb-4 text-lg font-semibold text-zinc-900">Order summary</h2>
+        <dl className="space-y-2.5 text-sm">
           <div className="flex justify-between">
             <dt className="text-zinc-600">Subtotal</dt>
             <dd className="font-medium text-zinc-900">{formatUSD(order.subtotalCents)}</dd>
           </div>
           {order.discountCents > 0 && (
-            <div className="flex justify-between text-green-700">
-              <dt>Promo discount{order.promoCode ? ` (${order.promoCode})` : ""}</dt>
-              <dd className="font-medium">−{formatUSD(order.discountCents)}</dd>
+            <div className="flex justify-between rounded-lg bg-green-50 px-3 py-1.5 text-green-700">
+              <dt>🎟️ Promo{order.promoCode ? ` (${order.promoCode})` : ""}</dt>
+              <dd className="font-bold">−{formatUSD(order.discountCents)}</dd>
             </div>
           )}
           {order.zuzuDiscountCents > 0 && (
-            <div className="flex justify-between text-green-700">
-              <dt>⭐ ZUZU points ({order.zuzuPointsRedeemed.toLocaleString()} pts)</dt>
-              <dd className="font-medium">−{formatUSD(order.zuzuDiscountCents)}</dd>
+            <div className="flex justify-between rounded-lg bg-amber-50 px-3 py-1.5 text-amber-700">
+              <dt>⭐ ZUZU ({order.zuzuPointsRedeemed.toLocaleString()} pts)</dt>
+              <dd className="font-bold">−{formatUSD(order.zuzuDiscountCents)}</dd>
             </div>
           )}
           <div className="flex justify-between">
             <dt className="text-zinc-600">Shipping</dt>
             <dd className="font-medium text-zinc-900">
-              {order.shippingCents === 0 ? "FREE" : formatUSD(order.shippingCents)}
+              {order.shippingCents === 0 ? (
+                <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">FREE</span>
+              ) : (
+                formatUSD(order.shippingCents)
+              )}
             </dd>
           </div>
-          <div className="flex justify-between border-t border-zinc-200 pt-3 text-base">
-            <dt className="font-semibold text-zinc-900">Total</dt>
-            <dd className="font-bold text-zinc-900">{formatUSD(order.totalCents)}</dd>
+          <div className="flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3 text-base">
+            <dt className="font-bold text-white">Total</dt>
+            <dd className="text-xl font-extrabold text-white">{formatUSD(order.totalCents)}</dd>
           </div>
         </dl>
-        {order.userId && (
-          <ZuzuPointsToggle
-            orderId={order.id}
-            balance={zuzuBalance}
-            redeemed={order.zuzuPointsRedeemed}
-            discountCents={order.zuzuDiscountCents}
-          />
-        )}
       </section>
 
       <div className="flex flex-wrap gap-3">
