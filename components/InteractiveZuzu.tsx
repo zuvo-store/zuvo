@@ -59,9 +59,9 @@ export default function InteractiveZuzu({
   const reactionRef = useRef<string | null>(null);
 
   const sizes = {
-    sm: "h-20 w-20",
-    md: "h-32 w-32",
-    lg: "h-44 w-44",
+    sm: "h-24 w-24",
+    md: "h-48 w-48",
+    lg: "h-64 w-64 sm:h-80 sm:w-80",
   };
 
   function showMessage(msg: string, ms = 2500) {
@@ -181,23 +181,23 @@ export default function InteractiveZuzu({
         ))}
       </div>
 
-      {/* Zuzu */}
+      {/* Zuzu — free and open, no circular prison! */}
       <button
         type="button"
         onClick={tap}
         aria-label={sleeping ? "Wake up Zuzu" : "Say hi to Zuzu"}
         title={sleeping ? "Wake Zuzu up!" : "Tap Zuzu!"}
-        className="group relative cursor-pointer rounded-full outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+        className="group relative cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-orange-300 rounded-3xl"
       >
         <img
           src="/zuvo-mascot.jpg"
           alt="Zuzu, the ZUVO mascot"
           draggable={false}
-          className={`${sizes[size]} rounded-full object-cover shadow-xl shadow-orange-500/25 ring-4 ring-white transition-transform group-active:scale-95 ${imgCls}`}
+          className={`${sizes[size]} rounded-3xl object-cover shadow-xl shadow-orange-500/25 transition-transform group-active:scale-95 ${imgCls}`}
           onAnimationEnd={onAnimationEnd}
         />
         {!sleeping && (
-          <span aria-hidden="true" className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-orange-400/20 [animation-duration:2.5s]" />
+          <span aria-hidden="true" className="pointer-events-none absolute inset-0 animate-ping rounded-3xl bg-orange-400/20 [animation-duration:2.5s]" />
         )}
       </button>
 
