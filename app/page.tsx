@@ -95,38 +95,77 @@ export default async function HomePage() {
       </Suspense>
       {/* Slim welcome nudge for guests only (signed-in users get the claimable RewardPopup below) */}
       {!user && <GuestRewardBanner />}
-      {/* (a) Hero — light artwork background, so dark text for contrast */}
-      <section className="relative mt-6 overflow-hidden rounded-2xl bg-orange-100 text-zinc-900">
-        <img
-          src="/hero.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="relative flex flex-col items-start gap-5 px-6 py-16 sm:px-12 sm:py-24">
-          <p className="rounded-full bg-orange-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-orange-700 ring-1 ring-orange-600/30">
-            Demo marketplace
-          </p>
-          <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-            Discover More. Shop Smarter.
-          </h1>
-          <p className="max-w-lg text-base text-zinc-700 sm:text-lg">
-            Thousands of products across electronics, fashion, home and more —
-            with deals refreshed daily and a simulated checkout that is safe to explore.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/search"
-              className="rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-orange-600"
-            >
-              Shop Now
-            </Link>
-            <Link
-              href="/deals"
-              className="rounded-xl bg-white/70 px-6 py-3 text-sm font-semibold text-zinc-900 ring-1 ring-zinc-900/10 backdrop-blur hover:bg-white"
-            >
-              Explore Deals
-            </Link>
+      {/* (a) Hero — premium 3D mascot, store branding */}
+      <section className="relative mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 text-zinc-900 shadow-lg">
+        {/* soft 3D blobs */}
+        <div aria-hidden="true" className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 right-1/4 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
+        <div className="relative grid items-center gap-6 px-6 py-10 sm:px-12 sm:py-14 lg:grid-cols-2 lg:py-16">
+          <div className="flex flex-col items-start gap-5">
+            <p className="rounded-full bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm ring-1 ring-orange-200 backdrop-blur">
+              ✨ New deals every day
+            </p>
+            <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+              Discover More.
+              <span className="block bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+                Shop Smarter.
+              </span>
+            </h1>
+            <p className="max-w-lg text-base text-zinc-600 sm:text-lg">
+              ZUVO brings you thousands of quality products across electronics,
+              fashion, home and more — at prices you&apos;ll love.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/search"
+                className="rounded-full bg-orange-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600 hover:shadow-orange-600/40"
+              >
+                Shop Now
+              </Link>
+              <Link
+                href="/deals"
+                className="rounded-full bg-white/80 px-8 py-3.5 text-sm font-bold text-zinc-900 shadow ring-1 ring-zinc-900/10 backdrop-blur transition hover:bg-white"
+              >
+                Explore Deals
+              </Link>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-zinc-500">
+              <span className="flex items-center gap-1.5">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="text-green-500">
+                  <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Free shipping
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="text-green-500">
+                  <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Easy returns
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="text-green-500">
+                  <path d="M4 10.5l4 4 8-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Secure checkout
+              </span>
+            </div>
+          </div>
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <img
+              src="/zuvo-mascot.jpg"
+              alt="ZUVO shopping mascot"
+              className="w-full rounded-3xl object-cover shadow-2xl shadow-orange-500/20 transition-transform duration-500 hover:scale-[1.02]"
+              loading="eager"
+            />
+            {/* floating deal badge */}
+            <div className="absolute -left-3 top-6 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 sm:-left-6">
+              <p className="text-xs font-bold text-zinc-500">UP TO</p>
+              <p className="text-xl font-extrabold text-orange-600">50% OFF</p>
+            </div>
+            <div className="absolute -right-2 bottom-8 animate-bounce rounded-2xl bg-white px-4 py-2 shadow-xl ring-1 ring-zinc-100 [animation-delay:0.5s] sm:-right-4">
+              <p className="text-xs font-bold text-zinc-500">NEW USER</p>
+              <p className="text-xl font-extrabold text-green-600">$20 REWARD</p>
+            </div>
           </div>
         </div>
       </section>
