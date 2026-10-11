@@ -38,6 +38,21 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  zuzuPoints     Int              @default(0) // tap-to-earn balance
+  zuzuPointsLogs ZuzuPointsLog[]
+}
+
+model ZuzuPointsLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int      // +earned / -redeemed
+  kind      String   // TAP | REDEEM | BONUS | ADJUST
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Session {
