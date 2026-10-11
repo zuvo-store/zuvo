@@ -1,4 +1,4 @@
-// ZUVO marketplace — Prisma schema (SQLite for local demo; blueprint-allowed fallback)
+// ZUVO marketplace — Prisma schema (Postgres for hosted demo; SQLite file for local dev via schema.sqlite.prisma)
 // Money is ALWAYS stored as integer cents. Never floats.
 
 generator client {
@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
