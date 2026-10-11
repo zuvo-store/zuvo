@@ -48,7 +48,7 @@ export default async function HomePage() {
       include: {
         products: {
           where: { active: true },
-          orderBy: { sortOrder: "asc" },
+          orderBy: { createdAt: "asc" },
           take: 1,
           select: { images: true },
         },
@@ -134,7 +134,9 @@ export default async function HomePage() {
         />
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {categories.map((c) => {
-            const productImage = c.products[0]?.images?.[0];
+            const imgs = c.products[0]?.images;
+            const productImage =
+              Array.isArray(imgs) && typeof imgs[0] === "string" ? imgs[0] : null;
             const cardImage =
               productImage && !productImage.endsWith(".svg") ? productImage : c.image;
             return (
