@@ -154,13 +154,13 @@ export default async function HomePage() {
           </div>
           <div className="relative mx-auto flex w-full max-w-md flex-col items-center justify-center px-12 py-10 lg:max-w-none">
             <InteractiveZuzu size="lg" greet />
-            {/* floating deal badges — tucked in corners, clear of Zuzu */}
-            <div className="absolute left-1 top-1 animate-bounce rounded-xl bg-white px-2.5 py-1 shadow-md ring-1 ring-zinc-100">
-              <p className="text-[9px] font-bold text-zinc-500">UP TO</p>
+            {/* floating deal badges — glass style, text behind shows through */}
+            <div className="absolute left-1 top-1 animate-bounce rounded-xl border border-white/50 bg-white/40 px-2.5 py-1 shadow-md backdrop-blur-md">
+              <p className="text-[9px] font-bold text-zinc-600">UP TO</p>
               <p className="text-sm font-extrabold text-orange-600">50% OFF</p>
             </div>
-            <div className="absolute right-1 top-1/3 animate-bounce rounded-xl bg-white px-2.5 py-1 shadow-md ring-1 ring-zinc-100 [animation-delay:0.5s]">
-              <p className="text-[9px] font-bold text-zinc-500">NEW USER</p>
+            <div className="absolute right-1 top-1/3 animate-bounce rounded-xl border border-white/50 bg-white/40 px-2.5 py-1 shadow-md backdrop-blur-md [animation-delay:0.5s]">
+              <p className="text-[9px] font-bold text-zinc-600">NEW USER</p>
               <p className="text-sm font-extrabold text-green-600">$20 REWARD</p>
             </div>
           </div>
