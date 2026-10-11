@@ -29,7 +29,11 @@ export default function Logo({
             <stop offset="100%" stopColor="#ea580c" />
           </linearGradient>
         </defs>
-        <rect x="1" y="1" width="34" height="34" rx="9" fill="url(#zuvo-logo-grad)" />
+        {/* organic blob — no corners, matches the mascot character */}
+        <path
+          d="M18 2c7.5 0 11.5 3.2 13.4 7.1 1.9 3.8 1.6 8.6-.6 12.3-2.2 3.8-6.4 6.1-11 6.3-5.2.3-10.3-1.6-12.9-5.6C4.4 18.2 4 13.5 5.8 9.7 7.7 5.7 11.7 2 18 2z"
+          fill="url(#zuvo-logo-grad)"
+        />
         <text
           x="18"
           y="25"
