@@ -10,8 +10,14 @@ function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export default async function AdminReportsPage() {
+export default async function AdminReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [k: string]: string | string[] | undefined }>;
+}) {
   await requireAdminPage(); // must run before any data fetch (see lib/auth.ts)
+  const sp = await searchParams;
+  const topRange = sp.topRange === "7" ? 7 : sp.topRange === "90" ? 90 : 30;
   const now = new Date();
 
   // --- Revenue by day, last 30 days (SUCCEEDED payments) ---
@@ -36,12 +42,18 @@ export default async function AdminReportsPage() {
   const maxRev = Math.max(1, ...days.map((d) => d.total));
   const totalRev = days.reduce((s, d) => s + d.total, 0);
 
-  // --- Top 10 products by qty sold (non-cancelled orders) ---
+  // --- Top 10 products by qty sold (non-cancelled orders, selectable range) ---
+  const topSince = new Date(now);
+  topSince.setDate(topSince.getDate() - (topRange - 1));
+  topSince.setHours(0, 0, 0, 0);
   const topItems = await db.orderItem.groupBy({
     by: ["productId"],
     where: {
       productId: { not: null },
-      order: { status: { notIn: ["CANCELLED", "DRAFT", "PENDING_PAYMENT"] } },
+      order: {
+        status: { notIn: ["CANCELLED", "DRAFT", "PENDING_PAYMENT", "REFUNDED"] },
+        createdAt: { gte: topSince },
+      },
     },
     _sum: { qty: true, lineTotalCents: true },
     orderBy: { _sum: { qty: "desc" } },
@@ -275,7 +287,28 @@ export default async function AdminReportsPage() {
 
         {/* Top products */}
         <div className={`${cardCls} p-5`}>
-          <h2 className="mb-3 text-base font-bold text-zinc-900">Top products by units sold</h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold text-zinc-900">Top products by units sold</h2>
+            <div className="flex gap-1 text-xs">
+              {[
+                { v: "7", label: "7d" },
+                { v: "30", label: "30d" },
+                { v: "90", label: "90d" },
+              ].map((r) => (
+                <Link
+                  key={r.v}
+                  href={`/admin/reports?topRange=${r.v}`}
+                  className={`rounded-full px-2.5 py-1 font-semibold ${
+                    String(topRange) === r.v
+                      ? "bg-orange-500 text-white"
+                      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                  }`}
+                >
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           {topItems.length === 0 ? (
             <p className="text-sm text-zinc-500">No sales yet.</p>
           ) : (
