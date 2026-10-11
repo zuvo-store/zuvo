@@ -96,7 +96,9 @@ export default async function ResultPage({
         body: "This order is still in progress.",
       });
 
-  const viewOrderHref = user ? `/account/orders/${order.id}` : "/track-order";
+  const viewOrderHref = user
+    ? `/account/orders/${order.id}`
+    : `/track-order?order=${encodeURIComponent(order.orderNumber)}`;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">

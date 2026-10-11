@@ -79,7 +79,7 @@ export default async function ReviewPage() {
           <p className="text-sm text-zinc-700">{address.street}</p>
           {address.apartment && <p className="text-sm text-zinc-700">{address.apartment}</p>}
           <p className="text-sm text-zinc-700">
-            {address.city}, {address.state} {address.postalCode}
+            {address.city},{" "}{address.state} {address.postalCode}
           </p>
           <p className="text-sm text-zinc-700">{address.country}</p>
         </section>

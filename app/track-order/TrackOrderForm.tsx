@@ -48,8 +48,8 @@ type TrackedOrder = {
   totalCents?: number;
 };
 
-export default function TrackOrderForm() {
-  const [orderNumber, setOrderNumber] = useState("");
+export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrderNumber?: string }) {
+  const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -125,7 +125,8 @@ export default function TrackOrderForm() {
               </span>
             </div>
             <p className="mt-1 text-sm text-zinc-500">
-              Placed {order.createdAt ? new Date(order.createdAt).toLocaleString("en-US") : "—"}
+              Placed{" "}
+              {order.createdAt ? new Date(order.createdAt).toLocaleString("en-US") : "—"}
               {order.deliveryLabel ? ` · ${order.deliveryLabel}` : ""}
             </p>
 

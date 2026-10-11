@@ -62,7 +62,7 @@ export default async function SiteHeader() {
             </Link>
             <Link
               href="/cart"
-              aria-label={`Cart, ${cart.count} items`}
+              aria-label={`Cart, ${cart.count} ${cart.count === 1 ? "item" : "items"}`}
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-zinc-700 hover:bg-zinc-100"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">

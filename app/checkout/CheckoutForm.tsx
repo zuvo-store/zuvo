@@ -92,7 +92,10 @@ export default function CheckoutForm({
         email: contact.email,
         phone: contact.phone || undefined,
       });
-      if (!c.ok) return void setError(c.error ?? "Could not save contact info.");
+      if (!c.ok) {
+        setError(c.error ?? "Could not save contact info.");
+        return;
+      }
       const s = await postJson("/api/checkout/shipping", {
         country: address.country,
         state: address.state,
@@ -101,13 +104,21 @@ export default function CheckoutForm({
         apartment: address.apartment || undefined,
         postalCode: address.postalCode,
       });
-      if (!s.ok) return void setError(s.error ?? "Could not save shipping address.");
+      if (!s.ok) {
+        setError(s.error ?? "Could not save shipping address.");
+        return;
+      }
       const d = await postJson("/api/checkout/delivery", {
         method,
         promoCode: promoCode.trim() || undefined,
       });
-      if (!d.ok) return void setError(d.error ?? "Could not save delivery method.");
+      if (!d.ok) {
+        setError(d.error ?? "Could not save delivery method.");
+        return;
+      }
       router.push("/checkout/review");
+    } catch {
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setPending(false);
     }

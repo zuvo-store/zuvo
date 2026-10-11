@@ -5,7 +5,11 @@ import TrackOrderForm from "./TrackOrderForm";
 
 export const metadata = { title: "Track your order — ZUVO" };
 
-export default function TrackOrderPage() {
+export default function TrackOrderPage({
+  searchParams,
+}: {
+  searchParams: { order?: string };
+}) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <SectionTitle
@@ -13,7 +17,7 @@ export default function TrackOrderPage() {
         subtitle="Enter your order number and the email you used at checkout"
       />
       <div className="mt-6">
-        <TrackOrderForm />
+        <TrackOrderForm initialOrderNumber={searchParams.order ?? ""} />
       </div>
       <p className="mt-6 text-sm text-zinc-500">
         Signed in and ordered with your account?{" "}
