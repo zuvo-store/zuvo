@@ -48,6 +48,19 @@ export async function POST(req: NextRequest) {
   if (!user || !valid)
     return NextResponse.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
 
+  // Unverified accounts must complete the email OTP step before signing in.
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        ok: false,
+        needsVerification: true,
+        email: user.email,
+        error: "Please verify your email address. We sent a 6-digit code to your inbox.",
+      },
+      { status: 403 }
+    );
+  }
+
   await createSession(user.id, remember, req.headers.get("user-agent") ?? undefined);
   try {
     await mergeGuestCartIntoUser(user.id, await getGuestToken());

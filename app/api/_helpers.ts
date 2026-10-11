@@ -34,6 +34,16 @@ export async function readJson(req: NextRequest): Promise<Record<string, unknown
   }
 }
 
+export function verifyCodeHtml(name: string, code: string): string {
+  return `<div style="font-family:sans-serif;max-width:560px">
+    <h2>Welcome to ZUVO, ${name}!</h2>
+    <p>Your verification code is:</p>
+    <p style="font-size:32px;font-weight:800;letter-spacing:8px;color:#ea580c">${code}</p>
+    <p>Enter this code on the ZUVO website to verify your email address. Valid for 10 minutes.</p>
+    <p style="color:#71717a">If you did not create a ZUVO account, you can safely ignore this email.</p>
+  </div>`;
+}
+
 export function verifyEmailHtml(name: string, link: string): string {
   return `<div style="font-family:sans-serif;max-width:560px">
     <h2>Welcome to ZUVO, ${name}!</h2>

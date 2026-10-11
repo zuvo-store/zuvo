@@ -8,19 +8,19 @@ import {
   isEmail,
   passwordIssues,
   uniqueReferralCode,
-  createSession,
-  getGuestToken,
-  randomToken,
+  randomOtp,
   sha256hex,
 } from "@/lib/auth";
-import { mergeGuestCartIntoUser } from "@/lib/cart";
 import { attributeReferral } from "@/lib/referrals";
 import { ensureRewardForUser } from "@/lib/rewards";
-import { sendEmail, emailConfigured, appUrl } from "@/lib/email";
+import { sendEmail, emailConfigured } from "@/lib/email";
 import { audit } from "@/lib/audit";
-import { rateLimitOr429, readJson, verifyEmailHtml } from "../../_helpers";
+import { rateLimitOr429, readJson, verifyCodeHtml } from "../../_helpers";
 
 const USERNAME_RE = /^[A-Za-z0-9_.-]{3,20}$/;
+
+/** OTP validity: 10 minutes. */
+export const OTP_TTL_MS = 10 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   const limited = rateLimitOr429(req, "signup");
@@ -84,12 +84,8 @@ export async function POST(req: NextRequest) {
     throw e;
   }
 
-  await createSession(user.id, false);
-  try {
-    await mergeGuestCartIntoUser(user.id, await getGuestToken());
-  } catch {
-    // Cart merge must never break signup.
-  }
+  // NOTE: no session is created here — the user must verify the OTP first.
+  // Referral + reward are safe to attach now; cart merge happens at verification.
 
   let referralWarning: string | undefined;
   if (referralCode) {
@@ -103,25 +99,28 @@ export async function POST(req: NextRequest) {
     // Reward enrollment must never break signup.
   }
 
-  const token = randomToken();
-  await db.emailToken.deleteMany({ where: { userId: user.id, type: "VERIFY" } });
+  // Issue a 6-digit OTP (hashed at rest, 10-minute expiry).
+  const otp = randomOtp();
+  await db.emailToken.deleteMany({ where: { userId: user.id, type: "OTP" } });
   await db.emailToken.create({
     data: {
       userId: user.id,
-      tokenHash: sha256hex(token),
-      type: "VERIFY",
-      expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
+      tokenHash: sha256hex(`otp:${user.id}:${otp}`),
+      type: "OTP",
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
     },
   });
-  const verifyLink = `${appUrl()}/auth/verify-email?token=${token}`;
-  await sendEmail(user.email, "Verify your ZUVO account", verifyEmailHtml(user.name, verifyLink)).catch(
-    () => ({ sent: false, demo: true })
-  );
+
+  if (emailConfigured()) {
+    await sendEmail(user.email, "Your ZUVO verification code", verifyCodeHtml(user.name, otp)).catch(
+      () => ({ sent: false, demo: true })
+    );
+  }
 
   await audit("auth.signup", { actorId: user.id, entity: "User", entityId: user.id, meta: { username } });
 
-  const res: Record<string, unknown> = { ok: true };
+  const res: Record<string, unknown> = { ok: true, needsCode: true, email: user.email };
   if (referralWarning) res.referralWarning = referralWarning;
-  if (!emailConfigured()) res.demoVerifyLink = verifyLink;
+  if (!emailConfigured()) res.demoCode = otp; // demo mode: show the code on screen
   return NextResponse.json(res);
 }

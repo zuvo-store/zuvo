@@ -24,6 +24,11 @@ export function randomToken(bytes = 32): string {
   return randomBytes(bytes).toString("hex");
 }
 
+/** 6-digit numeric OTP for email verification. */
+export function randomOtp(): string {
+  return String(randomBytes(4).readUInt32BE(0) % 900000 + 100000);
+}
+
 export function sha256hex(s: string): string {
   return createHash("sha256").update(s).digest("hex");
 }

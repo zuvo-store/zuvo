@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { btnPrimary, inputCls, cardCls, Field, FormError } from "@/components/ui";
+import VerifyCodeForm from "@/components/VerifyCodeForm";
 
 export default function SignupForm({ initialRef }: { initialRef: string }) {
   const router = useRouter();
@@ -17,7 +18,8 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [demoLink, setDemoLink] = useState<string | null>(null);
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [demoCode, setDemoCode] = useState<string | null>(null);
   const visitRecorded = useRef(false);
 
   // Record the referral-link visit once on mount.
@@ -56,8 +58,9 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
         return;
       }
       if (data.referralWarning) setWarning(data.referralWarning);
-      if (data.demoVerifyLink) {
-        setDemoLink(data.demoVerifyLink as string);
+      if (data.needsCode) {
+        setVerifyEmail(data.email as string);
+        setDemoCode((data.demoCode as string) ?? null);
       } else {
         router.push("/");
         router.refresh();
@@ -69,30 +72,8 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
     }
   }
 
-  if (demoLink) {
-    return (
-      <div className={cardCls}>
-        <h1 className="text-2xl font-bold text-zinc-900">Account created</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Your account is ready. Please verify your email address to finish setting it up.
-        </p>
-        <div className="mt-4 rounded-xl border border-dashed border-amber-400 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-800">Demo mode: email sending not configured</p>
-          <p className="mt-1 text-sm text-amber-700">
-            In production this link would arrive by email. For this demo, use it directly:
-          </p>
-          <a
-            href={demoLink}
-            className="mt-2 block break-all text-sm font-medium text-brand-700 underline"
-          >
-            {demoLink}
-          </a>
-        </div>
-        <Link href="/" className={`${btnPrimary} mt-6 inline-flex w-full justify-center`}>
-          Continue shopping
-        </Link>
-      </div>
-    );
+  if (verifyEmail) {
+    return <VerifyCodeForm email={verifyEmail} demoCode={demoCode} title="Verify your email" />;
   }
 
   return (

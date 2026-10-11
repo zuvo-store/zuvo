@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { btnPrimary, inputCls, cardCls, Field, FormError } from "@/components/ui";
+import VerifyCodeForm from "@/components/VerifyCodeForm";
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,6 +27,20 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
+        if (data.needsVerification && data.email) {
+          // Trigger a fresh code, then show the OTP screen.
+          try {
+            await fetch("/api/auth/resend-code", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: data.email }),
+            });
+          } catch {
+            /* non-fatal; user can resend manually */
+          }
+          setVerifyEmail(data.email as string);
+          return;
+        }
         setError(data.error || "Could not sign you in. Please try again.");
         return;
       }
@@ -35,6 +51,10 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     } finally {
       setPending(false);
     }
+  }
+
+  if (verifyEmail) {
+    return <VerifyCodeForm email={verifyEmail} title="Verify your email" />;
   }
 
   return (
