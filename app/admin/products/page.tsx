@@ -106,9 +106,14 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
           <h1 className="text-2xl font-bold text-zinc-900">Products</h1>
           <p className="mt-1 text-sm text-zinc-500">{total} product{total === 1 ? "" : "s"}</p>
         </div>
-        <Link href="/admin/products/new" className={btnPrimary}>
-          New product
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/products/bulk" className={btnSecondary}>
+            ⬆️ Bulk upload
+          </Link>
+          <Link href="/admin/products/new" className={btnPrimary}>
+            New product
+          </Link>
+        </div>
       </div>
 
       <FormError message={qp(sp, "error")} />
