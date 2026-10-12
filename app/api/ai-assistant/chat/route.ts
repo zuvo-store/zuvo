@@ -95,6 +95,11 @@ const T = {
     roman: "Hmm, ye nahi mila. Kuch aur likh ke try karo, ya deals dekho! 🛍️",
     ur: "ہمم، یہ نہیں ملا۔ کچھ اور لکھ کر کوشش کریں، یا ڈیلز دیکھیں! 🛍️",
   },
+  notAvailable: {
+    en: "Sorry, that's not available in our store right now 😔 But check these out instead!",
+    roman: "Sorry, ye hamari store me abhi available nahi hai 😔 Lekin ye dekho, shayad pasand aaye!",
+    ur: "معذرت، یہ ہمارے اسٹور میں ابھی دستیاب نہیں ہے 😔 لیکن یہ دیکھیں، شاید پسند آئے!",
+  },
   deals: {
     en: "🔥 Hot deals right now! These are flying off the shelves:",
     roman: "🔥 Abhi ki hot deals! Ye to dharadhar bik rahe hain:",
@@ -159,7 +164,11 @@ const T = {
 
 /* ---------------- Product search ---------------- */
 
-async function searchProducts(query: string, maxPrice: number | null, dealsOnly: boolean): Promise<ProductCard[]> {
+async function searchProducts(
+  query: string,
+  maxPrice: number | null,
+  dealsOnly: boolean
+): Promise<{ products: ProductCard[]; bestScore: number; totalKeywords: number }> {
   // Extract meaningful keywords (remove common/filler words)
   const stopWords = new Set([
     "mujhe", "mujhy", "chahiye", "chahye", "dikhao", "dikhaen", "dikha", "batao", "show", "me",
@@ -177,7 +186,7 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
     .split(/\s+/)
     .filter((w) => w.length > 2 && !stopWords.has(w) && !/^\d+$/.test(w));
 
-  if (keywords.length === 0) return [];
+  if (keywords.length === 0) return { products: [], bestScore: 0, totalKeywords: 0 };
 
   // Expand keywords with singular/plural variants (shirts→shirt, shirt→shirts)
   const expanded = new Set<string>(keywords);
@@ -223,11 +232,12 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
       const nameL = p.name.toLowerCase();
       const descL = `${p.shortDesc ?? ""} ${p.description ?? ""}`.toLowerCase();
       let score = 0;
+      let matchedKw = 0;
       for (const kw of searchTerms) {
-        if (nameL.includes(kw)) score += 3;
-        else if (descL.includes(kw)) score += 1;
+        if (nameL.includes(kw)) { score += 3; matchedKw++; }
+        else if (descL.includes(kw)) { score += 1; matchedKw++; }
       }
-      return { p, score };
+      return { p, score, matchedKw };
     })
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score || b.p.rating - a.p.rating);
@@ -236,8 +246,24 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
   // Fall back to score >= 1 if nothing meets the bar.
   const relevant = scored.filter((s) => s.score >= 2);
   const final = (relevant.length > 0 ? relevant : scored).slice(0, 4);
+  const best = scored.length > 0 ? scored[0] : null;
 
-  return final.map(({ p }) => ({
+  return {
+    products: final.map(({ p }) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.priceCents / 100,
+      originalPrice: p.originalPriceCents ? p.originalPriceCents / 100 : null,
+      image: Array.isArray(p.images) && p.images.length > 0 ? String(p.images[0]) : null,
+      rating: p.rating,
+    })),
+    bestScore: best?.score ?? 0,
+    // Partial match: top result matched fewer than half the keywords
+    partialMatch: best ? best.matchedKw < Math.ceil(keywords.length / 2) && keywords.length > 1 : false,
+    totalKeywords: keywords.length,
+  };
+}
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -310,20 +336,29 @@ export async function POST(req: Request) {
       const wantsGift = hasAny(message, GIFT_WORDS);
       const wantsBest = hasAny(message, BEST_WORDS);
 
-      products = await searchProducts(message, maxPrice, wantsDeals);
+      const result = await searchProducts(message, maxPrice, wantsDeals);
+      products = result.products;
 
       // Gift → pick highly-rated products as gift ideas
       if (wantsGift && products.length === 0) {
-        products = await getSuggestions([]);
+        const sug = await getSuggestions([]);
+        products = sug;
         text = lang === "en" ? "🎁 Perfect gift ideas for you!" : lang === "roman" ? "🎁 Apke liye perfect gift ideas!" : "🎁 آپ کے لیے بہترین تحفے کے آئیڈیاز!";
       } else if (products.length > 0) {
-        text = wantsDeals
-          ? T.deals[lang]
-          : wantsBest
-            ? (lang === "en" ? "⭐ Our top-rated picks for you!" : lang === "roman" ? "⭐ Apke liye sab se top-rated!" : "⭐ آپ کے لیے سب سے ٹاپ ریٹڈ!")
-            : T.foundProducts[lang](products.length);
-        // Add smart suggestions
-        suggestions = await getSuggestions(products.map((p) => p.id));
+        // HONESTY: weak or partial match → say it's not available, show alternatives
+        if ((result.bestScore < 3 || result.partialMatch) && !wantsDeals && !wantsBest) {
+          text = T.notAvailable[lang];
+          suggestions = products; // show as alternatives
+          products = [];
+        } else {
+          text = wantsDeals
+            ? T.deals[lang]
+            : wantsBest
+              ? (lang === "en" ? "⭐ Our top-rated picks for you!" : lang === "roman" ? "⭐ Apke liye sab se top-rated!" : "⭐ آپ کے لیے سب سے ٹاپ ریٹڈ!")
+              : T.foundProducts[lang](products.length);
+          // Add smart suggestions
+          suggestions = await getSuggestions(products.map((p) => p.id));
+        }
       } else {
         text = T.noProducts[lang];
         suggestions = await getSuggestions([]);
