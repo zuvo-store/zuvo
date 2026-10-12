@@ -192,6 +192,9 @@ async function searchProducts(
     "a", "an", "for", "kya", "kia", "hai", "hain", "aur", "or", "acha", "achha",
     "sasta", "sasty", "do", "de", "please", "plz", "zara", "koi", "under",
     "below", "less", "than", "wala", "wali", "wale", "lye", "liye",
+    // greetings & misspellings — never search these
+    "hye", "hye", "hey", "hi", "hello", "salam", "aoa", "how", "are", "you",
+    "kese", "kaise", "kaisay", "ho", "hal", "haal",
     // filler words that match everything — never search these
     "new", "style", "styles", "latest", "modern", "best", "top", "good", "nice",
     "nay", "naya", "naye", "style me", "me",
