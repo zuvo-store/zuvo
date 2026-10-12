@@ -126,7 +126,8 @@ export async function saveDraftDelivery(orderId: string, method: "STANDARD" | "E
     const now = new Date();
     const valid =
       p && p.active && (!p.startsAt || p.startsAt <= now) && (!p.endsAt || p.endsAt >= now) &&
-      (!p.usageLimit || p.usedCount < p.usageLimit);
+      (!p.usageLimit || p.usedCount < p.usageLimit) &&
+      (!p.userId || p.userId === order.userId); // user-specific vouchers
     if (!valid) throw new Error("Promo code is invalid or expired.");
     promo = p.code;
     // discount computed against the live subtotal at rebuild time; store code only
@@ -170,7 +171,8 @@ export async function rebuildDraftOrder(orderId: string) {
     const p = await db.promotion.findUnique({ where: { code: order.promoCode } });
     const now = new Date();
     if (p && p.active && (!p.startsAt || p.startsAt <= now) && (!p.endsAt || p.endsAt >= now) &&
-        (!p.usageLimit || p.usedCount < p.usageLimit) && subtotalCents >= p.minOrderCents) {
+        (!p.usageLimit || p.usedCount < p.usageLimit) && subtotalCents >= p.minOrderCents &&
+        (!p.userId || p.userId === order.userId)) {
       discountCents = p.discountType === "PERCENT"
         ? Math.round((subtotalCents * Math.min(p.discountValue, 90)) / 100)
         : Math.min(p.discountValue, subtotalCents);

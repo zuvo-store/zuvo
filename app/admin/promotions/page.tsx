@@ -68,6 +68,7 @@ function parsePromotion(fd: FormData) {
     startsAt: parseDate("startsAt"),
     endsAt: parseDate("endsAt"),
     usageLimit,
+    userId: str("userId") || null,
   };
 }
 
@@ -114,12 +115,15 @@ async function updatePromotion(formData: FormData) {
 
 function PromotionForm({
   promo,
+  customers,
 }: {
   promo?: {
     id: string; code: string | null; title: string; description: string | null;
     discountType: string; discountValue: number; minOrderCents: number;
     active: boolean; startsAt: Date | null; endsAt: Date | null; usageLimit: number | null;
+    userId: string | null;
   } | null;
+  customers: { id: string; name: string; email: string }[];
 }) {
   const isEdit = Boolean(promo);
   const toInput = (d: Date | null) => (d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
@@ -127,6 +131,14 @@ function PromotionForm({
     <form action={isEdit ? updatePromotion : createPromotion} className={`${cardCls} mb-6 grid gap-4 p-5 sm:grid-cols-3`}>
       {isEdit ? <input type="hidden" name="id" value={promo!.id} /> : null}
       <h2 className="text-base font-bold text-zinc-900 sm:col-span-3">{isEdit ? "Edit promotion" : "New promotion"}</h2>
+      <Field label="Assign to customer" hint="Empty = public code for everyone">
+        <select name="userId" className={inputCls} defaultValue={promo?.userId ?? ""}>
+          <option value="">Everyone (public)</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>{c.name} — {c.email}</option>
+          ))}
+        </select>
+      </Field>
       <Field label="Code (optional)">
         <input name="code" className={inputCls} defaultValue={promo?.code ?? ""} placeholder="WELCOME10" />
       </Field>
@@ -179,7 +191,16 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
   await requireAdminPage(); // must run before any data fetch (see lib/auth.ts)
   const sp = await searchParams;
   const editId = qp(sp, "edit");
-  const promotions = await db.promotion.findMany({ orderBy: { createdAt: "desc" } });
+  const promotions = await db.promotion.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { name: true, email: true } } },
+  });
+  const customers = await db.user.findMany({
+    where: { role: "CUSTOMER" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, email: true },
+    take: 200,
+  });
   const editing = editId ? promotions.find((p) => p.id === editId) ?? null : null;
 
   return (
@@ -192,7 +213,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
         </div>
       ) : null}
 
-      <PromotionForm promo={editing} />
+      <PromotionForm promo={editing} customers={customers} />
 
       <h2 className="mb-3 text-lg font-bold text-zinc-900">All promotions</h2>
       <div className={tableWrapCls}>
@@ -201,6 +222,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
             <tr>
               <th className={thCls}>Code</th>
               <th className={thCls}>Title</th>
+              <th className={thCls}>For</th>
               <th className={thCls}>Discount</th>
               <th className={thCls}>Min order</th>
               <th className={thCls}>Used</th>
@@ -214,6 +236,13 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
               <tr key={p.id} className="hover:bg-zinc-50">
                 <td className={tdCls}><span className="font-mono text-xs font-semibold">{p.code ?? "—"}</span></td>
                 <td className={tdCls}>{p.title}</td>
+                <td className={tdCls}>
+                  {p.user ? (
+                    <span className="text-xs font-medium text-violet-700">👤 {p.user.name}</span>
+                  ) : (
+                    <span className="text-xs text-zinc-400">Everyone</span>
+                  )}
+                </td>
                 <td className={tdCls}>
                   {p.discountType === "PERCENT" ? `${p.discountValue}%` : formatUSD(p.discountValue)}
                 </td>

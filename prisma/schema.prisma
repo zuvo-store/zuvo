@@ -35,6 +35,7 @@ model User {
   referralAttribution ReferralAttribution? @relation("ReferredAttribution")
   reviews       Review[]
   auditLogs     AuditLog[]
+  vouchers      Promotion[] // user-specific vouchers assigned to this customer
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -344,6 +345,9 @@ model Promotion {
   endsAt         DateTime?
   usageLimit     Int?
   usedCount      Int       @default(0)
+  // User-specific voucher: only this customer can use it (null = public code)
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime  @default(now())
 }
 

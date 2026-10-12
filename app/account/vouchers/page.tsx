@@ -43,7 +43,10 @@ export default async function VouchersPage() {
 
   const [promotions, usedOrders] = await Promise.all([
     db.promotion.findMany({
-      where: { code: { not: null } },
+      where: {
+        code: { not: null },
+        OR: [{ userId: null }, { userId: user.id }], // public + mine
+      },
       orderBy: [{ active: "desc" }, { endsAt: "asc" }],
     }),
     db.order.findMany({
@@ -56,7 +59,12 @@ export default async function VouchersPage() {
 
   const vouchers = promotions
     .filter((p) => p.code)
-    .map((p) => ({ ...p, code: p.code!, state: stateOf(p, usedCodes, p.code!.toUpperCase(), now) }));
+    .map((p) => ({
+      ...p,
+      code: p.code!,
+      state: stateOf(p, usedCodes, p.code!.toUpperCase(), now),
+      personal: p.userId === user.id,
+    }));
 
   const available = vouchers.filter((v) => v.state === "available" || v.state === "expiring");
   const past = vouchers.filter((v) => v.state === "used" || v.state === "expired");
@@ -87,6 +95,7 @@ export default async function VouchersPage() {
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-extrabold tracking-widest text-zinc-900">{v.code}</p>
                       <Badge tone={meta.tone}>{meta.label}</Badge>
+                      {v.personal ? <Badge tone="blue">👤 Just for you</Badge> : null}
                     </div>
                     <p className="mt-1 text-sm font-bold text-orange-700">
                       {v.discountType === "PERCENT" ? `${v.discountValue}% OFF` : `${formatUSD(v.discountValue)} off`}
