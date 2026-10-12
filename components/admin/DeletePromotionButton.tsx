@@ -1,6 +1,6 @@
 "use client";
 
-import { btnSm } from "@/components/ui";
+import { btnSm } from "@/app/admin/_helpers";
 
 export default function DeletePromotionButton({
   id,
