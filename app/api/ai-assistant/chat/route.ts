@@ -25,7 +25,8 @@ async function askGroq(
         messages: [
           {
             role: "system",
-            content: `You are Zuzu, the friendly shopping assistant for ZUVO (an online store like Temu). You were created by Haider Malik (the founder of ZUVO). If anyone asks who made/created/built you or ZUVO, proudly say Haider Malik. Reply in ${langName}. IMPORTANT RULES: (1) ALWAYS answer every message warmly and helpfully — NEVER say "I don't understand", "could you clarify", or any variation of not understanding. If the message is short, vague, or has typos, make your best friendly guess at what they mean and respond conversationally. (2) Be open and chatty like a real friendly shop assistant — talk naturally about anything: shopping, products, the website, Haider Malik, or just casual chat. No robotic restrictions. Keep replies short (1-3 sentences), warm, with 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable, say so honestly and suggest alternatives from the context.
+            content: `You are Zuzu, the friendly shopping assistant for ZUVO (an online store like Temu). You were created by Haider Malik (the founder of ZUVO). If anyone asks who made/created/built you or ZUVO, proudly say Haider Malik.
+KNOW ABOUT ZUVO'S FEATURES — if asked what the website can do / its features, explain: FOR SHOPPERS: 48+ products across categories, smart search with autocomplete, tap Zuzu to earn coins (1000 points = $1 off, daily cap, verified email needed), promo codes + My Vouchers page (copy codes, expiry tracking), voucher picker at checkout, wishlist, order tracking from Account page, flash deals & discount campaigns with storefront banners, gift ideas, AI chat help in English/Urdu/Roman Urdu. FOR STORE OWNER (ADMIN): sales analytics dashboard (revenue & orders charts, category sales, top products), discount campaign manager (create/pause/resume/schedule), 10 business reports (revenue, low stock, inventory value, top products, orders by status, signups, profit, returns, top customers, coupon usage), bulk product upload, inventory & low-stock alerts, order management, customer management, user-specific vouchers. Reply in ${langName}. IMPORTANT RULES: (1) ALWAYS answer every message warmly and helpfully — NEVER say "I don't understand", "could you clarify", or any variation of not understanding. If the message is short, vague, or has typos, make your best friendly guess at what they mean and respond conversationally. (2) Be open and chatty like a real friendly shop assistant — talk naturally about anything: shopping, products, the website, Haider Malik, or just casual chat. No robotic restrictions. Keep replies short (1-3 sentences), warm, with 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable, say so honestly and suggest alternatives from the context.
 ${productContext}`,
           },
           { role: "user", content: userMessage },
@@ -110,6 +111,7 @@ const ORDER_WORDS = ["order", "track", "kahan hai", "status", "meri order", "mer
 const GIFT_WORDS = ["gift", "tohfa", "tuhfa", "present", "birthday", "gift", "تحفہ"];
 const BEST_WORDS = ["best", "top", "popular", "achha", "acha", "behtreen", "recommend", "suggest", "bestseller", "بہترین"];
 const THANKS_WORDS = ["thanks", "thank", "shukriya", "shukria", "شکریہ"];
+const FEATURE_WORDS = ["feature", "features", "kya kar sakte", "kia kar sakte", "what can you do", "tum kya", "ap kya", "capabilities", "facilities", "sahulat", "khubiyan", "khas baat", "website me kya", "site me kya"];
 const BYE_WORDS = ["bye", "allah hafiz", "khuda hafiz", "alvida", "goodbye", "اللہ حافظ"];
 
 function hasAny(text: string, words: string[]): boolean {
@@ -188,6 +190,11 @@ const T = {
     en: "📦 You can track your order from the Account page → Orders. Need the order number? It's in your confirmation!",
     roman: "📦 Apna order Account page → Orders se track karo. Order number chahiye? Wo confirmation me hai!",
     ur: "📦 اپنا آرڈر اکاؤنٹ پیج ← آرڈرز سے ٹریک کریں۔ آرڈر نمبر چاہیے؟ وہ کنفرمیشن میں ہے!",
+  },
+  features: {
+    en: "✨ Here's what ZUVO can do! 🛍️ **For shoppers:** browse 48+ products, smart search, tap Zuzu to earn coins (1000 = $1 off!), promo codes & My Vouchers page, wishlist, order tracking, flash deals & gift ideas. 📊 **For store owners (admin):** sales analytics dashboard, discount campaigns, 10 business reports (revenue, inventory, top products, customers & more), bulk product upload, inventory & low-stock alerts, order & customer management. All built by Haider Malik! 🧡",
+    roman: "✨ Dekho ZUVO me kya kya hai! 🛍️ **Customers ke liye:** 48+ products, smart search, Zuzu tap karke coins kamao (1000 = $1 off!), promo codes aur My Vouchers page, wishlist, order tracking, flash deals aur gift ideas. 📊 **Admin (dukan ke malik) ke liye:** sales analytics dashboard, discount campaigns, 10 business reports (revenue, inventory, top products, customers waghera), bulk product upload, stock alerts, order aur customer management. Sab kuch Haider Malik ne banaya hai! 🧡",
+    ur: "✨ دیکھیں ZUVO میں کیا کیا ہے! 🛍️ **گاہکوں کے لیے:** 48+ مصنوعات، اسمارٹ تلاش، Zuzu ٹیپ کر کے کوئنز کمائیں (1000 = $1 رعایت!)، پرومو کوڈز اور My Vouchers صفحہ، وش لسٹ، آرڈر ٹریکنگ، فلیش ڈیلز اور گفٹ آئیڈیاز۔ 📊 **ایڈمن کے لیے:** سیلز اینالیٹکس ڈیش بورڈ، ڈسکاؤنٹ مہمات، 10 کاروباری رپورٹس، بلک پروڈکٹ اپلوڈ، اسٹاک الرٹس، آرڈر اور کسٹمر مینجمنٹ۔ سب کچھ Haider Malik نے بنایا ہے! 🧡",
   },
   thanks: {
     en: "You're so welcome! 🧡 Anything else I can help with?",
@@ -396,6 +403,8 @@ export async function POST(req: Request) {
       text = T.payment[lang];
     } else if (hasAny(message, ORDER_WORDS)) {
       text = T.order[lang];
+    } else if (hasAny(message, FEATURE_WORDS)) {
+      text = T.features[lang];
     } else {
       // Product search / deals / recommendations
       const wantsDeals = hasAny(message, DEAL_WORDS);
