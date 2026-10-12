@@ -264,15 +264,6 @@ async function searchProducts(
     totalKeywords: keywords.length,
   };
 }
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    price: p.priceCents / 100,
-    originalPrice: p.originalPriceCents ? p.originalPriceCents / 100 : null,
-    image: Array.isArray(p.images) && p.images.length > 0 ? String(p.images[0]) : null,
-    rating: p.rating,
-  }));
-}
 
 async function getSuggestions(excludeIds: string[]): Promise<ProductCard[]> {
   const products = await db.product.findMany({
