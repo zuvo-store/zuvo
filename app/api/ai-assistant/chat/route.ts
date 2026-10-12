@@ -3,6 +3,52 @@ import { db } from "@/lib/db";
 
 type Lang = "en" | "roman" | "ur";
 
+/* ---------------- Groq AI (free) ---------------- */
+// Uses Groq's free Llama API for natural conversations.
+// Falls back to templates when key is missing or API fails.
+async function askGroq(
+  userMessage: string,
+  lang: Lang,
+  productContext: string
+): Promise<string | null> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return null;
+  const langName = lang === "ur" ? "Urdu (اردو script)" : lang === "roman" ? "Roman Urdu" : "English";
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 300,
+        temperature: 0.7,
+        messages: [
+          {
+            role: "system",
+            content: `You are Zuzu, the friendly shopping assistant for ZUVO (an online store like Temu). Reply in ${langName}. Keep replies short (1-3 sentences), warm, and helpful. Use 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable, say so honestly and suggest alternatives from the context.
+${productContext}`,
+          },
+          { role: "user", content: userMessage },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    const text = d?.choices?.[0]?.message?.content?.trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
+function productContextBlock(products: ProductCard[]): string {
+  if (products.length === 0) return "No matching products found in the store right now.";
+  return (
+    "Matching products in our store:\n" +
+    products.map((p) => `- ${p.name} — $${p.price.toFixed(2)}${p.originalPrice ? ` (was $${p.originalPrice.toFixed(2)})` : ""}`).join("\n")
+  );
+}
+
 type ProductCard = {
   id: string;
   name: string;
@@ -391,6 +437,11 @@ export async function POST(req: Request) {
         }
       }
     }
+
+    // GROQ AI ENHANCEMENT: let the LLM craft a natural reply using our
+    // accurate local product results as context. Falls back to templates.
+    const aiText = await askGroq(message, lang, productContextBlock([...products, ...suggestions]));
+    if (aiText) text = aiText;
 
     return NextResponse.json({ ok: true, text, products, suggestions, lang });
   } catch (e) {
