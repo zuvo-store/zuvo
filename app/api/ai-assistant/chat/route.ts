@@ -378,16 +378,18 @@ async function searchProducts(
 }
 
 async function getSuggestions(excludeIds: string[]): Promise<ProductCard[]> {
+  // Randomized picks — different products each time, not always the same top-2
   const products = await db.product.findMany({
     where: { active: true, id: { notIn: excludeIds }, OR: [{ deal: true }, { featured: true }] },
     select: {
       id: true, name: true, slug: true, priceCents: true,
       originalPriceCents: true, images: true, rating: true,
     },
-    orderBy: { rating: "desc" },
-    take: 2,
+    take: 20,
   });
-  return products.map((p) => ({
+  // Shuffle and take 2
+  const shuffled = products.sort(() => Math.random() - 0.5).slice(0, 2);
+  return shuffled.map((p) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -479,8 +481,8 @@ export async function POST(req: Request) {
           products = sug;
           text = T.deals[lang];
         } else {
-          text = T.noProducts[lang];
-          suggestions = await getSuggestions([]);
+          // Casual chat / unclear message → NO product suggestions, let Groq chat freely
+          text = "";
         }
       }
     }
