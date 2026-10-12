@@ -221,7 +221,8 @@ export default function AIAssistant() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick replies */}
+          {/* Quick replies — only at start of chat, not every message */}
+          {messages.length <= 2 && (
           <div className="flex gap-1.5 overflow-x-auto px-3 pb-2">
             {QUICK_REPLIES.map((q) => (
               <button
@@ -234,6 +235,7 @@ export default function AIAssistant() {
               </button>
             ))}
           </div>
+          )}
 
           {/* Input */}
           <form
