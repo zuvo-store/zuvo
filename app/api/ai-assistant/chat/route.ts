@@ -179,12 +179,23 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
 
   if (keywords.length === 0) return [];
 
+  // Expand keywords with singular/plural variants (shirts→shirt, shirt→shirts)
+  const expanded = new Set<string>(keywords);
+  for (const kw of keywords) {
+    if (kw.endsWith("s") && kw.length > 3) expanded.add(kw.slice(0, -1)); // shirts → shirt
+    else expanded.add(kw + "s"); // shirt → shirts
+    // common e-commerce synonyms
+    if (kw === "tee" || kw === "tees") { expanded.add("t-shirt"); expanded.add("tshirt"); }
+    if (kw === "tshirt" || kw === "t-shirt") { expanded.add("tee"); }
+  }
+  const searchTerms = [...expanded];
+
   const where: Record<string, unknown> = { active: true };
   if (dealsOnly) where.deal = true;
   if (maxPrice !== null) where.priceCents = { lte: maxPrice * 100 };
 
   // Candidates: match ANY keyword, fetch more for relevance ranking
-  (where as Record<string, unknown>).OR = keywords.flatMap((kw) => [
+  (where as Record<string, unknown>).OR = searchTerms.flatMap((kw) => [
     { name: { contains: kw, mode: "insensitive" } },
     { description: { contains: kw, mode: "insensitive" } },
     { shortDesc: { contains: kw, mode: "insensitive" } },
@@ -209,7 +220,7 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
       const nameL = p.name.toLowerCase();
       const descL = `${p.shortDesc ?? ""} ${p.description ?? ""}`.toLowerCase();
       let score = 0;
-      for (const kw of keywords) {
+      for (const kw of searchTerms) {
         if (nameL.includes(kw)) score += 3;
         else if (descL.includes(kw)) score += 1;
       }
