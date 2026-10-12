@@ -58,7 +58,7 @@ export default function InteractiveZuzu({
   const [earned, setEarned] = useState<number | null>(null);
   const [sleeping, setSleeping] = useState(false);
   const [swaying, setSwaying] = useState(true);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [guestNudge, setGuestNudge] = useState(false);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,8 +156,9 @@ export default function InteractiveZuzu({
         } else if (d.dailyCap) {
           showMessage("Daily limit reached! 🎉", 2000);
         } else if (status === 401) {
-          // Guest tapped — show professional login prompt
-          setShowLoginPrompt(true);
+          // Guest tapped — small side nudge (no modal, character stays fun!)
+          setGuestNudge(true);
+          setTimeout(() => setGuestNudge(false), 2500);
         }
       })
       .catch(() => {});
@@ -286,54 +287,10 @@ export default function InteractiveZuzu({
         </p>
       )}
 
-      {/* Professional login prompt for guests */}
-      {showLoginPrompt && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={() => setShowLoginPrompt(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Create an account to earn ZUZU coins"
-        >
-          <div
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-5 text-center">
-              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-3xl">
-                ⭐
-              </div>
-              <h3 className="text-lg font-extrabold text-white">Earn ZUZU Coins!</h3>
-              <p className="mt-1 text-sm text-white/90">Tap Zuzu, collect coins, get discounts</p>
-            </div>
-            <div className="px-6 py-5">
-              <p className="text-center text-sm text-zinc-600">
-                Please create a <span className="font-bold text-zinc-900">free account</span> first to
-                start earning <span className="font-bold text-amber-600">1,000 = $1 off</span> 🎉
-              </p>
-              <div className="mt-5 flex flex-col gap-2.5">
-                <a
-                  href="/auth/signup"
-                  className="rounded-xl bg-zinc-900 py-3 text-center text-sm font-bold text-white transition hover:bg-zinc-700 active:scale-[0.98]"
-                >
-                  Create Free Account
-                </a>
-                <a
-                  href="/auth/login"
-                  className="rounded-xl border-2 border-zinc-200 py-3 text-center text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.98]"
-                >
-                  I Already Have an Account
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setShowLoginPrompt(false)}
-                  className="py-1 text-xs font-medium text-zinc-400 hover:text-zinc-600"
-                >
-                  Maybe later
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Small side nudge for guests — no modal, character stays fun! */}
+      {guestNudge && (
+        <div className="zuzu-bubble pointer-events-none absolute -left-2 top-4 z-10 whitespace-nowrap rounded-full bg-zinc-900/90 px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+          🔒 <a href="/auth/login" className="pointer-events-auto underline underline-offset-2">Login</a> to earn coins!
         </div>
       )}
     </div>
