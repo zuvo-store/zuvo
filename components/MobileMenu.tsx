@@ -43,6 +43,15 @@ const SHOP_LINKS = [
     ),
   },
   {
+    href: "/ai-chat",
+    label: "AI Chat",
+    desc: "Ask anything, generate images",
+    gradient: "from-orange-400 to-amber-500",
+    icon: (
+      <path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18.4 5.6l-2.1 2.1M21 12h-3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 18v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    ),
+  },
+  {
     href: "/track-order",
     label: "Track Order",
     desc: "Follow your delivery",
