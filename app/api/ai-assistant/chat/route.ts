@@ -63,8 +63,16 @@ const THANKS_WORDS = ["thanks", "thank", "shukriya", "shukria", "شکریہ"];
 const BYE_WORDS = ["bye", "allah hafiz", "khuda hafiz", "alvida", "goodbye", "اللہ حافظ"];
 
 function hasAny(text: string, words: string[]): boolean {
-  const t = text.toLowerCase();
-  return words.some((w) => t.includes(w.toLowerCase()));
+  const t = ` ${text.toLowerCase()} `;
+  return words.some((w) => {
+    const ww = w.toLowerCase();
+    // Short words (<=3 chars) need word boundaries to avoid false matches
+    // e.g. "hi" inside "chahiye"
+    if (ww.length <= 3) {
+      return new RegExp(`[\\s.,!?]${ww.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s.,!?]`).test(t);
+    }
+    return t.includes(ww);
+  });
 }
 
 /* ---------------- Response templates ---------------- */
