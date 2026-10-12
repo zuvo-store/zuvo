@@ -187,7 +187,7 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
     // common e-commerce synonyms
     if (kw === "tee" || kw === "tees") { expanded.add("t-shirt"); expanded.add("tshirt"); }
     if (kw === "tshirt" || kw === "t-shirt") { expanded.add("tee"); }
-    if (kw === "shirt" || kw === "shirts") { expanded.add("tee"); expanded.add("t-shirt"); expanded.add("tshirt"); expanded.add("top"); expanded.add("clothing"); }
+    if (kw === "shirt" || kw === "shirts") { expanded.add("tee"); expanded.add("t-shirt"); expanded.add("tshirt"); }
     if (kw === "shoe" || kw === "shoes") { expanded.add("sneaker"); expanded.add("footwear"); }
     if (kw === "phone" || kw === "phones") { expanded.add("mobile"); expanded.add("smartphone"); }
   }
@@ -230,10 +230,14 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
       return { p, score };
     })
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score || b.p.rating - a.p.rating)
-    .slice(0, 4);
+    .sort((a, b) => b.score - a.score || b.p.rating - a.p.rating);
 
-  return scored.map(({ p }) => ({
+  // Only show relevant results (score >= 2 = name match or strong multi-match).
+  // Fall back to score >= 1 if nothing meets the bar.
+  const relevant = scored.filter((s) => s.score >= 2);
+  const final = (relevant.length > 0 ? relevant : scored).slice(0, 4);
+
+  return final.map(({ p }) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
