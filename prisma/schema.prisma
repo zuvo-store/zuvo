@@ -41,6 +41,7 @@ model User {
 
   zuzuPoints     Int              @default(0) // tap-to-earn balance
   zuzuPointsLogs ZuzuPointsLog[]
+  lastZuzuTapAt  DateTime? // anti-abuse: DB-backed tap cooldown
 }
 
 model ZuzuPointsLog {
