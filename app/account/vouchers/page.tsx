@@ -103,7 +103,7 @@ export default async function VouchersPage() {
                     </p>
                     {v.title ? <p className="mt-0.5 truncate text-xs text-zinc-500">{v.title}</p> : null}
                     <p className="mt-1 text-[11px] text-zinc-400">
-                      Valid till {fmtDate(v.endsAt)}
+                      {v.endsAt ? `Valid till ${fmtDate(v.endsAt)}` : "No expiry"}
                       {v.usageLimit ? ` • ${Math.max(0, v.usageLimit - v.usedCount)} left` : ""}
                     </p>
                   </div>
