@@ -18,15 +18,17 @@ type ProductCard = {
 function detectLang(text: string): Lang {
   // Urdu script (Arabic block)
   if (/[\u0600-\u06FF]/.test(text)) return "ur";
-  const t = text.toLowerCase();
-  // Roman Urdu markers
+  const t = ` ${text.toLowerCase()} `;
+  // Roman Urdu markers — matched as WHOLE WORDS only (so "me" in "show me"
+  // or "se" in "glasses" doesn't falsely trigger)
   const romanWords = [
     "mujhe", "mujhy", "chahiye", "chahye", "dikhao", "dikhaen", "batao", "bataen",
-    "kia", "kya", "hai", "hain", "ka", "ki", "ke", "ko", "mein", "me", "se",
-    "acha", "achha", "acha", "sasta", "sasty", "mehnga", "kitne", "kitna",
-    "kahan", "kab", "kaise", "acha", "wala", "wali", "wale", "lye", "liye",
+    "kia", "kya", "hai", "hain", "ka", "ki", "ke", "ko", "mein", "se",
+    "acha", "achha", "sasta", "sasty", "mehnga", "kitne", "kitna",
+    "kahan", "kab", "kaise", "wala", "wali", "wale", "lye", "liye", "apko",
+    "theek", "shukriya", "bhai", "bata", "dikha", "chahta", "chahti",
   ];
-  const hits = romanWords.filter((w) => t.includes(w)).length;
+  const hits = romanWords.filter((w) => t.includes(` ${w} `)).length;
   if (hits >= 1) return "roman";
   return "en";
 }
@@ -75,6 +77,15 @@ function hasAny(text: string, words: string[]): boolean {
     }
     return t.includes(ww);
   });
+}
+
+/** Remove conversational phrases so only the shopping request remains. */
+function stripPhrases(text: string, phrases: string[]): string {
+  let t = text;
+  for (const p of phrases) {
+    t = t.replace(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+  }
+  return t.replace(/\s+/g, " ").trim();
 }
 
 /* ---------------- Response templates ---------------- */
@@ -144,6 +155,11 @@ const T = {
     en: "I'm great, thanks for asking! 🧡 Ready to help you shop — what are you looking for today?",
     roman: "Me bilkul theek hun, puchne ka shukriya! 🧡 Shopping me help ke liye hazir hun — aj kya dhund rahe ho?",
     ur: "میں بالکل ٹھیک ہوں، پوچھنے کا شکریہ! 🧡 شاپنگ میں مدد کے لیے حاضر ہوں — آج کیا ڈھونڈ رہے ہیں؟",
+  },
+  foundForYou: {
+    en: "Here are some great options for you! 🎉",
+    roman: "Ye lo, apke liye zabardast options! 🎉",
+    ur: "یہ لیں، آپ کے لیے بہترین آپشنز! 🎉",
   },
   whoAreYou: {
     en: "I'm Zuzu! 🧡 ZUVO's shopping buddy — I find products, show deals, and answer your questions. Ask me anything!",
@@ -305,6 +321,14 @@ export async function POST(req: Request) {
       text = T.greeting[lang];
     } else if (hasAny(message, HOW_ARE_YOU)) {
       text = T.howAreYou[lang];
+      // If they also asked for products ("how are you, show me glasses"),
+      // answer AND search — don't ignore the shopping request.
+      const stripped = stripPhrases(message, [...GREETINGS, ...HOW_ARE_YOU]);
+      const result = await searchProducts(stripped, maxPrice, false);
+      if (result.products.length > 0) {
+        products = result.products;
+        text += " " + T.foundForYou[lang];
+      }
     } else if (hasAny(message, WHO_ARE_YOU)) {
       text = T.whoAreYou[lang];
     } else if (hasAny(message, THANKS_WORDS)) {
