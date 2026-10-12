@@ -356,32 +356,39 @@ export async function POST(req: Request) {
       const wantsGift = hasAny(message, GIFT_WORDS);
       const wantsBest = hasAny(message, BEST_WORDS);
 
-      const result = await searchProducts(message, maxPrice, wantsDeals);
-      products = result.products;
-
-      // Gift → pick highly-rated products as gift ideas
-      if (wantsGift && products.length === 0) {
+      // GIFT → always show highly-rated products as gift ideas (never "not available")
+      if (wantsGift) {
         const sug = await getSuggestions([]);
         products = sug;
         text = lang === "en" ? "🎁 Perfect gift ideas for you!" : lang === "roman" ? "🎁 Apke liye perfect gift ideas!" : "🎁 آپ کے لیے بہترین تحفے کے آئیڈیاز!";
-      } else if (products.length > 0) {
-        // HONESTY: weak or partial match → say it's not available, show alternatives
-        if ((result.bestScore < 3 || result.partialMatch) && !wantsDeals && !wantsBest) {
-          text = T.notAvailable[lang];
-          suggestions = products; // show as alternatives
-          products = [];
-        } else {
-          text = wantsDeals
-            ? T.deals[lang]
-            : wantsBest
-              ? (lang === "en" ? "⭐ Our top-rated picks for you!" : lang === "roman" ? "⭐ Apke liye sab se top-rated!" : "⭐ آپ کے لیے سب سے ٹاپ ریٹڈ!")
-              : T.foundProducts[lang](products.length);
-          // Add smart suggestions
-          suggestions = await getSuggestions(products.map((p) => p.id));
-        }
       } else {
-        text = T.noProducts[lang];
-        suggestions = await getSuggestions([]);
+        const result = await searchProducts(message, maxPrice, wantsDeals);
+        products = result.products;
+
+        if (products.length > 0) {
+          // HONESTY: weak or partial match → say it's not available, show alternatives
+          if ((result.bestScore < 3 || result.partialMatch) && !wantsDeals && !wantsBest) {
+            text = T.notAvailable[lang];
+            suggestions = products; // show as alternatives
+            products = [];
+          } else {
+            text = wantsDeals
+              ? T.deals[lang]
+              : wantsBest
+                ? (lang === "en" ? "⭐ Our top-rated picks for you!" : lang === "roman" ? "⭐ Apke liye sab se top-rated!" : "⭐ آپ کے لیے سب سے ٹاپ ریٹڈ!")
+                : T.foundProducts[lang](products.length);
+            // Add smart suggestions
+            suggestions = await getSuggestions(products.map((p) => p.id));
+          }
+        } else if (wantsDeals) {
+          // No discounted items right now → show top-rated as "hot picks" instead of empty
+          const sug = await getSuggestions([]);
+          products = sug;
+          text = T.deals[lang];
+        } else {
+          text = T.noProducts[lang];
+          suggestions = await getSuggestions([]);
+        }
       }
     }
 
