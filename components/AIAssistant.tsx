@@ -182,7 +182,7 @@ export default function AIAssistant() {
               <p className="text-sm font-extrabold text-white">Zuzu Assistant</p>
               <p className="flex items-center gap-1 text-[11px] text-white/85">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-300" />
-                {talking || loading ? "typing…" : "Online — asks me anything!"}
+                {talking || loading ? "typing…" : "● Online — Ask me anything! 💬"}
               </p>
             </div>
             <button
