@@ -287,6 +287,9 @@ async function searchProducts(
     // filler words that match everything — never search these
     "new", "style", "styles", "latest", "modern", "best", "top", "good", "nice",
     "nay", "naya", "naye", "style me", "me",
+    // relationship/context words — not product keywords
+    "husband", "wife", "shohar", "biwi", "beta", "beti", "bhai", "behen",
+    "apne", "apna", "apni", "mere", "mera", "meri", "uske", "uska", "uski",
   ]);
   const keywords = query
     .toLowerCase()
