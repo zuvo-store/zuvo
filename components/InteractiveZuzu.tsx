@@ -58,6 +58,7 @@ export default function InteractiveZuzu({
   const [earned, setEarned] = useState<number | null>(null);
   const [sleeping, setSleeping] = useState(false);
   const [swaying, setSwaying] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,9 +103,11 @@ export default function InteractiveZuzu({
   }
 
   useEffect(() => {
-    // Preload wink image so there's no flicker
-    const img = new Image();
-    img.src = "/zuvo-mascot-wink.jpg";
+    // Preload wink + sleeping images so there's no flicker
+    const winkImg = new Image();
+    winkImg.src = "/zuvo-mascot-wink.jpg";
+    const sleepImg = new Image();
+    sleepImg.src = "/zuvo-mascot-sleeping.jpg";
     resetSleepTimer();
     scheduleAutoMove();
     if (greet) {
@@ -144,14 +147,17 @@ export default function InteractiveZuzu({
 
     // Earn points (logged-in users)
     fetch("/api/zuzu/tap", { method: "POST" })
-      .then((r) => r.json())
-      .then((d) => {
+      .then(async (r) => ({ status: r.status, data: await r.json() }))
+      .then(({ status, data: d }) => {
         if (d.ok) {
           setPoints(d.balance);
           setEarned(d.earned);
           setTimeout(() => setEarned(null), 1500);
         } else if (d.dailyCap) {
           showMessage("Daily limit reached! 🎉", 2000);
+        } else if (status === 401) {
+          // Guest tapped — show professional login prompt
+          setShowLoginPrompt(true);
         }
       })
       .catch(() => {});
@@ -235,7 +241,7 @@ export default function InteractiveZuzu({
         className="group relative cursor-pointer rounded-full outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
       >
         <img
-          src={winking ? "/zuvo-mascot-wink.jpg" : "/zuvo-mascot.jpg"}
+          src={sleeping ? "/zuvo-mascot-sleeping.jpg" : winking ? "/zuvo-mascot-wink.jpg" : "/zuvo-mascot.jpg"}
           alt="Zuzu, the ZUVO mascot"
           draggable={false}
           className={`${sizes[size]} rounded-full object-cover shadow-xl shadow-orange-500/25 ring-4 ring-white transition-transform group-active:scale-95 ${popping ? "zuzu-popout" : imgCls}`}
@@ -278,6 +284,57 @@ export default function InteractiveZuzu({
         <p className="mt-2 text-center text-[11px] font-medium text-zinc-500">
           👆 Tap Zuzu to earn coins • <span className="font-bold text-amber-600">1,000 = $1 off</span>
         </p>
+      )}
+
+      {/* Professional login prompt for guests */}
+      {showLoginPrompt && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setShowLoginPrompt(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create an account to earn ZUZU coins"
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-5 text-center">
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-3xl">
+                ⭐
+              </div>
+              <h3 className="text-lg font-extrabold text-white">Earn ZUZU Coins!</h3>
+              <p className="mt-1 text-sm text-white/90">Tap Zuzu, collect coins, get discounts</p>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-center text-sm text-zinc-600">
+                Please create a <span className="font-bold text-zinc-900">free account</span> first to
+                start earning <span className="font-bold text-amber-600">1,000 = $1 off</span> 🎉
+              </p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <a
+                  href="/auth/signup"
+                  className="rounded-xl bg-zinc-900 py-3 text-center text-sm font-bold text-white transition hover:bg-zinc-700 active:scale-[0.98]"
+                >
+                  Create Free Account
+                </a>
+                <a
+                  href="/auth/login"
+                  className="rounded-xl border-2 border-zinc-200 py-3 text-center text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.98]"
+                >
+                  I Already Have an Account
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="py-1 text-xs font-medium text-zinc-400 hover:text-zinc-600"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
