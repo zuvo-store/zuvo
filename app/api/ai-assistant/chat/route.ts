@@ -26,7 +26,9 @@ async function askGroq(
           {
             role: "system",
             content: `You are Zuzu, the friendly shopping assistant for ZUVO (an online store like Temu). You were created by Haider Malik (the founder of ZUVO). If anyone asks who made/created/built you or ZUVO, proudly say Haider Malik.
-KNOW ABOUT ZUVO'S FEATURES — if asked what the website can do / its features, explain: FOR SHOPPERS: 48+ products across categories, smart search with autocomplete, tap Zuzu to earn coins (1000 points = $1 off, daily cap, verified email needed), promo codes + My Vouchers page (copy codes, expiry tracking), voucher picker at checkout, wishlist, order tracking from Account page, flash deals & discount campaigns with storefront banners, gift ideas, AI chat help in English/Urdu/Roman Urdu. FOR STORE OWNER (ADMIN): sales analytics dashboard (revenue & orders charts, category sales, top products), discount campaign manager (create/pause/resume/schedule), 10 business reports (revenue, low stock, inventory value, top products, orders by status, signups, profit, returns, top customers, coupon usage), bulk product upload, inventory & low-stock alerts, order management, customer management, user-specific vouchers. Reply in ${langName}. IMPORTANT RULES: (1) ALWAYS answer every message warmly and helpfully — NEVER say "I don't understand", "could you clarify", or any variation of not understanding. If the message is short, vague, or has typos, make your best friendly guess at what they mean and respond conversationally. (2) Be open and chatty like a real friendly shop assistant — talk naturally about anything: shopping, products, the website, Haider Malik, or just casual chat. No robotic restrictions. Keep replies short (1-3 sentences), warm, with 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable, say so honestly and suggest alternatives from the context.
+KNOW ABOUT ZUVO'S FEATURES — if asked what the website can do / its features, explain: FOR SHOPPERS: 48+ products across categories, smart search with autocomplete, tap Zuzu to earn coins (1000 points = $1 off, daily cap, verified email needed), promo codes + My Vouchers page (copy codes, expiry tracking), voucher picker at checkout, wishlist, order tracking from Account page, flash deals & discount campaigns with storefront banners, gift ideas, AI chat help in English/Urdu/Roman Urdu. FOR STORE OWNER (ADMIN): sales analytics dashboard (revenue & orders charts, category sales, top products), discount campaign manager (create/pause/resume/schedule), 10 business reports (revenue, low stock, inventory value, top products, orders by status, signups, profit, returns, top customers, coupon usage), bulk product upload, inventory & low-stock alerts, order management, customer management, user-specific vouchers.
+TODAY'S OFFERS: the context includes LIVE OFFERS TODAY — when asked about today's offers/deals, list them naturally.
+PERSONAL TOUCH: when recommending products, add a warm personal opinion like "mere khayal se ye aapke liye perfect rahega" / "I personally think this one is great for you" — be a friendly advisor, not a robot. Reply in ${langName}. IMPORTANT RULES: (1) ALWAYS answer every message warmly and helpfully — NEVER say "I don't understand", "could you clarify", or any variation of not understanding. If the message is short, vague, or has typos, make your best friendly guess at what they mean and respond conversationally. (2) Be open and chatty like a real friendly shop assistant — talk naturally about anything: shopping, products, the website, Haider Malik, or just casual chat. No robotic restrictions. Keep replies short (1-3 sentences), warm, with 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable, say so honestly and suggest alternatives from the context.
 ${productContext}`,
           },
           { role: "user", content: userMessage },
@@ -48,6 +50,37 @@ function productContextBlock(products: ProductCard[]): string {
     "Matching products in our store:\n" +
     products.map((p) => `- ${p.name} — $${p.price.toFixed(2)}${p.originalPrice ? ` (was $${p.originalPrice.toFixed(2)})` : ""}`).join("\n")
   );
+}
+
+/* ---------------- Live offers (campaigns + public promos) ---------------- */
+async function getActiveOffers(): Promise<string> {
+  const now = new Date();
+  const [campaigns, promos] = await Promise.all([
+    db.campaign.findMany({
+      where: { active: true, startsAt: { lte: now }, endsAt: { gte: now } },
+      select: { name: true, bannerText: true, discountType: true, discountValue: true },
+      take: 5,
+    }),
+    db.promotion.findMany({
+      where: {
+        active: true, userId: null,
+        OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+        AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: now } }] }],
+      },
+      select: { code: true, title: true, discountType: true, discountValue: true },
+      take: 5,
+    }),
+  ]);
+  const lines: string[] = [];
+  for (const c of campaigns) {
+    const off = c.discountType === "PERCENT" ? `${c.discountValue}% OFF` : `$${(c.discountValue / 100).toFixed(2)} OFF`;
+    lines.push(`🔥 ${c.name}: ${off}${c.bannerText ? ` — ${c.bannerText}` : ""}`);
+  }
+  for (const p of promos) {
+    const off = p.discountType === "PERCENT" ? `${p.discountValue}% OFF` : `$${(p.discountValue / 100).toFixed(2)} OFF`;
+    lines.push(`🎟️ ${p.title} (${p.code}): ${off}`);
+  }
+  return lines.length > 0 ? lines.join("\n") : "No active offers right now.";
 }
 
 type ProductCard = {
@@ -112,6 +145,7 @@ const GIFT_WORDS = ["gift", "tohfa", "tuhfa", "present", "birthday", "gift", "ت
 const BEST_WORDS = ["best", "top", "popular", "achha", "acha", "behtreen", "recommend", "suggest", "bestseller", "بہترین"];
 const THANKS_WORDS = ["thanks", "thank", "shukriya", "shukria", "شکریہ"];
 const FEATURE_WORDS = ["feature", "features", "kya kar sakte", "kia kar sakte", "what can you do", "tum kya", "ap kya", "capabilities", "facilities", "sahulat", "khubiyan", "khas baat", "website me kya", "site me kya"];
+const OFFER_WORDS = ["aj ki offer", "aaj ki offer", "aj ke offer", "today offer", "today's offer", "offers today", "kya offer", "koi offer", "deal chal", "sale chal"];
 const BYE_WORDS = ["bye", "allah hafiz", "khuda hafiz", "alvida", "goodbye", "اللہ حافظ"];
 
 function hasAny(text: string, words: string[]): boolean {
@@ -448,8 +482,10 @@ export async function POST(req: Request) {
     }
 
     // GROQ AI ENHANCEMENT: let the LLM craft a natural reply using our
-    // accurate local product results as context. Falls back to templates.
-    const aiText = await askGroq(message, lang, productContextBlock([...products, ...suggestions]));
+    // accurate local product results + live offers as context. Falls back to templates.
+    const offers = await getActiveOffers();
+    const fullContext = productContextBlock([...products, ...suggestions]) + "\n\nLIVE OFFERS TODAY:\n" + offers;
+    const aiText = await askGroq(message, lang, fullContext);
     if (aiText) text = aiText;
 
     return NextResponse.json({ ok: true, text, products, suggestions, lang });
