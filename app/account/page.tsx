@@ -13,6 +13,7 @@ const QUICK_LINKS = [
   { href: "/account/orders", title: "Orders", desc: "Track and review orders" },
   { href: "/account/wishlist", title: "Wishlist", desc: "Items you saved for later" },
   { href: "/account/rewards", title: "Rewards", desc: "Signup reward status" },
+  { href: "/account/vouchers", title: "My Vouchers", desc: "Promo codes: available & expired" },
   { href: "/account/referrals", title: "Referrals", desc: "Invite friends, earn credit" },
   { href: "/account/settings", title: "Settings", desc: "Password and account" },
 ];
@@ -58,6 +59,17 @@ export default async function AccountDashboard() {
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 20.5S3.5 15.4 3.5 9.6C3.5 7 5.5 5.5 7.8 5.5c1.3 0 2.4.6 3.2 1.6.8-1 1.9-1.6 3.2-1.6 2.3 0 4.3 1.5 4.3 4.1 0 5.8-8.5 10.9-8.5 10.9z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      href: "/account/vouchers",
+      title: "My vouchers",
+      badge: null,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 8a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 000-4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M14 6v2M14 11v2M14 16v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="1 3" />
         </svg>
       ),
     },
