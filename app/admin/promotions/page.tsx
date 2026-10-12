@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import DeletePromotionButton from "@/components/admin/DeletePromotionButton";
 import { db } from "@/lib/db";
 import { formatUSD, toCents } from "@/lib/money";
 import { audit } from "@/lib/audit";
@@ -274,12 +275,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
                     <Link href={`/admin/promotions?edit=${p.id}`} className={`${btnSecondary} ${btnSm}`}>
                       Edit
                     </Link>
-                    <form action={deletePromotion} onSubmit={(e) => { if (!confirm(`Delete promotion ${p.code ?? p.title}?`)) e.preventDefault(); }}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <button type="submit" className={`${btnSm} rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50`}>
-                        Delete
-                      </button>
-                    </form>
+                    <DeletePromotionButton id={p.id} label={p.code ?? p.title} action={deletePromotion} />
                   </div>
                 </td>
               </tr>
