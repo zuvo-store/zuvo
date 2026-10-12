@@ -156,9 +156,8 @@ export default function InteractiveZuzu({
         } else if (d.dailyCap) {
           showMessage("Daily limit reached! 🎉", 2000);
         } else if (status === 401) {
-          // Guest tapped — small side nudge (no modal, character stays fun!)
+          // Guest tapped — show persistent side nudge (stays visible, no flicker)
           setGuestNudge(true);
-          setTimeout(() => setGuestNudge(false), 2500);
         }
       })
       .catch(() => {});
@@ -287,10 +286,10 @@ export default function InteractiveZuzu({
         </p>
       )}
 
-      {/* Small side nudge for guests — no modal, character stays fun! */}
+      {/* Small persistent side nudge for guests — no modal, character stays fun! */}
       {guestNudge && (
         <div className="zuzu-bubble pointer-events-none absolute -left-2 top-4 z-10 whitespace-nowrap rounded-full bg-zinc-900/90 px-3 py-1.5 text-xs font-bold text-white shadow-lg">
-          🔒 <a href="/auth/login" className="pointer-events-auto underline underline-offset-2">Login</a> to earn coins!
+          🔒 <a href="/auth/login" className="pointer-events-auto underline underline-offset-2">Sign in</a> to earn coins!
         </div>
       )}
     </div>
