@@ -187,6 +187,9 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
     // common e-commerce synonyms
     if (kw === "tee" || kw === "tees") { expanded.add("t-shirt"); expanded.add("tshirt"); }
     if (kw === "tshirt" || kw === "t-shirt") { expanded.add("tee"); }
+    if (kw === "shirt" || kw === "shirts") { expanded.add("tee"); expanded.add("t-shirt"); expanded.add("tshirt"); expanded.add("top"); expanded.add("clothing"); }
+    if (kw === "shoe" || kw === "shoes") { expanded.add("sneaker"); expanded.add("footwear"); }
+    if (kw === "phone" || kw === "phones") { expanded.add("mobile"); expanded.add("smartphone"); }
   }
   const searchTerms = [...expanded];
 
