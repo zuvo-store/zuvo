@@ -116,29 +116,49 @@ export default function AIAssistant() {
     const q = text.trim();
     if (!q || loading) return;
     setInput("");
-    setMessages((m) => [...m, { id: nextId(), from: "user", text: q }]);
+    const userMsg: Msg = { id: nextId(), from: "user", text: q };
+    setMessages((m) => [...m, userMsg]);
     setLoading(true);
     setTalking(true);
-    try {
+
+    // Fetch with one automatic retry (handles brief deployments)
+    async function attempt(): Promise<{ ok: boolean; [k: string]: unknown }> {
       const res = await fetch("/api/ai-assistant/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: q }),
       });
-      const d = await res.json();
+      if (!res.ok) throw new Error(`http-${res.status}`);
+      return res.json();
+    }
+
+    try {
+      let d: { ok: boolean; [k: string]: unknown };
+      try {
+        d = await attempt();
+      } catch {
+        await new Promise((r) => setTimeout(r, 2500));
+        d = await attempt();
+      }
       if (d.ok) {
-        const msgs: Msg[] = [{ id: nextId(), from: "zuzu", text: d.text, products: d.products }];
-        if (d.suggestions && d.suggestions.length > 0) {
+        const msgs: Msg[] = [{
+          id: nextId(),
+          from: "zuzu",
+          text: String(d.text ?? ""),
+          products: Array.isArray(d.products) ? (d.products as ProductCard[]) : undefined,
+        }];
+        const sugs = Array.isArray(d.suggestions) ? (d.suggestions as ProductCard[]) : [];
+        if (sugs.length > 0) {
           const sugLabel =
             d.lang === "ur" ? "💡 یہ بھی آپ کو پسند آئے گا:" : d.lang === "roman" ? "💡 Ye bhi pasand aayega apko:" : "💡 You might also love:";
-          msgs.push({ id: nextId(), from: "zuzu", text: sugLabel, products: d.suggestions });
+          msgs.push({ id: nextId(), from: "zuzu", text: sugLabel, products: sugs });
         }
         setMessages((m) => [...m, ...msgs]);
       } else {
         setMessages((m) => [...m, { id: nextId(), from: "zuzu", text: "Oops! Kuch garbar ho gayi. Phir se try karo! 🧡" }]);
       }
     } catch {
-      setMessages((m) => [...m, { id: nextId(), from: "zuzu", text: "Oops! Connection issue. Try again! 🧡" }]);
+      setMessages((m) => [...m, { id: nextId(), from: "zuzu", text: "🔧 Zuzu is updating right now! Try again in a moment! 🧡" }]);
     } finally {
       setLoading(false);
       setTalking(false);
