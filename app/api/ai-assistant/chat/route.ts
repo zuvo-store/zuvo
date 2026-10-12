@@ -50,7 +50,9 @@ function parseMaxPrice(text: string): number | null {
 
 /* ---------------- Intent matching ---------------- */
 
-const GREETINGS = ["hello", "hi", "hey", "salam", "aoa", "assalam", "hey zozu", "hey zuzu", "adab", "salaam", "السلام"];
+const GREETINGS = ["hello", "hi", "hey", "salam", "aoa", "assalam", "adab", "salaam", "السلام"];
+const HOW_ARE_YOU = ["how are you", "kia hal", "kya hal", "kese ho", "kaise ho", "kaisay ho", "haal", "حال", "کیا حال"];
+const WHO_ARE_YOU = ["who are you", "tum kaun", "tum kon", "ap kaun", "your name", "tumhara naam", "تم کون", "آپ کون"];
 const DEAL_WORDS = ["deal", "deals", "discount", "sale", "offer", "offers", "sasta", "sasty", "off", "promo", "آفر", "ڈیل", "رعایت"];
 const DELIVERY_WORDS = ["delivery", "shipping", "parcel", "ship", "deliver", "pahunchega", "pahonchega", "kab aayega", "kitne din", "ڈیلیوری"];
 const RETURN_WORDS = ["return", "refund", "wapasi", "wapas", "exchange", "واپسی"];
@@ -133,6 +135,16 @@ const T = {
     roman: "Allah Hafiz! Khush raho, shopping karo! 🛍️🧡",
     ur: "اللہ حافظ! خوش رہیں، شاپنگ کریں! 🛍️🧡",
   },
+  howAreYou: {
+    en: "I'm great, thanks for asking! 🧡 Ready to help you shop — what are you looking for today?",
+    roman: "Me bilkul theek hun, puchne ka shukriya! 🧡 Shopping me help ke liye hazir hun — aj kya dhund rahe ho?",
+    ur: "میں بالکل ٹھیک ہوں، پوچھنے کا شکریہ! 🧡 شاپنگ میں مدد کے لیے حاضر ہوں — آج کیا ڈھونڈ رہے ہیں؟",
+  },
+  whoAreYou: {
+    en: "I'm Zuzu! 🧡 ZUVO's shopping buddy — I find products, show deals, and answer your questions. Ask me anything!",
+    roman: "Me Zuzu hun! 🧡 ZUVO ka shopping dost — products dhundta hun, deals dikhata hun, aur sawalon ke jawab deta hun. Kuch bhi pucho!",
+    ur: "میں زوزو ہوں! 🧡 زوو کا شاپنگ دوست — پروڈکٹس ڈھونڈتا ہوں، ڈیلز دکھاتا ہوں، اور سوالوں کے جواب دیتا ہوں۔ کچھ بھی پوچھیں!",
+  },
   fallback: {
     en: "Hmm, I'm still learning! 🧡 Try asking for a product (like 'headphones under $50'), deals, delivery info, or ZUZU coins!",
     roman: "Hmm, me abhi seekh raha hun! 🧡 Koi product mango (jaise 'headphones under $50'), deals, delivery info, ya ZUZU coins pucho!",
@@ -148,13 +160,16 @@ const T = {
 /* ---------------- Product search ---------------- */
 
 async function searchProducts(query: string, maxPrice: number | null, dealsOnly: boolean): Promise<ProductCard[]> {
-  // Extract meaningful keywords (remove common words)
+  // Extract meaningful keywords (remove common/filler words)
   const stopWords = new Set([
-    "mujhe", "mujhy", "chahiye", "chahye", "dikhao", "dikhaen", "batao", "show", "me",
+    "mujhe", "mujhy", "chahiye", "chahye", "dikhao", "dikhaen", "dikha", "batao", "show", "me",
     "find", "search", "want", "need", "ko", "ka", "ki", "ke", "se", "mein", "the",
     "a", "an", "for", "kya", "kia", "hai", "hain", "aur", "or", "acha", "achha",
-    "sasta", "sasty", "dikha", "do", "de", "please", "plz", "zara", "koi", "under",
+    "sasta", "sasty", "do", "de", "please", "plz", "zara", "koi", "under",
     "below", "less", "than", "wala", "wali", "wale", "lye", "liye",
+    // filler words that match everything — never search these
+    "new", "style", "styles", "latest", "modern", "best", "top", "good", "nice",
+    "nay", "naya", "naye", "style me", "me",
   ]);
   const keywords = query
     .toLowerCase()
@@ -162,31 +177,49 @@ async function searchProducts(query: string, maxPrice: number | null, dealsOnly:
     .split(/\s+/)
     .filter((w) => w.length > 2 && !stopWords.has(w) && !/^\d+$/.test(w));
 
+  if (keywords.length === 0) return [];
+
   const where: Record<string, unknown> = { active: true };
   if (dealsOnly) where.deal = true;
   if (maxPrice !== null) where.priceCents = { lte: maxPrice * 100 };
 
-  if (keywords.length > 0) {
-    (where as Record<string, unknown>).OR = keywords.flatMap((kw) => [
-      { name: { contains: kw, mode: "insensitive" } },
-      { description: { contains: kw, mode: "insensitive" } },
-      { shortDesc: { contains: kw, mode: "insensitive" } },
-      { brand: { contains: kw, mode: "insensitive" } },
-      { category: { name: { contains: kw, mode: "insensitive" } } },
-    ]);
-  }
+  // Candidates: match ANY keyword, fetch more for relevance ranking
+  (where as Record<string, unknown>).OR = keywords.flatMap((kw) => [
+    { name: { contains: kw, mode: "insensitive" } },
+    { description: { contains: kw, mode: "insensitive" } },
+    { shortDesc: { contains: kw, mode: "insensitive" } },
+    { brand: { contains: kw, mode: "insensitive" } },
+    { category: { name: { contains: kw, mode: "insensitive" } } },
+  ]);
 
-  const products = await db.product.findMany({
+  const candidates = await db.product.findMany({
     where: where as never,
     select: {
       id: true, name: true, slug: true, priceCents: true,
       originalPriceCents: true, images: true, rating: true,
+      shortDesc: true, description: true,
     },
-    orderBy: [{ featured: "desc" }, { rating: "desc" }],
-    take: 4,
+    take: 20,
   });
 
-  return products.map((p) => ({
+  // Relevance score: name matches weigh 3x, description 1x.
+  // Products matching MORE keywords rank higher.
+  const scored = candidates
+    .map((p) => {
+      const nameL = p.name.toLowerCase();
+      const descL = `${p.shortDesc ?? ""} ${p.description ?? ""}`.toLowerCase();
+      let score = 0;
+      for (const kw of keywords) {
+        if (nameL.includes(kw)) score += 3;
+        else if (descL.includes(kw)) score += 1;
+      }
+      return { p, score };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score || b.p.rating - a.p.rating)
+    .slice(0, 4);
+
+  return scored.map(({ p }) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -235,6 +268,10 @@ export async function POST(req: Request) {
 
     if (hasAny(message, GREETINGS) && message.trim().length < 30) {
       text = T.greeting[lang];
+    } else if (hasAny(message, HOW_ARE_YOU)) {
+      text = T.howAreYou[lang];
+    } else if (hasAny(message, WHO_ARE_YOU)) {
+      text = T.whoAreYou[lang];
     } else if (hasAny(message, THANKS_WORDS)) {
       text = T.thanks[lang];
     } else if (hasAny(message, BYE_WORDS)) {
