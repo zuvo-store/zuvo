@@ -83,7 +83,9 @@ function hasAny(text: string, words: string[]): boolean {
 function stripPhrases(text: string, phrases: string[]): string {
   let t = text;
   for (const p of phrases) {
-    t = t.replace(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+    const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Use word boundaries so "hi" doesn't destroy "shirts"
+    t = t.replace(new RegExp(`\\b${escaped}\\b`, "gi"), " ");
   }
   return t.replace(/\s+/g, " ").trim();
 }
