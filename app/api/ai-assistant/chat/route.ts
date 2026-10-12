@@ -168,7 +168,7 @@ async function searchProducts(
   query: string,
   maxPrice: number | null,
   dealsOnly: boolean
-): Promise<{ products: ProductCard[]; bestScore: number; totalKeywords: number }> {
+): Promise<{ products: ProductCard[]; bestScore: number; partialMatch: boolean; totalKeywords: number }> {
   // Extract meaningful keywords (remove common/filler words)
   const stopWords = new Set([
     "mujhe", "mujhy", "chahiye", "chahye", "dikhao", "dikhaen", "dikha", "batao", "show", "me",
@@ -186,7 +186,7 @@ async function searchProducts(
     .split(/\s+/)
     .filter((w) => w.length > 2 && !stopWords.has(w) && !/^\d+$/.test(w));
 
-  if (keywords.length === 0) return { products: [], bestScore: 0, totalKeywords: 0 };
+  if (keywords.length === 0) return { products: [], bestScore: 0, partialMatch: false, totalKeywords: 0 };
 
   // Expand keywords with singular/plural variants (shirts→shirt, shirt→shirts)
   const expanded = new Set<string>(keywords);
