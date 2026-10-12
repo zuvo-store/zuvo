@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { inputCls, btn } from "@/components/ui";
+import VoucherPicker from "@/components/VoucherPicker";
 
 export type SavedAddress = {
   id: string;
@@ -250,6 +251,7 @@ export default function CheckoutForm({
             disabled={pending}
           />
           <p className="mt-1 text-xs text-zinc-500">Applied to your order at review time.</p>
+          <VoucherPicker onPick={(code) => setPromoCode(code)} />
         </div>
       </section>
 
