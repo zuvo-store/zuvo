@@ -17,4 +17,4 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma db push --accept-data-loss
-      - run: npx tsx prisma/fix-variant-order.ts
+      - run: npx tsx prisma/cleanup-noimage.ts
