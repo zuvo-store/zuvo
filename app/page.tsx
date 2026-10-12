@@ -12,6 +12,7 @@ import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
+import CampaignBanner from "@/components/CampaignBanner";
 import Reveal from "@/components/Reveal";
 import { Suspense } from "react";
 
@@ -97,6 +98,10 @@ export default async function HomePage() {
       </Suspense>
       {/* Slim welcome nudge for guests only (signed-in users get the claimable RewardPopup below) */}
       {!user && <GuestRewardBanner />}
+      {/* Live campaign banner */}
+      <div className="mt-4">
+        <CampaignBanner />
+      </div>
       {/* (a) Hero — premium 3D mascot, store branding */}
       <section className="relative mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 text-zinc-900 shadow-lg">
         {/* soft 3D blobs */}

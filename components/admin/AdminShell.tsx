@@ -15,8 +15,10 @@ const NAV: { href: string; label: string }[] = [
   { href: "/admin/rewards", label: "Rewards" },
   { href: "/admin/referrals", label: "Referrals" },
   { href: "/admin/promotions", label: "Promotions" },
+  { href: "/admin/campaigns", label: "Campaigns" },
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/audit-logs", label: "Audit Logs" },
   { href: "/admin/settings", label: "Settings" },
 ];

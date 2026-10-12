@@ -164,6 +164,8 @@ export async function rebuildDraftOrder(orderId: string) {
   const shippingCents = estimateShipping(subtotalCents, method);
 
   let discountCents = 0;
+  let campaignId: string | null = null;
+  let campaignName: string | null = null;
   if (order.promoCode) {
     const p = await db.promotion.findUnique({ where: { code: order.promoCode } });
     const now = new Date();
@@ -172,6 +174,30 @@ export async function rebuildDraftOrder(orderId: string) {
       discountCents = p.discountType === "PERCENT"
         ? Math.round((subtotalCents * Math.min(p.discountValue, 90)) / 100)
         : Math.min(p.discountValue, subtotalCents);
+    }
+  }
+  // Auto-apply best live campaign (only when no promo code beat it)
+  if (!order.promoCode || discountCents === 0) {
+    const { getActiveCampaigns, bestCampaignFor } = await import("./campaigns");
+    const live = await getActiveCampaigns();
+    if (live.length > 0) {
+      const prodIds = [...new Set(cart.lines.map((l) => l.productId))];
+      const prods = await db.product.findMany({
+        where: { id: { in: prodIds } },
+        select: { id: true, categoryId: true },
+      });
+      const catOf = new Map(prods.map((p) => [p.id, p.categoryId]));
+      const items = cart.lines.map((l) => ({
+        priceCents: l.unitPriceCents,
+        qty: l.qty,
+        categoryId: catOf.get(l.productId) ?? "",
+      }));
+      const best = bestCampaignFor(live, items, subtotalCents);
+      if (best && best.discountCents > discountCents) {
+        discountCents = best.discountCents;
+        campaignId = best.campaign.id;
+        campaignName = best.campaign.name;
+      }
     }
   }
 
@@ -207,7 +233,7 @@ export async function rebuildDraftOrder(orderId: string) {
     });
     await tx.order.update({
       where: { id: orderId },
-      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents },
+      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents, campaignId, campaignName },
     });
   });
 

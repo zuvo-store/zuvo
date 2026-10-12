@@ -124,7 +124,7 @@ export default async function ReviewPage() {
           </div>
           {order.discountCents > 0 && (
             <div className="flex justify-between rounded-lg bg-green-50 px-3 py-1.5 text-green-700">
-              <dt>🎟️ Promo{order.promoCode ? ` (${order.promoCode})` : ""}</dt>
+              <dt>🎟️ {order.campaignName ? `Sale: ${order.campaignName}` : `Promo${order.promoCode ? ` (${order.promoCode})` : ""}`}</dt>
               <dd className="font-bold">−{formatUSD(order.discountCents)}</dd>
             </div>
           )}
