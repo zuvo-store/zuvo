@@ -72,6 +72,17 @@ function parsePromotion(fd: FormData) {
   };
 }
 
+async function deletePromotion(formData: FormData) {
+  "use server";
+  const id = String(formData.get("id") ?? "");
+  const me = await getSessionUser();
+  if (!me || me.role !== "ADMIN") redirect("/admin/promotions?error=" + encodeURIComponent("Admin only."));
+  const promo = await db.promotion.findUnique({ where: { id }, select: { code: true } });
+  await db.promotion.delete({ where: { id } });
+  await audit("promotion.delete", { actorId: me.id, entity: "Promotion", entityId: id, meta: { code: promo?.code } });
+  redirect("/admin/promotions?saved=1");
+}
+
 async function createPromotion(formData: FormData) {
   "use server";
   const me = await getSessionUser();
@@ -259,9 +270,17 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
                   </span>
                 </td>
                 <td className={tdCls}>
-                  <Link href={`/admin/promotions?edit=${p.id}`} className={`${btnSecondary} ${btnSm}`}>
-                    Edit
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/promotions?edit=${p.id}`} className={`${btnSecondary} ${btnSm}`}>
+                      Edit
+                    </Link>
+                    <form action={deletePromotion} onSubmit={(e) => { if (!confirm(`Delete promotion ${p.code ?? p.title}?`)) e.preventDefault(); }}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <button type="submit" className={`${btnSm} rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50`}>
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
