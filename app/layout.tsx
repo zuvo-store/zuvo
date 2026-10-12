@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import AIAssistant from "@/components/AIAssistant";
 
 export const metadata: Metadata = {
   title: "ZUVO — Discover More. Shop Smarter.",
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main className="min-h-[60vh]">{children}</main>
         <SiteFooter />
+        <AIAssistant />
       </body>
     </html>
   );
