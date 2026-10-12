@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type ProductCard = {
   id: string;
@@ -62,6 +63,9 @@ function ProductCards({ products }: { products: ProductCard[] }) {
  * - Product cards + suggestions inside chat
  */
 export default function AIAssistant() {
+  const pathname = usePathname();
+  // Hide floating assistant on the full AI Chat page
+  if (pathname === "/ai-chat") return null;
   const [open, setOpen] = useState(false);
   const [waving, setWaving] = useState(false);
   const [talking, setTalking] = useState(false);

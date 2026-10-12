@@ -57,9 +57,12 @@ export default function AIChatPage() {
   };
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-64px)] max-w-3xl flex-col">
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#fef9f3]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-orange-100 bg-white/80 px-4 py-3 backdrop-blur">
+      <div className="flex shrink-0 items-center gap-3 border-b border-orange-100 bg-white/90 px-4 py-3 backdrop-blur">
+        <a href="/" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-lg hover:bg-gray-200" title="Back">
+          ←
+        </a>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/zuvo-assistant-wave.jpg" alt="Zuzu AI" className="h-10 w-10 rounded-full object-cover ring-2 ring-orange-200" />
         <div>
@@ -68,8 +71,8 @@ export default function AIChatPage() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      {/* Messages — only this scrolls */}
+      <div className="mx-auto w-full max-w-3xl flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
           <div className="mt-10 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,9 +130,10 @@ export default function AIChatPage() {
       )}
 
       {/* Input */}
+      <div className="shrink-0 border-t border-orange-100 bg-white">
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="flex items-center gap-2 border-t border-orange-100 bg-white px-3 py-3"
+        className="mx-auto flex w-full max-w-3xl items-center gap-2 px-3 py-3"
       >
         <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
         <button
@@ -154,6 +158,7 @@ export default function AIChatPage() {
           ➤
         </button>
       </form>
+      </div>
     </div>
   );
 }
