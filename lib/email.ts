@@ -110,3 +110,101 @@ export async function sendOrderStatusEmail(opts: {
     </div>`;
   await sendEmail(opts.to, subject, html);
 }
+
+/* ------------------------------------------------------------------ */
+/* Admin new-order notification — sent when an order is placed         */
+/* ------------------------------------------------------------------ */
+
+/** Resolve the admin notification email: ADMIN_EMAIL env, else first ADMIN user, else null. */
+export async function getAdminEmail(): Promise<string | null> {
+  if (process.env.ADMIN_EMAIL) return process.env.ADMIN_EMAIL;
+  try {
+    const { db } = await import("./db");
+    const admin = await db.user.findFirst({
+      where: { role: "ADMIN" },
+      orderBy: { createdAt: "asc" },
+      select: { email: true },
+    });
+    return admin?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function sendAdminNewOrderEmail(opts: {
+  orderId: string;
+  orderNumber: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  itemCount: number;
+  items: { name: string; qty: number; unitPriceCents: number }[];
+  totalCents: number;
+}): Promise<void> {
+  const to = await getAdminEmail();
+  if (!to) return;
+  const total = (opts.totalCents / 100).toFixed(2);
+  const subject = `🔔 New Order ${opts.orderNumber} — $${total}`;
+  const adminUrl = `${appUrl()}/admin/orders/${opts.orderId}`;
+  const itemRows = opts.items
+    .map(
+      (i) =>
+        `<tr><td style="padding:8px;border-bottom:1px solid #f4f4f5">${i.name}</td>` +
+        `<td style="padding:8px;border-bottom:1px solid #f4f4f5;text-align:center">×${i.qty}</td>` +
+        `<td style="padding:8px;border-bottom:1px solid #f4f4f5;text-align:right">$${((i.unitPriceCents * i.qty) / 100).toFixed(2)}</td></tr>`
+    )
+    .join("");
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fffdf9;border:1px solid #fde6c8;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:24px;text-align:center;color:#fff">
+        <div style="font-size:32px">🔔</div>
+        <h1 style="margin:8px 0 0;font-size:22px">New Order Received!</h1>
+        <p style="margin:6px 0 0;font-size:14px;opacity:.9">Order <b>${opts.orderNumber}</b> — $${total}</p>
+      </div>
+      <div style="padding:24px;color:#3f3f46;font-size:14px;line-height:1.6">
+        <p><b>Customer:</b> ${opts.customerName ?? "Guest"}${opts.customerEmail ? ` (${opts.customerEmail})` : ""}<br/>
+        <b>Items:</b> ${opts.itemCount} &nbsp; <b>Total:</b> $${total}</p>
+        <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px">
+          <tr style="color:#a1a1aa;text-align:left"><th style="padding:8px">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Amount</th></tr>
+          ${itemRows}
+        </table>
+        <p style="text-align:center;margin:24px 0">
+          <a href="${adminUrl}" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;font-weight:bold;padding:12px 28px;border-radius:999px">View Order in Admin →</a>
+        </p>
+      </div>
+      <div style="background:#fafaf9;padding:16px;text-align:center;color:#a1a1aa;font-size:12px">
+        ZUVO Admin Notification 🧡
+      </div>
+    </div>`;
+  await sendEmail(to, subject, html);
+}
+
+/**
+ * Fire-and-forget admin notification for a newly placed order.
+ * Fetches order details and sends; never throws.
+ */
+export async function notifyAdminNewOrder(orderId: string): Promise<void> {
+  try {
+    const { db } = await import("./db");
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { select: { name: true, qty: true, unitPriceCents: true } },
+        user: { select: { email: true, name: true } },
+      },
+    });
+    if (!order) return;
+    const contact = (order.contactJson as Record<string, string> | null) ?? null;
+    const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
+    await sendAdminNewOrderEmail({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.user?.name ?? order.guestName ?? contact?.name ?? null,
+      customerEmail: order.user?.email ?? order.guestEmail ?? contact?.email ?? null,
+      itemCount,
+      items: order.items,
+      totalCents: order.totalCents,
+    });
+  } catch (e) {
+    console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e);
+  }
+}

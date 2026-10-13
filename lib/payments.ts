@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { db } from "./db";
 import { getOrderOwned, rebuildDraftOrder, transitionOrder } from "./checkout";
 import { audit } from "./audit";
+import { notifyAdminNewOrder } from "./email";
 
 /**
  * DEMO-ONLY payment provider. No real charge is ever attempted: there is no
@@ -72,6 +73,10 @@ async function confirmPendingDemoPayment(orderId: string, actorId?: string): Pro
   });
   await audit("payment.demo", { actorId, entity: "Order", entityId: orderId, meta: { scenario: "pending-confirmed", demo: true } });
   await clearCartForOrder(order);
+  // Notify admin of the new order — fire and forget.
+  notifyAdminNewOrder(orderId).catch((e) =>
+    console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
+  );
 }
 
 async function clearCartForOrder(order: { userId: string | null; guestToken: string | null }) {
@@ -143,6 +148,10 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
         });
         await audit("payment.demo", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { scenario, transactionRef } });
         await clearCartForOrder(order);
+        // Notify admin of the new order — fire and forget.
+        notifyAdminNewOrder(orderId).catch((e) =>
+          console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
+        );
         return { ok: true, paymentStatus: "SUCCEEDED", orderStatus: "CONFIRMED", message: "Demo payment successful.", transactionRef };
       }
       case "declined": {

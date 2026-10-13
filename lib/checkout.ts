@@ -3,7 +3,7 @@ import { db } from "./db";
 import { getGuestToken, getSessionUser } from "./auth";
 import { getCart, estimateShipping } from "./cart";
 import { audit } from "./audit";
-import { sendOrderStatusEmail } from "./email";
+import { sendOrderStatusEmail, notifyAdminNewOrder } from "./email";
 
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -316,6 +316,13 @@ export async function transitionOrder(
     const name = order.user?.name ?? order.guestName ?? contact?.name ?? null;
     sendOrderStatusEmail({ to: to_, name, orderNumber: updated.orderNumber, status: to }).catch((e) =>
       console.error("[zuvo] order status email failed:", e instanceof Error ? e.message : e)
+    );
+  }
+
+  // Notify the admin on new orders — fire and forget.
+  if (to === "CONFIRMED") {
+    notifyAdminNewOrder(orderId).catch((e) =>
+      console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
     );
   }
   return updated;
