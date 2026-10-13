@@ -30,18 +30,23 @@ Now do the same for the product below. Output ONLY the two lines.`,
       user: `Product: ${name.trim()}${brand ? `, Brand: ${brand}` : ""}${category ? `, Category: ${category}` : ""}${shortDesc ? `, About: ${shortDesc}` : ""}`,
       maxTokens: 300,
       temperature: 0.7,
-      retries: 2,
+      retries: 3,
     });
-    if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
-    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const lines = (text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     // Strip any "Title:"/"Description:" labels the model might add
     const clean = (l: string) => l.replace(/^(title|seo title|description|meta description)\s*:\s*/i, "").trim();
-    const seoTitle = lines[0] ? clean(lines[0]) : "";
-    const seoDescription = lines[1] ? clean(lines[1]) : "";
+    let seoTitle = lines[0] ? clean(lines[0]) : "";
+    let seoDescription = lines[1] ? clean(lines[1]) : "";
+    let fallback = false;
     if (!seoTitle || !seoDescription) {
-      return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
+      // AI failed — use a smart template so the button never dead-ends
+      fallback = true;
+      const n = name.trim();
+      seoTitle = `${n} - Buy Online | Best Price`.slice(0, 60);
+      const about = shortDesc?.trim() || `${n} at the best price.`;
+      seoDescription = `${about} Free shipping at ZUVO. Order today!`.slice(0, 160);
     }
-    return NextResponse.json({ ok: true, seoTitle, seoDescription });
+    return NextResponse.json({ ok: true, seoTitle, seoDescription, fallback });
   } catch {
     return NextResponse.json({ ok: false, error: "Something went wrong" }, { status: 500 });
   }

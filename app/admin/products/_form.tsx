@@ -46,7 +46,7 @@ function GenerateSeoButton({ categories }: { categories: CategoryOpt[] }) {
         const de = form.querySelector('[name="seoDescription"]') as HTMLTextAreaElement | null;
         if (t) { t.value = d.seoTitle; t.dispatchEvent(new Event("input", { bubbles: true })); }
         if (de) { de.value = d.seoDescription; de.dispatchEvent(new Event("input", { bubbles: true })); }
-        setMsg("✓ SEO generated — review and tweak as needed.");
+        setMsg(d.fallback ? "✓ SEO filled (smart template — AI was busy, tweak as needed)." : "✓ SEO generated — review and tweak as needed.");
       } else {
         setMsg(d?.error ?? "AI unavailable right now.");
       }
