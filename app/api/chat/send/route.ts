@@ -59,6 +59,25 @@ export async function POST(req: NextRequest) {
         body: text,
       },
     });
+
+    // Auto-reply: first customer message in a conversation gets an instant acknowledgment
+    if (!isAdmin) {
+      const hasAuto = await db.message.findFirst({
+        where: { conversationId: convId, senderRole: "SYSTEM" },
+        select: { id: true },
+      });
+      if (!hasAuto) {
+        await db.message.create({
+          data: {
+            conversationId: convId,
+            senderId: me.id,
+            senderRole: "SYSTEM",
+            body: "Thanks for reaching out! 🙏 Please wait — our support team will reply here soon, usually within a few hours.",
+          },
+        });
+      }
+    }
+
     await db.conversation.update({
       where: { id: convId },
       data: { lastMessageAt: new Date(), status: "OPEN" },

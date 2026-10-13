@@ -81,6 +81,15 @@ export default function OrderChat({ orderId }: { orderId: string }) {
           </p>
         ) : (
           messages.map((m) => {
+            if (m.senderRole === "SYSTEM") {
+              return (
+                <div key={m.id} className="flex justify-center px-4">
+                  <p className="rounded-full bg-zinc-200/80 px-4 py-1.5 text-center text-xs font-medium text-zinc-600">
+                    {m.body}
+                  </p>
+                </div>
+              );
+            }
             const mine = m.senderRole === "CUSTOMER";
             return (
               <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>

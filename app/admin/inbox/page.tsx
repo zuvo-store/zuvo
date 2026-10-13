@@ -176,6 +176,15 @@ export default function InboxPage() {
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto bg-zinc-50 p-4">
                 {messages.map((m) => {
+                  if (m.senderRole === "SYSTEM") {
+                    return (
+                      <div key={m.id} className="flex justify-center px-4">
+                        <p className="rounded-full bg-zinc-200/80 px-4 py-1.5 text-center text-xs font-medium text-zinc-600">
+                          {m.body}
+                        </p>
+                      </div>
+                    );
+                  }
                   const mine = m.senderRole === "ADMIN";
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>

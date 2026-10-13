@@ -38,10 +38,10 @@ export async function GET(req: NextRequest) {
       select: { id: true, senderId: true, senderRole: true, body: true, createdAt: true },
     });
 
-    // Mark incoming as read
-    const myRole = isAdmin ? "ADMIN" : "CUSTOMER";
+    // Mark incoming human messages as read (system notices excluded)
+    const oppositeRole = isAdmin ? "CUSTOMER" : "ADMIN";
     await db.message.updateMany({
-      where: { conversationId, senderRole: { not: myRole }, readAt: null },
+      where: { conversationId, senderRole: oppositeRole, readAt: null },
       data: { readAt: new Date() },
     });
 

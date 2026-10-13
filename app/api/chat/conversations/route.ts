@@ -12,7 +12,7 @@ export async function GET() {
   if (!me) return NextResponse.json({ ok: false, error: "Sign in required" }, { status: 401 });
   try {
     const isAdmin = me.role === "ADMIN";
-    const myRole = isAdmin ? "ADMIN" : "CUSTOMER";
+    const oppositeRole = isAdmin ? "CUSTOMER" : "ADMIN";
 
     const convs = await db.conversation.findMany({
       where: isAdmin ? {} : { userId: me.id },
@@ -28,7 +28,7 @@ export async function GET() {
         },
         _count: {
           select: {
-            messages: { where: { senderRole: { not: myRole }, readAt: null } },
+            messages: { where: { senderRole: oppositeRole, readAt: null } },
           },
         },
       },
