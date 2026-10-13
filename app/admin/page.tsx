@@ -286,34 +286,75 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       </div>
 
       {/* Revenue chart */}
+      {/* Revenue trend — trading-style line chart */}
       <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Revenue trend</h2>
       <div className={`${cardCls} p-5`}>
         {daily.every((d) => d.cents === 0) ? (
           <p className="py-6 text-center text-sm text-zinc-400">No revenue in this period.</p>
         ) : (
-          <div>
-            <div className="flex h-40 items-end gap-1.5">
-              {daily.map((d, i) => (
-                <div key={i} className="group relative flex h-full flex-1 items-end">
-                  <div
-                    className="w-full rounded-t-md bg-gradient-to-t from-orange-500 to-amber-400 transition group-hover:from-orange-600 group-hover:to-amber-500"
-                    style={{ height: `${Math.max(3, (d.cents / maxCents) * 100)}%` }}
-                    title={`${d.label}: ${formatUSD(d.cents)}`}
-                  />
-                  <span className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-bold text-white group-hover:block">
-                    {formatUSD(d.cents)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 flex gap-1.5">
-              {daily.map((d, i) => (
-                <p key={i} className="flex-1 truncate text-center text-[10px] text-zinc-400">
-                  {buckets > 14 && i % 2 === 1 ? "" : d.label}
-                </p>
-              ))}
-            </div>
-          </div>
+          (() => {
+            // Nice rounded Y-axis max (1 / 2 / 2.5 / 5 × 10^n)
+            const niceCeil = (v: number) => {
+              if (v <= 0) return 10;
+              const exp = Math.floor(Math.log10(v));
+              const base = Math.pow(10, exp);
+              const n = v / base;
+              const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+              return nice * base;
+            };
+            const yMax = niceCeil(maxCents / 100) * 100;
+            const W = 640, H = 260, padL = 52, padR = 14, padT = 14, padB = 30;
+            const iw = W - padL - padR, ih = H - padT - padB;
+            const n = daily.length;
+            const px = (i: number) => (n === 1 ? padL + iw / 2 : padL + (i / (n - 1)) * iw);
+            const py = (cents: number) => padT + ih * (1 - cents / yMax);
+            const line = daily.map((d, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${py(d.cents).toFixed(1)}`).join(" ");
+            const area = `${line} L${px(n - 1).toFixed(1)},${(padT + ih).toFixed(1)} L${px(0).toFixed(1)},${(padT + ih).toFixed(1)} Z`;
+            const ticks = [0, 1, 2, 3, 4].map((t) => (yMax / 4) * t);
+            const xStep = n > 15 ? 3 : n > 8 ? 2 : 1;
+            const gid = "revGrad";
+            return (
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Revenue trend line chart">
+                <defs>
+                  <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f97316" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#f97316" stopOpacity="0.02" />
+                  </linearGradient>
+                </defs>
+                {/* gridlines + Y labels */}
+                {ticks.map((t, i) => (
+                  <g key={i}>
+                    <line
+                      x1={padL} y1={py(t)} x2={W - padR} y2={py(t)}
+                      stroke="#e4e4e7" strokeWidth="1" strokeDasharray={i === 0 ? "" : "4 4"}
+                    />
+                    <text x={padL - 8} y={py(t) + 4} textAnchor="end" fontSize="11" fill="#71717a" fontWeight="600">
+                      ${Math.round(t / 100)}
+                    </text>
+                  </g>
+                ))}
+                {/* area + line */}
+                <path d={area} fill={`url(#${gid})`} />
+                <path d={line} fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                {/* points */}
+                {daily.map((d, i) => (
+                  <g key={i}>
+                    <circle cx={px(i)} cy={py(d.cents)} r="4" fill="#fff" stroke="#f97316" strokeWidth="2.5">
+                      <title>{`${d.label}: ${formatUSD(d.cents)}`}</title>
+                    </circle>
+                  </g>
+                ))}
+                {/* X labels */}
+                {daily.map((d, i) =>
+                  i % xStep === 0 || i === n - 1 ? (
+                    <text key={i} x={px(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#a1a1aa">
+                      {d.label}
+                    </text>
+                  ) : null
+                )}
+              </svg>
+            );
+          })()
         )}
       </div>
 
