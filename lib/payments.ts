@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { db } from "./db";
 import { getOrderOwned, rebuildDraftOrder, transitionOrder } from "./checkout";
 import { audit } from "./audit";
-import { notifyAdminNewOrder, notifyCustomerOrderConfirmed } from "./email";
+import { notifyAdminNewOrder, notifyCustomerOrderConfirmed, orderEmailData } from "./email";
 
 /**
  * DEMO-ONLY payment provider. No real charge is ever attempted: there is no
@@ -73,12 +73,17 @@ async function confirmPendingDemoPayment(orderId: string, actorId?: string): Pro
   });
   await audit("payment.demo", { actorId, entity: "Order", entityId: orderId, meta: { scenario: "pending-confirmed", demo: true } });
   await clearCartForOrder(order);
+  // Build email data here in request context (DB healthy); the sends below never touch the DB.
+  const pendingEmailUser = order.userId
+    ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
+    : null;
+  const pendingEmailData = orderEmailData({ ...order, user: pendingEmailUser });
   // Notify admin of the new order — fire and forget.
-  notifyAdminNewOrder(orderId).catch((e) =>
+  notifyAdminNewOrder(pendingEmailData.admin).catch((e) =>
     console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
   );
   // Notify the customer that their order is confirmed — fire and forget.
-  notifyCustomerOrderConfirmed(orderId).catch((e) =>
+  notifyCustomerOrderConfirmed(pendingEmailData.customer).catch((e) =>
     console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
   );
 }
@@ -152,12 +157,17 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
         });
         await audit("payment.demo", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { scenario, transactionRef } });
         await clearCartForOrder(order);
+        // Build email data here in request context (DB healthy); the sends below never touch the DB.
+        const successEmailUser = order.userId
+          ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
+          : null;
+        const successEmailData = orderEmailData({ ...order, user: successEmailUser });
         // Notify admin of the new order — fire and forget.
-        notifyAdminNewOrder(orderId).catch((e) =>
+        notifyAdminNewOrder(successEmailData.admin).catch((e) =>
           console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
         );
         // Notify the customer that their order is confirmed — fire and forget.
-        notifyCustomerOrderConfirmed(orderId).catch((e) =>
+        notifyCustomerOrderConfirmed(successEmailData.customer).catch((e) =>
           console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
         );
         return { ok: true, paymentStatus: "SUCCEEDED", orderStatus: "CONFIRMED", message: "Demo payment successful.", transactionRef };

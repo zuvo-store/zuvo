@@ -180,50 +180,88 @@ export async function sendAdminNewOrderEmail(opts: {
 
 /**
  * Fire-and-forget customer notification for a newly confirmed order.
- * Fetches order details and sends the "Order confirmed!" email; never throws.
+ * Takes pre-fetched data — no DB query, so pool exhaustion can't break it.
+ * Never throws.
  */
-export async function notifyCustomerOrderConfirmed(orderId: string): Promise<void> {
+export async function notifyCustomerOrderConfirmed(data: CustomerOrderEmailData): Promise<void> {
   try {
-    const { db } = await import("./db");
-    const order = await db.order.findUnique({
-      where: { id: orderId },
-      include: { user: { select: { email: true, name: true } } },
-    });
-    if (!order) return;
-    const contact = (order.contactJson as Record<string, string> | null) ?? null;
-    const to = order.user?.email ?? order.guestEmail ?? contact?.email ?? null;
-    const name = order.user?.name ?? order.guestName ?? contact?.name ?? null;
-    await sendOrderStatusEmail({ to, name, orderNumber: order.orderNumber, status: "CONFIRMED" });
+    await sendOrderStatusEmail({ to: data.to, name: data.name, orderNumber: data.orderNumber, status: "CONFIRMED" });
   } catch (e) {
     console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e);
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Pre-fetched email data — build in request context, send fire-and-   */
+/* forget. Emails never touch the DB, so they survive pool exhaustion. */
+/* ------------------------------------------------------------------ */
+
+export type AdminOrderEmailData = {
+  orderId: string;
+  orderNumber: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  itemCount: number;
+  items: { name: string; qty: number; unitPriceCents: number }[];
+  totalCents: number;
+};
+
+export type CustomerOrderEmailData = {
+  to?: string | null;
+  name?: string | null;
+  orderNumber: string;
+};
+
+export type OrderForEmail = {
+  id: string;
+  orderNumber: string;
+  totalCents: number;
+  guestName?: string | null;
+  guestEmail?: string | null;
+  contactJson?: unknown;
+  user?: { email?: string | null; name?: string | null } | null;
+  items: { name: string; qty: number; unitPriceCents: number }[];
+};
+
 /**
- * Fire-and-forget admin notification for a newly placed order.
- * Fetches order details and sends; never throws.
+ * Build admin + customer email data from an already-fetched order.
+ * Call this in the request context (where DB access is healthy), then pass
+ * the result to the notify functions fire-and-forget.
  */
-export async function notifyAdminNewOrder(orderId: string): Promise<void> {
-  try {
-    const { db } = await import("./db");
-    const order = await db.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: { select: { name: true, qty: true, unitPriceCents: true } },
-        user: { select: { email: true, name: true } },
-      },
-    });
-    if (!order) return;
-    const contact = (order.contactJson as Record<string, string> | null) ?? null;
-    const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
-    await sendAdminNewOrderEmail({
+export function orderEmailData(order: OrderForEmail): { admin: AdminOrderEmailData; customer: CustomerOrderEmailData } {
+  const contact = (order.contactJson as Record<string, string> | null) ?? null;
+  const customerEmail = order.user?.email ?? order.guestEmail ?? contact?.email ?? null;
+  const customerName = order.user?.name ?? order.guestName ?? contact?.name ?? null;
+  const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
+  return {
+    admin: {
       orderId: order.id,
       orderNumber: order.orderNumber,
-      customerName: order.user?.name ?? order.guestName ?? contact?.name ?? null,
-      customerEmail: order.user?.email ?? order.guestEmail ?? contact?.email ?? null,
+      customerName,
+      customerEmail,
       itemCount,
-      items: order.items,
+      items: order.items.map((i) => ({ name: i.name, qty: i.qty, unitPriceCents: i.unitPriceCents })),
       totalCents: order.totalCents,
+    },
+    customer: { to: customerEmail, name: customerName, orderNumber: order.orderNumber },
+  };
+}
+
+/**
+ * Fire-and-forget admin notification for a newly placed order.
+ * Takes pre-fetched data — no DB query, so pool exhaustion can't break it.
+ * Never throws.
+ */
+export async function notifyAdminNewOrder(data: AdminOrderEmailData): Promise<void> {
+  try {
+    await sendAdminNewOrderEmail({
+      orderId: data.orderId,
+      orderNumber: data.orderNumber,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      itemCount: data.itemCount,
+      items: data.items,
+      totalCents: data.totalCents,
     });
   } catch (e) {
     console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e);

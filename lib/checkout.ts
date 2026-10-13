@@ -3,7 +3,7 @@ import { db } from "./db";
 import { getGuestToken, getSessionUser } from "./auth";
 import { getCart, estimateShipping } from "./cart";
 import { audit } from "./audit";
-import { sendOrderStatusEmail, notifyAdminNewOrder } from "./email";
+import { sendOrderStatusEmail, notifyAdminNewOrder, orderEmailData } from "./email";
 
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -301,7 +301,10 @@ export async function transitionOrder(
 ) {
   const order = await db.order.findUniqueOrThrow({
     where: { id: orderId },
-    include: { user: { select: { email: true, name: true } } },
+    include: {
+      user: { select: { email: true, name: true } },
+      items: { select: { name: true, qty: true, unitPriceCents: true } },
+    },
   });
   if (!canTransition(order.status, to)) {
     throw new Error(`Cannot move order from ${order.status} to ${to}.`);
@@ -319,9 +322,10 @@ export async function transitionOrder(
     );
   }
 
-  // Notify the admin on new orders — fire and forget.
+  // Notify the admin on new orders — fire and forget (data pre-fetched; no DB in the send path).
   if (to === "CONFIRMED") {
-    notifyAdminNewOrder(orderId).catch((e) =>
+    const emailData = orderEmailData({ ...updated, items: order.items, user: order.user });
+    notifyAdminNewOrder(emailData.admin).catch((e) =>
       console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
     );
   }
