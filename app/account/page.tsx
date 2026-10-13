@@ -178,7 +178,8 @@ export default async function AccountDashboard() {
       </div>
       </Reveal>
 
-      {/* Coupon bundle banner */}
+      {/* Coupon bundle banner — only while the reward can still be claimed */}
+      {reward?.status === "AVAILABLE" && (
       <Reveal delay={100}>
       <div className="mt-3 flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-lg font-extrabold text-amber-700">
@@ -192,10 +193,11 @@ export default async function AccountDashboard() {
           href="/rewards/claim"
           className="shrink-0 rounded-full bg-orange-500 px-6 py-2 text-sm font-bold text-white shadow hover:bg-orange-600"
         >
-          {reward?.status === "CLAIMED" ? "Claimed" : "Get"}
+          Get
         </Link>
       </div>
       </Reveal>
+      )}
 
       {/* Menu rows */}
       <nav className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm" aria-label="Account">
