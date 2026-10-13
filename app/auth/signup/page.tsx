@@ -10,12 +10,14 @@ export const metadata = { title: "Create account — ZUVO" };
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string; error?: string }>;
+  searchParams: Promise<{ ref?: string; error?: string; next?: string }>;
 }) {
   const user = await getSessionUser();
   if (user) redirect("/");
 
   const sp = await searchParams;
+  const nextRaw = sp.next;
+  const nextPath = nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/";
   // Prefill the demo code when no ?ref= is present (editable and removable).
   const initialRef = sp.ref?.trim() || DEMO_REFERRAL_CODE;
   const oauthError = googleErrorMessage(sp.error);
@@ -38,7 +40,7 @@ export default async function SignupPage({
           </div>
         </div>
       )}
-      <SignupForm initialRef={initialRef} />
+      <SignupForm initialRef={initialRef} nextPath={nextPath} />
     </div>
   );
 }

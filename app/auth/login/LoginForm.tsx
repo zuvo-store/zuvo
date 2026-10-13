@@ -107,21 +107,20 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
           {pending ? "Signing you in…" : "Sign in"}
         </button>
 
+        <div className="my-1 flex items-center gap-3 text-xs text-zinc-400">
+          <span className="h-px flex-1 bg-zinc-200" />
+          New to ZUVO?
+          <span className="h-px flex-1 bg-zinc-200" />
+        </div>
+
         <Link
-          href="/"
-          className="inline-flex w-full justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+          href={nextPath && nextPath !== "/" ? `/auth/signup?next=${encodeURIComponent(nextPath)}` : "/auth/signup"}
+          className="inline-flex w-full justify-center rounded-xl border-2 border-orange-500 px-4 py-2.5 text-sm font-bold text-orange-600 hover:bg-orange-50"
         >
-          Continue as Guest — no account needed
+          Create an account
         </Link>
         <p className="text-xs text-zinc-500">
-          Guest shopping works fully: you can fill your cart and check out without an account.
-        </p>
-
-        <p className="text-center text-sm text-zinc-600">
-          New to ZUVO?{" "}
-          <Link href="/auth/signup" className="font-medium text-brand-700 underline">
-            Create an account
-          </Link>
+          An account is required to shop — your cart, orders and rewards stay saved.
         </p>
       </div>
     </form>

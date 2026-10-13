@@ -6,7 +6,7 @@ import Link from "next/link";
 import { btnPrimary, inputCls, cardCls, Field, FormError } from "@/components/ui";
 import VerifyCodeForm from "@/components/VerifyCodeForm";
 
-export default function SignupForm({ initialRef }: { initialRef: string }) {
+export default function SignupForm({ initialRef, nextPath }: { initialRef: string; nextPath: string }) {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -62,7 +62,7 @@ export default function SignupForm({ initialRef }: { initialRef: string }) {
         setVerifyEmail(data.email as string);
         setDemoCode((data.demoCode as string) ?? null);
       } else {
-        router.push("/");
+        router.push(nextPath);
         router.refresh();
       }
     } catch {
