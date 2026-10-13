@@ -27,6 +27,7 @@ export default async function PaymentPage() {
         orderNumber={order.orderNumber}
         totalCents={order.totalCents}
         scenarioLabels={SCENARIO_LABELS}
+        stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? null}
       />
     </main>
   );

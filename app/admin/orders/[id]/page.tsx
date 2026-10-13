@@ -41,10 +41,14 @@ export default async function AdminOrderDetailPage({
 
   const nextStatuses = VALID_TRANSITIONS[order.status] ?? [];
   const hasSucceeded = order.payments.some((p) => p.status === "SUCCEEDED");
-  // Demo-provider pending payments only — COD pending payments get their own "Mark payment received" action.
-  const hasPending = order.payments.some((p) => p.status === "PENDING" && p.provider !== "cod");
+  // Demo-provider pending payments only — COD and Stripe pending payments get
+  // their own actions and must never be confirmed through the demo path.
+  const hasPending = order.payments.some((p) => p.status === "PENDING" && p.provider === "demo");
   const isCodOrder = order.payments.some((p) => p.provider === "cod");
   const hasPendingCod = order.payments.some((p) => p.provider === "cod" && p.status === "PENDING");
+  const stripePayment = order.payments.find((p) => p.provider === "stripe");
+  const isStripeOrder = Boolean(stripePayment);
+  const stripeTestMode = (stripePayment?.resultJson as Record<string, unknown> | null)?.stripeTestMode === true;
 
   async function transition(formData: FormData) {
     "use server";
@@ -132,6 +136,9 @@ export default async function AdminOrderDetailPage({
         <Badge tone={statusTone(order.paymentStatus)}>{order.paymentStatus}</Badge>
         {isCodOrder && (
           <Badge tone="bg-green-100 text-green-800">💵 Cash on Delivery</Badge>
+        )}
+        {isStripeOrder && (
+          <Badge tone="bg-indigo-100 text-indigo-800">💳 Stripe{stripeTestMode ? " (test)" : ""}</Badge>
         )}
         <span className="text-sm text-zinc-500">placed {fmtDate(order.createdAt)}</span>
       </div>
@@ -309,7 +316,7 @@ export default async function AdminOrderDetailPage({
               {order.payments.map((p) => (
                 <tr key={p.id} className="hover:bg-zinc-50">
                   <td className={tdCls}>{p.transactionRef ?? "—"}</td>
-                  <td className={tdCls}>{p.provider === "cod" ? "💵 Cash on Delivery" : (SCENARIO_LABELS[p.scenario as keyof typeof SCENARIO_LABELS] ?? p.scenario)}</td>
+                  <td className={tdCls}>{p.provider === "cod" ? "💵 Cash on Delivery" : p.provider === "stripe" ? "💳 Stripe" : (SCENARIO_LABELS[p.scenario as keyof typeof SCENARIO_LABELS] ?? p.scenario)}</td>
                   <td className={tdCls}>
                     <Badge tone={statusTone(p.status)}>{p.status}</Badge>
                   </td>

@@ -233,6 +233,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       <p className="mt-1 rounded-lg bg-green-50 px-2 py-1 text-xs font-medium text-green-800">
                         💵 Cash on Delivery — pay {formatUSD(p.amountCents)} in cash when your order arrives.
                       </p>
+                    ) : p.provider === "stripe" ? (
+                      <p className="mt-1 rounded-lg bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-800">
+                        💳 Paid by card via Stripe{(p.resultJson as Record<string, unknown> | null)?.stripeTestMode === true ? " (test mode)" : ""}.
+                      </p>
                     ) : (
                       <p className="text-xs text-zinc-500">Demo scenario: {p.scenario}</p>
                     )}

@@ -1,8 +1,27 @@
 import { randomBytes } from "crypto";
+import Stripe from "stripe";
 import { db } from "./db";
 import { getOrderOwned, rebuildDraftOrder, transitionOrder } from "./checkout";
 import { audit } from "./audit";
 import { notifyAdminNewOrder, notifyCustomerOrderConfirmed, orderEmailData } from "./email";
+
+/**
+ * STRIPE (test mode) helpers. The Stripe client is constructed lazily so this
+ * module loads fine when Stripe env vars are absent; every Stripe entry point
+ * throws a friendly error instead.
+ */
+let stripeClient: Stripe | null = null;
+
+export function isStripeConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+}
+
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Stripe is not configured yet (STRIPE_SECRET_KEY missing).");
+  if (!stripeClient) stripeClient = new Stripe(key);
+  return stripeClient;
+}
 
 /**
  * DEMO-ONLY payment provider. No real charge is ever attempted: there is no
@@ -96,6 +115,126 @@ async function clearCartForOrder(order: { userId: string | null; guestToken: str
   }
 }
 
+export interface ConfirmOrderPaymentInput {
+  provider: string; // "demo" | "cod" | "stripe"
+  scenario: string; // demo scenario | "cod" | "stripe"
+  transactionRef: string; // DEMOTXN-... | pi_...
+  paymentStatus: "SUCCEEDED" | "PENDING"; // COD keeps payment PENDING until cash is collected
+  resultJson: unknown;
+  auditEvent: string; // "payment.demo" | "payment.cod" | "payment.stripe"
+  auditMeta: Record<string, unknown>;
+}
+
+/**
+ * Shared order-confirmation core used by the demo success path, COD, and
+ * Stripe: atomic stock deduction, payment row, order → CONFIRMED, ZUZU point
+ * deduction, cart clearing, and admin + customer emails.
+ *
+ * Idempotent: if a payment with the same transactionRef is already SUCCEEDED
+ * (e.g. webhook and client confirm racing), it returns the order number
+ * without touching stock twice.
+ */
+export async function confirmOrderWithPayment(
+  orderId: string,
+  input: ConfirmOrderPaymentInput,
+): Promise<{ orderNumber: string }> {
+  const already = await db.payment.findFirst({
+    where: { orderId, transactionRef: input.transactionRef, status: "SUCCEEDED" },
+    select: { id: true },
+  });
+  if (already) {
+    const done = await db.order.findUniqueOrThrow({ where: { id: orderId }, select: { orderNumber: true } });
+    return { orderNumber: done.orderNumber };
+  }
+
+  const owned = await getOrderOwned(orderId);
+  if (!owned) throw new Error("Order not found.");
+  if (owned.status !== "DRAFT" && owned.status !== "PENDING_PAYMENT") {
+    throw new Error("This order can no longer be paid.");
+  }
+
+  // Re-price everything from the database right before confirming.
+  const order = await rebuildDraftOrder(orderId);
+  if (order.totalCents <= 0) throw new Error("Order total is invalid.");
+
+  await db.$transaction(async (tx) => {
+    // Atomic stock check + deduction; throws on insufficient stock (rolls back).
+    for (const item of order.items) {
+      if (item.variantId) {
+        const v = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
+        if (v.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${v.stock} left.`);
+        await tx.productVariant.update({ where: { id: v.id }, data: { stock: v.stock - item.qty } });
+      } else if (item.productId) {
+        const p = await tx.product.findUniqueOrThrow({ where: { id: item.productId } });
+        if (p.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${p.stock} left.`);
+        await tx.product.update({ where: { id: p.id }, data: { stock: p.stock - item.qty } });
+      }
+    }
+    // Reuse the payment row when one was pre-created (e.g. Stripe intent),
+    // otherwise record a fresh one.
+    const existingRow = await tx.payment.findFirst({ where: { orderId, transactionRef: input.transactionRef } });
+    const paymentData = {
+      provider: input.provider,
+      scenario: input.scenario,
+      amountCents: order.totalCents,
+      currency: order.currency,
+      transactionRef: input.transactionRef,
+      status: input.paymentStatus,
+      resultJson: input.resultJson as object,
+    };
+    if (existingRow) {
+      await tx.payment.update({ where: { id: existingRow.id }, data: paymentData });
+    } else {
+      await tx.payment.create({ data: { orderId, ...paymentData } });
+    }
+    await tx.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: input.paymentStatus, status: "CONFIRMED" },
+    });
+    // Deduct redeemed ZUZU points
+    const confirmedOrder = await tx.order.findUnique({
+      where: { id: orderId },
+      select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true },
+    });
+    if (confirmedOrder?.userId && confirmedOrder.zuzuPointsRedeemed > 0) {
+      await tx.user.update({
+        where: { id: confirmedOrder.userId },
+        data: {
+          zuzuPoints: { decrement: confirmedOrder.zuzuPointsRedeemed },
+          zuzuPointsLogs: {
+            create: {
+              amount: -confirmedOrder.zuzuPointsRedeemed,
+              kind: "REDEEM",
+              note: `Redeemed on order ${confirmedOrder.orderNumber}`,
+            },
+          },
+        },
+      });
+    }
+  });
+  await audit(input.auditEvent, {
+    actorId: order.userId ?? undefined,
+    entity: "Order",
+    entityId: orderId,
+    meta: input.auditMeta,
+  });
+  await clearCartForOrder(order);
+  // Build email data here in request context (DB healthy); the sends below never touch the DB.
+  const emailUser = order.userId
+    ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
+    : null;
+  const emailData = orderEmailData({ ...order, user: emailUser });
+  // Notify admin of the new order — fire and forget.
+  notifyAdminNewOrder(emailData.admin).catch((e) =>
+    console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e),
+  );
+  // Notify the customer that their order is confirmed — fire and forget.
+  notifyCustomerOrderConfirmed(emailData.customer).catch((e) =>
+    console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e),
+  );
+  return { orderNumber: order.orderNumber };
+}
+
 export const DemoPaymentProvider: DemoPaymentProvider = {
   async createPaymentSession(orderId: string) {
     const order = await getOrderOwned(orderId);
@@ -127,49 +266,15 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
 
     switch (scenario) {
       case "success": {
-        // Everything that must stay consistent (stock, payment, order) happens
-        // in ONE transaction: if stock is insufficient the whole thing rolls back.
-        await db.$transaction(async (tx) => {
-          for (const item of order.items) {
-            if (item.variantId) {
-              const v = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
-              if (v.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${v.stock} left.`);
-              await tx.productVariant.update({ where: { id: v.id }, data: { stock: v.stock - item.qty } });
-            } else if (item.productId) {
-              const p = await tx.product.findUniqueOrThrow({ where: { id: item.productId } });
-              if (p.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${p.stock} left.`);
-              await tx.product.update({ where: { id: p.id }, data: { stock: p.stock - item.qty } });
-            }
-          }
-          await tx.payment.create({ data: { ...base, status: "SUCCEEDED", resultJson: { demo: true, scenario } } });
-          await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "SUCCEEDED", status: "CONFIRMED" } });
-          // Deduct redeemed ZUZU points
-          const ok2 = await tx.order.findUnique({ where: { id: orderId }, select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true } });
-          if (ok2?.userId && ok2.zuzuPointsRedeemed > 0) {
-            await tx.user.update({
-              where: { id: ok2.userId },
-              data: {
-                zuzuPoints: { decrement: ok2.zuzuPointsRedeemed },
-                zuzuPointsLogs: { create: { amount: -ok2.zuzuPointsRedeemed, kind: "REDEEM", note: `Redeemed on order ${ok2.orderNumber}` } },
-              },
-            });
-          }
+        await confirmOrderWithPayment(orderId, {
+          provider: "demo",
+          scenario,
+          transactionRef,
+          paymentStatus: "SUCCEEDED",
+          resultJson: { demo: true, scenario },
+          auditEvent: "payment.demo",
+          auditMeta: { scenario, transactionRef },
         });
-        await audit("payment.demo", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { scenario, transactionRef } });
-        await clearCartForOrder(order);
-        // Build email data here in request context (DB healthy); the sends below never touch the DB.
-        const successEmailUser = order.userId
-          ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
-          : null;
-        const successEmailData = orderEmailData({ ...order, user: successEmailUser });
-        // Notify admin of the new order — fire and forget.
-        notifyAdminNewOrder(successEmailData.admin).catch((e) =>
-          console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
-        );
-        // Notify the customer that their order is confirmed — fire and forget.
-        notifyCustomerOrderConfirmed(successEmailData.customer).catch((e) =>
-          console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
-        );
         return { ok: true, paymentStatus: "SUCCEEDED", orderStatus: "CONFIRMED", message: "Demo payment successful.", transactionRef };
       }
       case "declined": {
@@ -244,69 +349,16 @@ export { confirmPendingDemoPayment };
  * status PENDING until the admin marks it received.
  */
 export async function processCodPayment(orderId: string): Promise<{ ok: boolean; orderNumber: string }> {
-  const owned = await getOrderOwned(orderId);
-  if (!owned) throw new Error("Order not found.");
-  if (owned.status !== "DRAFT" && owned.status !== "PENDING_PAYMENT") {
-    throw new Error("This order can no longer be placed.");
-  }
-
-  // Re-price everything from the database right before confirming.
-  const order = await rebuildDraftOrder(orderId);
-  if (order.totalCents <= 0) throw new Error("Order total is invalid.");
-
-  await db.$transaction(async (tx) => {
-    // Atomic stock check + deduction; throws on insufficient stock (rolls back).
-    for (const item of order.items) {
-      if (item.variantId) {
-        const v = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
-        if (v.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${v.stock} left.`);
-        await tx.productVariant.update({ where: { id: v.id }, data: { stock: v.stock - item.qty } });
-      } else if (item.productId) {
-        const p = await tx.product.findUniqueOrThrow({ where: { id: item.productId } });
-        if (p.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${p.stock} left.`);
-        await tx.product.update({ where: { id: p.id }, data: { stock: p.stock - item.qty } });
-      }
-    }
-    await tx.payment.create({
-      data: {
-        orderId,
-        provider: "cod",
-        scenario: "cod",
-        amountCents: order.totalCents,
-        currency: order.currency,
-        status: "PENDING",
-        resultJson: { cod: true },
-      },
-    });
-    await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "PENDING", status: "CONFIRMED" } });
-    // Deduct redeemed ZUZU points
-    const cod2 = await tx.order.findUnique({ where: { id: orderId }, select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true } });
-    if (cod2?.userId && cod2.zuzuPointsRedeemed > 0) {
-      await tx.user.update({
-        where: { id: cod2.userId },
-        data: {
-          zuzuPoints: { decrement: cod2.zuzuPointsRedeemed },
-          zuzuPointsLogs: { create: { amount: -cod2.zuzuPointsRedeemed, kind: "REDEEM", note: `Redeemed on order ${cod2.orderNumber}` } },
-        },
-      });
-    }
+  const { orderNumber } = await confirmOrderWithPayment(orderId, {
+    provider: "cod",
+    scenario: "cod",
+    transactionRef: `COD-${orderId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+    paymentStatus: "PENDING",
+    resultJson: { cod: true },
+    auditEvent: "payment.cod",
+    auditMeta: { cod: true },
   });
-  await audit("payment.cod", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { cod: true } });
-  await clearCartForOrder(order);
-  // Build email data here in request context (DB healthy); the sends below never touch the DB.
-  const codEmailUser = order.userId
-    ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
-    : null;
-  const codEmailData = orderEmailData({ ...order, user: codEmailUser });
-  // Notify admin of the new order — fire and forget.
-  notifyAdminNewOrder(codEmailData.admin).catch((e) =>
-    console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
-  );
-  // Notify the customer that their order is confirmed — fire and forget.
-  notifyCustomerOrderConfirmed(codEmailData.customer).catch((e) =>
-    console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
-  );
-  return { ok: true, orderNumber: order.orderNumber };
+  return { ok: true, orderNumber };
 }
 
 /**
@@ -322,4 +374,100 @@ export async function markCodPaymentReceived(orderId: string, actorId?: string):
     await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "SUCCEEDED" } });
   });
   await audit("payment.cod_received", { actorId, entity: "Order", entityId: orderId });
+}
+
+/* ------------------------------------------------------------------ */
+/* STRIPE (test mode)                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Creates (or reuses) a Stripe PaymentIntent for the caller's draft order.
+ * A PENDING Payment row is recorded with the intent id as transactionRef so
+ * the webhook / confirm endpoint can match it later.
+ */
+export async function createStripePaymentIntent(
+  orderId: string,
+): Promise<{ clientSecret: string; paymentIntentId: string }> {
+  const stripe = getStripe();
+  const owned = await getOrderOwned(orderId);
+  if (!owned) throw new Error("Order not found.");
+  if (owned.status !== "DRAFT" && owned.status !== "PENDING_PAYMENT") {
+    throw new Error("This order can no longer be paid.");
+  }
+
+  // Re-price everything from the database right before the charge.
+  const order = await rebuildDraftOrder(orderId);
+  if (order.totalCents <= 0) throw new Error("Order total is invalid.");
+
+  // Reuse an existing pending intent for this order when it still matches.
+  const existingPending = await db.payment.findFirst({
+    where: { orderId, provider: "stripe", status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existingPending?.transactionRef) {
+    const pi = await stripe.paymentIntents.retrieve(existingPending.transactionRef).catch(() => null);
+    if (pi && pi.status !== "canceled" && pi.amount === order.totalCents && pi.client_secret) {
+      return { clientSecret: pi.client_secret, paymentIntentId: pi.id };
+    }
+  }
+
+  const pi = await stripe.paymentIntents.create({
+    amount: order.totalCents,
+    currency: (order.currency || "USD").toLowerCase(),
+    metadata: { orderId, orderNumber: order.orderNumber },
+    automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+  });
+  if (!pi.client_secret) throw new Error("Stripe did not return a client secret.");
+  const testMode = (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_");
+  await db.payment.create({
+    data: {
+      orderId,
+      provider: "stripe",
+      scenario: "stripe",
+      amountCents: order.totalCents,
+      currency: order.currency,
+      transactionRef: pi.id,
+      status: "PENDING",
+      resultJson: { stripe: true, stripeTestMode: testMode },
+    },
+  });
+  return { clientSecret: pi.client_secret, paymentIntentId: pi.id };
+}
+
+/**
+ * Confirms an order after Stripe reports the PaymentIntent as succeeded.
+ * Verifies the intent with Stripe first, then runs the shared confirmation
+ * core. Idempotent — safe to call from both the client confirm endpoint and
+ * the webhook.
+ */
+export async function confirmStripePayment(
+  orderId: string,
+  paymentIntentId: string,
+): Promise<{ orderNumber: string }> {
+  const stripe = getStripe();
+  const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const metaOrderId = typeof pi.metadata?.orderId === "string" ? pi.metadata.orderId : "";
+  if (metaOrderId && metaOrderId !== orderId) {
+    throw new Error("Payment intent does not belong to this order.");
+  }
+  if (pi.status !== "succeeded") {
+    throw new Error(`Stripe payment is ${pi.status}, not succeeded.`);
+  }
+  const owned = await getOrderOwned(orderId);
+  if (!owned) throw new Error("Order not found.");
+  const order = await rebuildDraftOrder(orderId);
+  if (pi.amount !== order.totalCents) {
+    throw new Error("Paid amount does not match the order total.");
+  }
+  const testMode = (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_");
+  const { orderNumber } = await confirmOrderWithPayment(orderId, {
+    provider: "stripe",
+    scenario: "stripe",
+    transactionRef: pi.id,
+    paymentStatus: "SUCCEEDED",
+    resultJson: { stripe: true, paymentIntentId: pi.id, stripeTestMode: testMode },
+    auditEvent: "payment.stripe",
+    auditMeta: { paymentIntentId: pi.id },
+  });
+  return { orderNumber };
 }
