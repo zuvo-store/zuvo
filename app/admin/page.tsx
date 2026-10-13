@@ -358,37 +358,37 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Orders by status — donut */}
+      {/* Donuts — side by side */}
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Orders by status</h2>
-          <div className={`${cardCls} p-5`}>
+          <h2 className="mb-3 mt-8 text-base font-bold text-zinc-900 sm:text-lg">Orders by status</h2>
+          <div className={`${cardCls} p-4`}>
             {byStatus.length === 0 ? (
               <p className="text-sm text-zinc-500">No orders in this period.</p>
             ) : (
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center">
                 <div
-                  className="relative h-36 w-36 shrink-0 rounded-full"
+                  className="relative h-28 w-28 shrink-0 rounded-full sm:h-32 sm:w-32"
                   style={{ background: statusGradient }}
                   role="img"
                   aria-label="Orders by status chart"
                 >
-                  <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-2xl font-extrabold text-zinc-900">{statusTotal}</p>
-                    <p className="text-[11px] font-medium text-zinc-500">orders</p>
+                  <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-xl font-extrabold text-zinc-900">{statusTotal}</p>
+                    <p className="text-[10px] font-medium text-zinc-500">orders</p>
                   </div>
                 </div>
-                <ul className="min-w-0 flex-1 space-y-2">
+                <ul className="mt-3 w-full space-y-1.5">
                   {[...byStatus]
                     .sort((a, b) => b._count.status - a._count.status)
                     .map((g) => (
                       <li key={g.status}>
                         <Link
                           href={`/admin/orders?status=${g.status}`}
-                          className="flex items-center gap-2 text-sm hover:opacity-80"
+                          className="flex items-center gap-1.5 text-xs hover:opacity-80"
                         >
                           <span
-                            className="h-3 w-3 shrink-0 rounded-sm"
+                            className="h-2.5 w-2.5 shrink-0 rounded-sm"
                             style={{ background: STATUS_COLORS[g.status] ?? "#a1a1aa" }}
                           />
                           <span className="truncate font-medium text-zinc-700">
@@ -402,8 +402,45 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
               </div>
             )}
           </div>
+        </div>
 
-          {/* Top products */}
+        <div>
+          <h2 className="mb-3 mt-8 text-base font-bold text-zinc-900 sm:text-lg">Revenue by category</h2>
+          <div className={`${cardCls} p-4`}>
+            {catDonut.length === 0 ? (
+              <p className="text-sm text-zinc-500">No sales in this period.</p>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div
+                  className="relative h-28 w-28 shrink-0 rounded-full sm:h-32 sm:w-32"
+                  style={{ background: catGradient }}
+                  role="img"
+                  aria-label="Revenue by category chart"
+                >
+                  <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-sm font-extrabold text-zinc-900">{formatUSD(catTotal)}</p>
+                    <p className="text-[10px] font-medium text-zinc-500">total</p>
+                  </div>
+                </div>
+                <ul className="mt-3 w-full space-y-1.5">
+                  {catDonut.map((c) => (
+                    <li key={c.name} className="flex items-center gap-1.5 text-xs">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: c.color }} />
+                      <span className="truncate font-medium text-zinc-700">{c.name}</span>
+                      <span className="ml-auto shrink-0 font-extrabold text-zinc-900">
+                        {formatUSD(c.cents)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div>
           <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Top products</h2>
           <div className={`${cardCls} p-4`}>
             {topProducts.length === 0 ? (
@@ -431,40 +468,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
           </div>
         </div>
 
-        {/* Low stock */}
         <div>
-          <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Revenue by category</h2>
-          <div className={`${cardCls} p-5`}>
-            {catDonut.length === 0 ? (
-              <p className="text-sm text-zinc-500">No sales in this period.</p>
-            ) : (
-              <div className="flex items-center gap-6">
-                <div
-                  className="relative h-36 w-36 shrink-0 rounded-full"
-                  style={{ background: catGradient }}
-                  role="img"
-                  aria-label="Revenue by category chart"
-                >
-                  <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-lg font-extrabold text-zinc-900">{formatUSD(catTotal)}</p>
-                    <p className="text-[11px] font-medium text-zinc-500">total</p>
-                  </div>
-                </div>
-                <ul className="min-w-0 flex-1 space-y-2">
-                  {catDonut.map((c) => (
-                    <li key={c.name} className="flex items-center gap-2 text-sm">
-                      <span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: c.color }} />
-                      <span className="truncate font-medium text-zinc-700">{c.name}</span>
-                      <span className="ml-auto shrink-0 font-extrabold text-zinc-900">
-                        {formatUSD(c.cents)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
           <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Low stock</h2>
           {lowStock.length === 0 ? (
             <EmptyState
