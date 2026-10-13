@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getSessionUser } from "@/lib/auth";
 
 type Lang = "en" | "roman" | "ur";
 
@@ -31,6 +32,7 @@ TODAY'S OFFERS: the context includes LIVE OFFERS TODAY — when asked about toda
 PERSONAL TOUCH: when recommending products, add a warm personal opinion like "mere khayal se ye aapke liye perfect rahega" / "I personally think this one is great for you" — be a friendly advisor, not a robot.
 WEBSITE COST: If anyone asks how much the ZUVO website costs / would cost to buy or build ("website kitne ki hai", "how much for this website"), give a friendly rough estimate: a custom full-stack marketplace like this (Next.js, admin panel, AI assistant, tap-to-earn rewards, campaigns, analytics, 10+ reports, 48 products) would typically cost $3,000–$10,000+ to build from scratch depending on features, and as a running business with brand + customers it could be worth more. Mention Haider Malik built it and they can contact him for a quote. Keep it as a helpful estimate, not a formal offer.
 BE FULLY OPEN & CASUAL: You are NOT limited to shopping talk. Chat freely about ANYTHING the user wants — jokes, feelings, casual chit-chat, flirting, life, anything. Be playful, fun, warm, and human-like. NEVER say "I'm just a shopping assistant", NEVER deflect with "let me know what you're looking for", NEVER give robotic boundary statements. Just vibe with the user naturally like a real friend would. If they ask about shopping/products/website, then help with that using the product context. Otherwise just enjoy the conversation! Reply in ${langName}. IMPORTANT: ALWAYS answer every message warmly — NEVER say "I don't understand" or "could you clarify". If the message is vague or has typos, make your best friendly guess and respond conversationally. Keep replies short (1-3 sentences) with 1-2 emojis max. Never invent products or prices — only mention products from the context below. If asked about something unavailable in the store, say so honestly and suggest alternatives.
+ORDER SUPPORT: if the context contains an "ORDER SUPPORT CONTEXT" block, use it to answer order/shipping/return questions directly and personally (e.g. "Your order ZV-... is confirmed ✅"). Never reveal another customer's order. If the visitor isn't logged in and gave no order number, ask them to log in or share their order number.
 ${productContext}`,
           },
           { role: "user", content: userMessage },
@@ -94,6 +96,81 @@ type ProductCard = {
   image: string | null;
   rating: number;
 };
+
+/* ---------------- Order support ---------------- */
+
+/** Friendly label for an order status. */
+function orderStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    DRAFT: "draft (not placed yet)",
+    PENDING: "pending payment",
+    CONFIRMED: "confirmed ✅",
+    PROCESSING: "being prepared 📦",
+    SHIPPED: "shipped 🚚",
+    DELIVERED: "delivered 🎉",
+    CANCELLED: "cancelled",
+    REFUNDED: "refunded",
+  };
+  return map[status] ?? status.toLowerCase();
+}
+
+/**
+ * Build a support context block for order questions.
+ * - If the message contains an order number (ZV-...), look it up (owner only).
+ * - Else if signed in, include their 3 most recent orders.
+ * - Else, note that login is needed for order details.
+ */
+async function getOrderSupportContext(message: string): Promise<string> {
+  const me = await getSessionUser().catch(() => null);
+  const orderNoMatch = message.toUpperCase().match(/ZV-[A-Z0-9-]{6,}/);
+  const lines: string[] = ["ORDER SUPPORT CONTEXT:"];
+
+  if (orderNoMatch) {
+    const orderNumber = orderNoMatch[0];
+    const order = await db.order.findUnique({
+      where: { orderNumber },
+      select: {
+        orderNumber: true, status: true, paymentStatus: true, totalCents: true,
+        createdAt: true, userId: true, guestEmail: true,
+        items: { select: { name: true, qty: true } },
+      },
+    }).catch(() => null);
+    if (!order) {
+      lines.push(`- No order found with number ${orderNumber}. Ask them to double-check the number from their confirmation email.`);
+    } else if (me && order.userId === me.id) {
+      lines.push(`- Order ${order.orderNumber}: status ${orderStatusLabel(order.status)}, payment ${order.paymentStatus.toLowerCase()}, total $${(order.totalCents / 100).toFixed(2)}, placed ${new Date(order.createdAt).toLocaleDateString()}.`);
+      lines.push(`- Items: ${order.items.map((i) => `${i.qty}× ${i.name}`).join(", ") || "—"}.`);
+      lines.push(`- Answer their question using this info. Delivery takes 3–5 business days after shipping.`);
+    } else {
+      lines.push(`- Order ${orderNumber} exists but is not linked to this account. For privacy, ask them to log in to the account that placed the order, or check Account → Orders.`);
+    }
+    return lines.join("\n");
+  }
+
+  if (me) {
+    const orders = await db.order.findMany({
+      where: { userId: me.id, status: { not: "DRAFT" } },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        orderNumber: true, status: true, paymentStatus: true, totalCents: true, createdAt: true,
+        items: { select: { name: true, qty: true } },
+      },
+    }).catch(() => []);
+    if (orders.length === 0) {
+      lines.push(`- The signed-in user (${me.email}) has no placed orders yet. Suggest browsing products or deals.`);
+    } else {
+      lines.push(`- Signed-in user ${me.email} — recent orders:`);
+      for (const o of orders) {
+        lines.push(`  • ${o.orderNumber}: ${orderStatusLabel(o.status)}, $${(o.totalCents / 100).toFixed(2)}, ${new Date(o.createdAt).toLocaleDateString()} — ${o.items.map((i) => `${i.qty}× ${i.name}`).join(", ") || "—"}`);
+      }
+      lines.push(`- Use this to answer "where is my order / order status" questions directly. If they ask about a specific order, use its number.`);
+    }
+  } else {
+    lines.push(`- Visitor is NOT logged in, so no order details are available. Ask them to log in, or give their order number (looks like ZV-20261013-XXXXXX) from the confirmation email.`);
+  }
+  return lines.join("\n");
+}
 
 /* ---------------- Language detection ---------------- */
 
@@ -415,6 +492,7 @@ export async function POST(req: Request) {
     let text = "";
     let products: ProductCard[] = [];
     let suggestions: ProductCard[] = [];
+    let orderContext = "";
 
     if (hasAny(message, GREETINGS) && message.trim().length < 30) {
       text = T.greeting[lang];
@@ -443,7 +521,9 @@ export async function POST(req: Request) {
     } else if (hasAny(message, PAYMENT_WORDS) && !hasAny(message, ["product", "buy", "price under", "kimat"])) {
       text = T.payment[lang];
     } else if (hasAny(message, ORDER_WORDS)) {
-      text = T.order[lang];
+      // Real order support: look up the user's orders and let AI answer.
+      orderContext = await getOrderSupportContext(message);
+      text = T.order[lang]; // fallback if AI is unavailable
     } else if (hasAny(message, FEATURE_WORDS)) {
       text = T.features[lang];
     } else {
@@ -489,9 +569,13 @@ export async function POST(req: Request) {
     }
 
     // GROQ AI ENHANCEMENT: let the LLM craft a natural reply using our
-    // accurate local product results + live offers as context. Falls back to templates.
+    // accurate local product results + live offers (+ order context) as context.
     const offers = await getActiveOffers();
-    const fullContext = productContextBlock([...products, ...suggestions]) + "\n\nLIVE OFFERS TODAY:\n" + offers;
+    const fullContext =
+      productContextBlock([...products, ...suggestions]) +
+      "\n\nLIVE OFFERS TODAY:\n" +
+      offers +
+      (orderContext ? "\n\n" + orderContext : "");
     const aiText = await askGroq(message, lang, fullContext);
     if (aiText) text = aiText;
 

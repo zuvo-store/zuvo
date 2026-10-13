@@ -1,0 +1,60 @@
+/**
+ * Shared Groq AI helper (free tier). Used by AI search, recommendations,
+ * product descriptions, visual search, and Zuzu support.
+ * Returns the model's text reply, or null when unavailable/failed.
+ */
+
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+export const GROQ_TEXT_MODEL = "openai/gpt-oss-120b";
+export const GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+
+type ChatMessage = {
+  role: "system" | "user";
+  content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+};
+
+export async function groqChat(opts: {
+  model?: string;
+  system: string;
+  user: string | ChatMessage["content"];
+  maxTokens?: number;
+  temperature?: number;
+}): Promise<string | null> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model: opts.model ?? GROQ_TEXT_MODEL,
+        max_tokens: opts.maxTokens ?? 500,
+        temperature: opts.temperature ?? 0.5,
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: opts.user },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    const text = d?.choices?.[0]?.message?.content?.trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Extract a JSON array of strings from a model reply (tolerates fences/prose). */
+export function extractIdList(text: string | null): string[] {
+  if (!text) return [];
+  const m = text.match(/\[[\s\S]*?\]/);
+  if (!m) return [];
+  try {
+    const arr = JSON.parse(m[0]);
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}

@@ -14,6 +14,65 @@ function slugify(s: string): string {
 
 export type CategoryOpt = { id: string; name: string };
 
+/** "✨ Generate with AI" button for the description field. */
+function GenerateDescriptionButton({ categories }: { categories: CategoryOpt[] }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function generate(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    const form = (e.target as HTMLElement).closest("form");
+    if (!form) return;
+    const val = (name: string) =>
+      (form.querySelector(`[name="${name}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null)?.value?.trim() ?? "";
+    const name = val("name");
+    if (!name) {
+      setMsg("Enter the product name first.");
+      return;
+    }
+    const categoryId = val("categoryId");
+    const category = categories.find((c) => c.id === categoryId)?.name ?? "";
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/admin/ai/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, brand: val("brand"), category, shortDesc: val("shortDesc") }),
+      });
+      const d = await res.json();
+      if (d?.ok && d.description) {
+        const ta = form.querySelector('[name="description"]') as HTMLTextAreaElement | null;
+        if (ta) {
+          ta.value = d.description;
+          ta.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        setMsg("✓ Description generated — review and tweak as needed.");
+      } else {
+        setMsg(d?.error ?? "AI unavailable right now.");
+      }
+    } catch {
+      setMsg("Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      {msg && <span className="text-xs text-zinc-500">{msg}</span>}
+      <button
+        type="button"
+        onClick={generate}
+        disabled={busy}
+        className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-1.5 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-50"
+      >
+        {busy ? "✨ Writing…" : "✨ Generate with AI"}
+      </button>
+    </span>
+  );
+}
+
 export type VariantRow = {
   key: string;
   id?: string;
@@ -243,6 +302,9 @@ export default function ProductForm({
           />
         </Field>
         <Field label="Description" className="sm:col-span-2">
+          <div className="mb-2 flex justify-end">
+            <GenerateDescriptionButton categories={categories} />
+          </div>
           <textarea name="description" rows={5} className={inputCls} defaultValue={initial?.description ?? ""} />
         </Field>
         <Field label="Images" hint="Comma-separated /p/ paths, e.g. /p/item-1.svg, /p/item-2.svg" className="sm:col-span-2">

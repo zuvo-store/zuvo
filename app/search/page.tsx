@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { dollarsToCentsParam, queryProducts } from "@/app/_shop/query";
+import { dollarsToCentsParam, queryProducts, toListItem } from "@/app/_shop/query";
+import { aiRankProducts } from "@/lib/ai-search";
 import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 import EmptyState from "@/components/EmptyState";
 import { SectionTitle } from "@/components/ui";
 import SearchFilters from "./SearchFilters";
+import VisualSearchButton from "@/components/VisualSearchButton";
 
 export const metadata = { title: "Search — ZUVO" };
 
@@ -16,6 +18,7 @@ type SearchParams = {
   maxPrice?: string;
   sort?: string;
   page?: string;
+  ai?: string;
 };
 
 function paramsWithout(sp: SearchParams, remove: keyof SearchParams): string {
@@ -35,6 +38,7 @@ export default async function SearchPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const aiMode = sp.ai === "1" && !!sp.q?.trim();
 
   const [categories, result] = await Promise.all([
     db.category.findMany({
@@ -42,17 +46,35 @@ export default async function SearchPage({
       orderBy: { sortOrder: "asc" },
       select: { slug: true, name: true },
     }),
-    queryProducts(
-      {
-        q: sp.q,
-        categorySlug: sp.category,
-        minCents: dollarsToCentsParam(sp.minPrice),
-        maxCents: dollarsToCentsParam(sp.maxPrice),
-        sort: sp.sort,
-      },
-      page,
-      24
-    ),
+    (async () => {
+      if (!aiMode) {
+        return queryProducts(
+          {
+            q: sp.q,
+            categorySlug: sp.category,
+            minCents: dollarsToCentsParam(sp.minPrice),
+            maxCents: dollarsToCentsParam(sp.maxPrice),
+            sort: sp.sort,
+          },
+          page,
+          24
+        );
+      }
+      // ✨ AI Smart search: rank by meaning/intent via Groq, fall back to keyword on failure.
+      let ids: string[] = [];
+      try {
+        ids = await aiRankProducts(sp.q!.trim());
+      } catch {
+        ids = [];
+      }
+      if (ids.length === 0) {
+        return queryProducts({ q: sp.q, categorySlug: sp.category }, page, 24);
+      }
+      const rows = await db.product.findMany({ where: { id: { in: ids }, active: true } });
+      const byId = new Map(rows.map((p) => [p.id, p]));
+      const ordered = ids.map((id) => byId.get(id)).filter((p) => !!p).map((p) => toListItem(p!));
+      return { items: ordered, total: ordered.length, totalPages: 1, page: 1, perPage: 24 };
+    })(),
   ]);
 
   const categoryName = sp.category
@@ -75,7 +97,7 @@ export default async function SearchPage({
         subtitle={
           result.total === 0
             ? undefined
-            : `${result.total} product${result.total === 1 ? "" : "s"} found`
+            : `${result.total} product${result.total === 1 ? "" : "s"} found${aiMode ? " · ✨ AI Smart ranked" : ""}`
         }
       />
 
@@ -90,6 +112,30 @@ export default async function SearchPage({
           }}
           categories={categories}
         />
+        {sp.q?.trim() && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-500">Search mode:</span>
+            <Link
+              href={paramsWithout(sp, "ai")}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                !aiMode ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              }`}
+            >
+              🔍 Keyword
+            </Link>
+            <Link
+              href={`/search?${new URLSearchParams({ ...Object.fromEntries(Object.entries(sp).filter(([, v]) => v != null && v !== "")), ai: "1" }).toString()}`}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                aiMode
+                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              }`}
+            >
+              ✨ AI Smart
+            </Link>
+          </div>
+        )}
+        <VisualSearchButton />
       </div>
 
       {chips.length > 0 && (

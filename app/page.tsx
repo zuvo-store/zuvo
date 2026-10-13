@@ -11,6 +11,7 @@ import GuestRewardBanner from "@/components/GuestRewardBanner";
 import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
+import ForYou from "@/components/ForYou";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
 import CampaignBanner from "@/components/CampaignBanner";
 import Reveal from "@/components/Reveal";
@@ -370,6 +371,11 @@ export default async function HomePage() {
       {/* (i) Recently viewed */}
       <Suspense fallback={null}>
         <RecentlyViewed />
+      </Suspense>
+
+      {/* (j) For You — AI personalized picks */}
+      <Suspense fallback={null}>
+        <ForYou />
       </Suspense>
     </div>
   );
