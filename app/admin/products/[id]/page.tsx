@@ -32,6 +32,8 @@ export default async function EditProductPage({
     brand: product.brand ?? "",
     shortDesc: product.shortDesc ?? "",
     description: product.description ?? "",
+    seoTitle: (product as { seoTitle?: string | null }).seoTitle ?? "",
+    seoDescription: (product as { seoDescription?: string | null }).seoDescription ?? "",
     price: (product.priceCents / 100).toFixed(2),
     originalPrice: product.originalPriceCents ? (product.originalPriceCents / 100).toFixed(2) : "",
     currency: product.currency,

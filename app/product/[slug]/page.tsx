@@ -25,12 +25,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await db.product.findUnique({
     where: { slug },
-    select: { name: true, shortDesc: true, active: true },
+    select: { name: true, shortDesc: true, active: true, seoTitle: true, seoDescription: true },
   });
   if (!product || !product.active) return { title: "Product — ZUVO" };
   return {
-    title: `${product.name} — ZUVO`,
-    description: product.shortDesc ?? undefined,
+    title: product.seoTitle || `${product.name} — ZUVO`,
+    description: product.seoDescription || product.shortDesc || undefined,
   };
 }
 

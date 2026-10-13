@@ -4,6 +4,7 @@ import { formatUSD } from "@/lib/money";
 import { cardCls, SectionTitle } from "@/components/ui";
 import { requireAdminPage } from "@/lib/auth";
 import { AreaChart, BarChart, DonutChart } from "@/components/admin/Charts";
+import AIBriefing from "@/components/admin/AIBriefing";
 
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -122,6 +123,9 @@ export default async function AdminAnalyticsPage() {
         title="Sales Analytics"
         subtitle="Revenue, orders, and category performance — last 30 days"
       />
+
+      {/* ✨ AI Business Briefing */}
+      <AIBriefing />
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

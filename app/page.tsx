@@ -16,6 +16,7 @@ import InteractiveZuzu from "@/components/InteractiveZuzu";
 import CampaignBanner from "@/components/CampaignBanner";
 import Reveal from "@/components/Reveal";
 import { Suspense } from "react";
+import { getLocale, t } from "@/lib/i18n";
 
 export const metadata = {
   title: "ZUVO — Discover More. Shop Smarter.",
@@ -47,7 +48,7 @@ const TRUST_CARDS = [
 ];
 
 export default async function HomePage() {
-  const [categories, deals, featured, newest, user] = await Promise.all([
+  const [categories, deals, featured, newest, user, locale] = await Promise.all([
     db.category.findMany({
       where: { active: true },
       orderBy: { sortOrder: "asc" },
@@ -77,6 +78,7 @@ export default async function HomePage() {
       take: 8,
     }),
     getSessionUser(),
+    getLocale(),
   ]);
 
   // Fill "Recommended" up to 8 with the highest-rated products if fewer are featured.
@@ -111,30 +113,26 @@ export default async function HomePage() {
         <div className="relative grid items-center gap-6 px-6 py-10 sm:px-12 sm:py-14 lg:grid-cols-2 lg:py-16">
           <div className="flex flex-col items-start gap-5">
             <p className="rounded-full bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm ring-1 ring-orange-200 backdrop-blur">
-              ✨ New deals every day
+              {t(locale, "hero.badge")}
             </p>
             <h1 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              Discover More.
-              <span className="block bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-                Shop Smarter.
-              </span>
+              {t(locale, "hero.title")}
             </h1>
             <p className="max-w-lg text-base text-zinc-600 sm:text-lg">
-              ZUVO brings you thousands of quality products across electronics,
-              fashion, home and more — at prices you&apos;ll love.
+              {t(locale, "hero.subtitle")}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/search"
                 className="rounded-full bg-orange-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600 hover:shadow-orange-600/40"
               >
-                Shop Now
+                {t(locale, "hero.cta")}
               </Link>
               <Link
                 href="/deals"
                 className="rounded-full bg-white/80 px-8 py-3.5 text-sm font-bold text-zinc-900 shadow ring-1 ring-zinc-900/10 backdrop-blur transition hover:bg-white"
               >
-                Explore Deals
+                {t(locale, "hero.cta2")}
               </Link>
             </div>
             <div className="flex items-center gap-6 text-sm text-zinc-500">
@@ -177,9 +175,10 @@ export default async function HomePage() {
       <Reveal>
       <section className="mt-12">
         <SectionTitle
-          title="Shop by category"
+          title={t(locale, "sec.categories")}
+          subtitle={t(locale, "sec.categoriesSub")}
           actionHref="/categories"
-          actionLabel="All categories"
+          actionLabel={t(locale, "common.viewAll")}
         />
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {categories.map((c) => {
@@ -272,10 +271,10 @@ export default async function HomePage() {
         <Reveal>
         <section className="mt-12">
           <SectionTitle
-            title="Today's Deals"
-            subtitle="Limited-time demo discounts, refreshed daily"
+            title={t(locale, "sec.deals")}
+            subtitle={t(locale, "sec.dealsSub")}
             actionHref="/deals"
-            actionLabel="View all deals"
+            actionLabel={t(locale, "common.viewAll")}
           />
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {deals.map((p) => (
@@ -291,8 +290,8 @@ export default async function HomePage() {
         <Reveal>
         <section className="mt-12">
           <SectionTitle
-            title="Recommended for you"
-            subtitle="Top-rated picks from across the marketplace"
+            title={t(locale, "sec.featured")}
+            subtitle={t(locale, "sec.featuredSub")}
           />
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {recommended.map((p) => (
@@ -307,7 +306,7 @@ export default async function HomePage() {
       {newest.length > 0 && (
         <Reveal>
         <section className="mt-12">
-          <SectionTitle title="New arrivals" subtitle="The latest additions to ZUVO" />
+          <SectionTitle title={t(locale, "sec.new")} subtitle={t(locale, "sec.newSub")} />
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {newest.map((p) => (
               <ProductCard key={p.id} product={toListItem(p)} />

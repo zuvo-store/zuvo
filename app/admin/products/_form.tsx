@@ -14,6 +14,64 @@ function slugify(s: string): string {
 
 export type CategoryOpt = { id: string; name: string };
 
+/** "✨ Generate SEO" button — fills SEO title + description via AI. */
+function GenerateSeoButton({ categories }: { categories: CategoryOpt[] }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function generate(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    const form = (e.target as HTMLElement).closest("form");
+    if (!form) return;
+    const val = (name: string) =>
+      (form.querySelector(`[name="${name}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null)?.value?.trim() ?? "";
+    const name = val("name");
+    if (!name) {
+      setMsg("Enter the product name first.");
+      return;
+    }
+    const categoryId = val("categoryId");
+    const category = categories.find((c) => c.id === categoryId)?.name ?? "";
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/admin/ai/seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, brand: val("brand"), category, shortDesc: val("shortDesc") }),
+      });
+      const d = await res.json();
+      if (d?.ok) {
+        const t = form.querySelector('[name="seoTitle"]') as HTMLInputElement | null;
+        const de = form.querySelector('[name="seoDescription"]') as HTMLTextAreaElement | null;
+        if (t) { t.value = d.seoTitle; t.dispatchEvent(new Event("input", { bubbles: true })); }
+        if (de) { de.value = d.seoDescription; de.dispatchEvent(new Event("input", { bubbles: true })); }
+        setMsg("✓ SEO generated — review and tweak as needed.");
+      } else {
+        setMsg(d?.error ?? "AI unavailable right now.");
+      }
+    } catch {
+      setMsg("Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      {msg && <span className="text-xs text-zinc-500">{msg}</span>}
+      <button
+        type="button"
+        onClick={generate}
+        disabled={busy}
+        className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-1.5 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-50"
+      >
+        {busy ? "✨ Optimizing…" : "✨ Generate SEO"}
+      </button>
+    </span>
+  );
+}
+
 /** "✨ Generate with AI" button for the description field. */
 function GenerateDescriptionButton({ categories }: { categories: CategoryOpt[] }) {
   const [busy, setBusy] = useState(false);
@@ -90,6 +148,8 @@ export type ProductInit = {
   brand: string;
   shortDesc: string;
   description: string;
+  seoTitle: string;
+  seoDescription: string;
   price: string;
   originalPrice: string;
   currency: string;
@@ -306,6 +366,15 @@ export default function ProductForm({
             <GenerateDescriptionButton categories={categories} />
           </div>
           <textarea name="description" rows={5} className={inputCls} defaultValue={initial?.description ?? ""} />
+        </Field>
+        <Field label="SEO Title" hint="Google search title (under 60 chars)" className="sm:col-span-2">
+          <div className="mb-2 flex justify-end">
+            <GenerateSeoButton categories={categories} />
+          </div>
+          <input name="seoTitle" className={inputCls} defaultValue={initial?.seoTitle ?? ""} placeholder="Auto-filled by AI, editable" maxLength={70} />
+        </Field>
+        <Field label="SEO Description" hint="Google search snippet (under 160 chars)" className="sm:col-span-2">
+          <textarea name="seoDescription" rows={2} className={inputCls} defaultValue={initial?.seoDescription ?? ""} placeholder="Auto-filled by AI, editable" maxLength={170} />
         </Field>
         <Field label="Images" hint="Comma-separated /p/ paths, e.g. /p/item-1.svg, /p/item-2.svg" className="sm:col-span-2">
           <textarea name="images" rows={2} className={inputCls} defaultValue={initial?.images ?? ""} />

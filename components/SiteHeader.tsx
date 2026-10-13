@@ -9,21 +9,23 @@ import MobileMenu from "@/components/MobileMenu";
 import CartIconButton from "@/components/CartIconButton";
 import DealsTicker from "@/components/DealsTicker";
 import HeaderZuzuButton from "@/components/HeaderZuzuButton";
-
-const NAV = [
-  { href: "/categories", label: "Categories" },
-  { href: "/deals", label: "Deals" },
-  { href: "/rewards", label: "Rewards" },
-  { href: "/track-order", label: "Track Order" },
-];
+import LanguageToggle from "@/components/LanguageToggle";
+import { getLocale, t } from "@/lib/i18n";
 
 export default async function SiteHeader() {
-  const [announcements, user, cart] = await Promise.all([
+  const [announcements, user, cart, locale] = await Promise.all([
     getAnnouncements(),
     getSessionUser(),
     getCart(),
+    getLocale(),
   ]);
   const announcement = announcements[0];
+  const NAV = [
+    { href: "/categories", label: t(locale, "nav.categories") },
+    { href: "/deals", label: t(locale, "nav.deals") },
+    { href: "/rewards", label: locale === "ur" ? "انعامات" : "Rewards" },
+    { href: "/track-order", label: locale === "ur" ? "آرڈر ٹریک کریں" : "Track Order" },
+  ];
 
   return (
     <>
@@ -32,7 +34,7 @@ export default async function SiteHeader() {
         <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <MobileMenu />
           <Logo tagline="Discover More. Shop Smarter." />
-          <SearchBox className="hidden min-w-0 flex-1 md:block" />
+          <SearchBox className="hidden min-w-0 flex-1 md:block" placeholder={t(locale, "search.placeholder")} />
           <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
             {NAV.map((item) => (
               <Link
@@ -45,6 +47,7 @@ export default async function SiteHeader() {
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
+            <LanguageToggle initial={locale} />
             <HeaderZuzuButton />
             <Link
               href="/wishlist"
@@ -67,7 +70,7 @@ export default async function SiteHeader() {
           </div>
         </div>
         <div className="border-t border-zinc-100 px-4 py-2 md:hidden">
-          <SearchBox />
+          <SearchBox placeholder={t(locale, "search.placeholder")} />
         </div>
       </header>
     </>

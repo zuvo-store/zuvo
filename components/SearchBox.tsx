@@ -11,7 +11,7 @@ type Suggestion = {
   image?: string;
 };
 
-export default function SearchBox({ className = "" }: { className?: string }) {
+export default function SearchBox({ className = "", placeholder = "Search products…" }: { className?: string; placeholder?: string }) {
   const router = useRouter();
   const listId = useId();
   const [q, setQ] = useState("");
@@ -101,7 +101,7 @@ export default function SearchBox({ className = "" }: { className?: string }) {
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder="Search products…"
+          placeholder={placeholder}
           autoComplete="off"
           role="combobox"
           aria-expanded={open}

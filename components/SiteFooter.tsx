@@ -1,52 +1,54 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import NewsletterForm from "@/components/NewsletterForm";
+import { getLocale, t } from "@/lib/i18n";
 
-const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
-  {
-    title: "Shop",
-    links: [
-      { href: "/categories", label: "Categories" },
-      { href: "/deals", label: "Today's Deals" },
-      { href: "/search?sort=newest", label: "New Arrivals" },
-    ],
-  },
-  {
-    title: "Support",
-    links: [
-      { href: "/help", label: "Help Center" },
-      { href: "/contact", label: "Contact Us" },
-      { href: "/track-order", label: "Track Order" },
-      { href: "/shipping", label: "Shipping Info" },
-      { href: "/returns", label: "Returns" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { href: "/about", label: "About ZUVO" },
-      { href: "/privacy", label: "Privacy Policy" },
-      { href: "/terms", label: "Terms of Service" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { href: "/auth/login", label: "Sign In" },
-      { href: "/account/orders", label: "My Orders" },
-      { href: "/wishlist", label: "Wishlist" },
-      { href: "/account/rewards", label: "My Rewards" },
-    ],
-  },
-];
+export default async function SiteFooter() {
+  const locale = await getLocale();
+  const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
+    {
+      title: t(locale, "footer.shop"),
+      links: [
+        { href: "/categories", label: t(locale, "nav.categories") },
+        { href: "/deals", label: t(locale, "nav.deals") },
+        { href: "/search?sort=newest", label: t(locale, "sec.new") },
+      ],
+    },
+    {
+      title: t(locale, "footer.help"),
+      links: [
+        { href: "/help", label: locale === "ur" ? "مدد مرکز" : "Help Center" },
+        { href: "/contact", label: locale === "ur" ? "رابطہ کریں" : "Contact Us" },
+        { href: "/track-order", label: locale === "ur" ? "آرڈر ٹریک کریں" : "Track Order" },
+        { href: "/shipping", label: locale === "ur" ? "شپنگ کی معلومات" : "Shipping Info" },
+        { href: "/returns", label: locale === "ur" ? "واپسی" : "Returns" },
+      ],
+    },
+    {
+      title: locale === "ur" ? "کمپنی" : "Company",
+      links: [
+        { href: "/about", label: t(locale, "footer.about") },
+        { href: "/privacy", label: locale === "ur" ? "پرائیویسی پالیسی" : "Privacy Policy" },
+        { href: "/terms", label: locale === "ur" ? "شرائط" : "Terms of Service" },
+      ],
+    },
+    {
+      title: locale === "ur" ? "اکاؤنٹ" : "Account",
+      links: [
+        { href: "/auth/login", label: locale === "ur" ? "سائن ان" : "Sign In" },
+        { href: "/account/orders", label: locale === "ur" ? "میرے آرڈرز" : "My Orders" },
+        { href: "/wishlist", label: locale === "ur" ? "وش لسٹ" : "Wishlist" },
+        { href: "/account/rewards", label: locale === "ur" ? "میرے انعامات" : "My Rewards" },
+      ],
+    },
+  ];
 
-export default function SiteFooter() {
   return (
     <footer className="border-t border-zinc-200 bg-zinc-50">
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <Logo tagline="Discover More. Shop Smarter." />
+            <Logo tagline={t(locale, "footer.tagline")} />
             <p className="mt-4 max-w-xs text-sm text-zinc-500">
               ZUVO is a demo marketplace. Browse great products, track orders, and try the
               full shopping experience.
@@ -77,9 +79,9 @@ export default function SiteFooter() {
           ))}
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-zinc-200 pt-6 text-xs text-zinc-500 sm:flex-row">
-          <p>© 2026 ZUVO demo. All rights reserved.</p>
-          <p className="font-medium text-zinc-600">Built by Haider Malik</p>
-          <p>Demo marketplace — no real transactions. Payments: DEMO only.</p>
+          <p>© 2026 ZUVO demo. {t(locale, "footer.rights")}</p>
+          <p className="font-medium text-zinc-600">{t(locale, "footer.builtBy")}</p>
+          <p>{locale === "ur" ? "ڈیمو مارکیٹ پلیس — کوئی اصل لین دین نہیں۔" : "Demo marketplace — no real transactions. Payments: DEMO only."}</p>
         </div>
       </div>
     </footer>

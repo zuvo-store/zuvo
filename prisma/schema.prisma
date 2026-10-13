@@ -98,6 +98,8 @@ model Product {
   slug               String   @unique
   shortDesc          String?
   description        String?
+  seoTitle           String?  // AI-generated SEO title (falls back to name)
+  seoDescription     String?  // AI-generated meta description (falls back to shortDesc)
   categoryId         String
   category           Category @relation(fields: [categoryId], references: [id])
   brand              String?

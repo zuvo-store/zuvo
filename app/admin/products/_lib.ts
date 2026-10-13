@@ -19,6 +19,8 @@ export type ProductFormData = {
   brand: string | null;
   shortDesc: string | null;
   description: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
   priceCents: number;
   originalPriceCents: number | null;
   currency: string;
@@ -135,6 +137,8 @@ export function parseProductForm(fd: FormData): ProductFormData {
     brand: str("brand") || null,
     shortDesc: str("shortDesc") || null,
     description: str("description") || null,
+    seoTitle: str("seoTitle") || null,
+    seoDescription: str("seoDescription") || null,
     priceCents,
     originalPriceCents,
     currency: (str("currency") || "USD").toUpperCase(),
