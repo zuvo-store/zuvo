@@ -123,12 +123,24 @@ export default async function AdminOrderDetailPage({
             <p className="text-sm text-zinc-500">No further status transitions available.</p>
           ) : (
             nextStatuses.map((to) => (
-              <form key={to} action={transition} className="inline">
+              <ConfirmForm
+                key={to}
+                action={transition}
+                className="inline"
+                title={to === "CANCELLED" ? "Cancel this order?" : `Move order to ${to}?`}
+                message={
+                  to === "CANCELLED"
+                    ? `Cancel order ${order.orderNumber}? Stock will be restored and the customer will be notified.`
+                    : `Move order ${order.orderNumber} to ${to}? The customer will be notified.`
+                }
+                confirmLabel={to === "CANCELLED" ? "Yes, cancel" : `Yes, move to ${to}`}
+                danger={to === "CANCELLED"}
+              >
                 <input type="hidden" name="to" value={to} />
                 <button type="submit" className={`${btnPrimary} ${btnSm}`}>
                   Move to {to}
                 </button>
-              </form>
+              </ConfirmForm>
             ))
           )}
           {hasPending ? (

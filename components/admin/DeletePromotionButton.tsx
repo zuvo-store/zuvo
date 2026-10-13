@@ -1,5 +1,6 @@
 "use client";
 
+import ConfirmForm from "@/components/ConfirmForm";
 import { btnSm } from "@/app/admin/_helpers";
 
 export default function DeletePromotionButton({
@@ -12,11 +13,12 @@ export default function DeletePromotionButton({
   action: (formData: FormData) => void;
 }) {
   return (
-    <form
+    <ConfirmForm
       action={action}
-      onSubmit={(e) => {
-        if (!confirm(`Delete promotion ${label}?`)) e.preventDefault();
-      }}
+      title={`Delete promotion "${label}"?`}
+      message="The promotion will be permanently removed and can no longer be used at checkout."
+      confirmLabel="Yes, delete"
+      danger
     >
       <input type="hidden" name="id" value={id} />
       <button
@@ -25,6 +27,6 @@ export default function DeletePromotionButton({
       >
         Delete
       </button>
-    </form>
+    </ConfirmForm>
   );
 }

@@ -265,11 +265,20 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
                   <td className={tdCls}>
                     <div className="flex flex-wrap gap-1.5">
                       <Link href={`/admin/campaigns?edit=${c.id}`} className={btnSm}>Edit</Link>
-                      <form action={toggleCampaign}>
+                      <ConfirmForm
+                        action={toggleCampaign}
+                        title={c.active ? `Pause campaign "${c.name}"?` : `Resume campaign "${c.name}"?`}
+                        message={
+                          c.active
+                            ? "The campaign's discounts will stop applying at checkout until resumed."
+                            : "The campaign's discounts will start applying at checkout immediately."
+                        }
+                        confirmLabel={c.active ? "Yes, pause" : "Yes, resume"}
+                      >
                         <input type="hidden" name="id" value={c.id} />
                         <input type="hidden" name="active" value={c.active ? "off" : "on"} />
                         <button type="submit" className={btnSm}>{c.active ? "Pause" : "Resume"}</button>
-                      </form>
+                      </ConfirmForm>
                       <ConfirmForm
                         action={deleteCampaign}
                         title={`Delete campaign "${c.name}"?`}

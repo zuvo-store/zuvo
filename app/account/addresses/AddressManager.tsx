@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { inputCls, btn, cardCls } from "@/components/ui";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export type AddressRow = {
   id: string;
@@ -40,6 +41,8 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -115,7 +118,8 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this address?")) return;
+    setDeleteId(null);
+    setDeleting(true);
     setError(null);
     try {
       const res = await fetch("/api/account/addresses", {
@@ -128,6 +132,8 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
       else router.refresh();
     } catch {
       setError("Network error. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -170,7 +176,7 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
               </button>
               <button
                 type="button"
-                onClick={() => remove(a.id)}
+                onClick={() => setDeleteId(a.id)}
                 className="text-sm font-medium text-zinc-500 hover:text-red-600"
               >
                 Delete
@@ -260,6 +266,19 @@ export default function AddressManager({ initial }: { initial: AddressRow[] }) {
           </div>
         </form>
       )}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete this address?"
+        message="The address will be permanently removed from your account."
+        confirmLabel="Yes, delete"
+        danger
+        loading={deleting}
+        onConfirm={() => deleteId && remove(deleteId)}
+        onCancel={() => {
+          if (!deleting) setDeleteId(null);
+        }}
+      />
     </div>
   );
 }

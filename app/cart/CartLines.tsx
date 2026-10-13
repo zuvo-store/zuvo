@@ -7,12 +7,14 @@ import type { CartLine } from "@/lib/cart";
 import { formatUSD } from "@/lib/money";
 import QuantitySelector from "@/components/QuantitySelector";
 import Price from "@/components/Price";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { btn } from "@/components/ui";
 
 export default function CartLines({ initialLines }: { initialLines: CartLine[] }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function mutate(promise: Promise<Response>, id: string | null, isClear = false) {
@@ -57,7 +59,7 @@ export default function CartLines({ initialLines }: { initialLines: CartLine[] }
     );
 
   const clear = () => {
-    if (!window.confirm("Remove all items from your cart?")) return;
+    setConfirmClear(false);
     void mutate(
       fetch("/api/cart", {
         method: "DELETE",
@@ -79,13 +81,25 @@ export default function CartLines({ initialLines }: { initialLines: CartLine[] }
         </p>
         <button
           type="button"
-          onClick={clear}
+          onClick={() => setConfirmClear(true)}
           disabled={clearing}
           className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
         >
           {clearing ? "Clearing…" : "Clear cart"}
         </button>
       </div>
+      <ConfirmDialog
+        open={confirmClear}
+        title="Clear your cart?"
+        message="All items will be removed from your cart."
+        confirmLabel="Yes, clear"
+        danger
+        loading={clearing}
+        onConfirm={clear}
+        onCancel={() => {
+          if (!clearing) setConfirmClear(false);
+        }}
+      />
       {error && (
         <p role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}

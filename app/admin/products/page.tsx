@@ -7,6 +7,7 @@ import { getSessionUser, requireAdminPage} from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { btnPrimary, btnSecondary, inputCls, Badge, FormError } from "@/components/ui";
+import ConfirmForm from "@/components/ConfirmForm";
 import EmptyState from "@/components/EmptyState";
 import Pagination from "@/components/Pagination";
 import { qp, pageNumber, tableWrapCls, tableCls, thCls, tdCls, type SearchParams } from "../_helpers";
@@ -54,7 +55,19 @@ function ToggleButton({
   label: string;
 }) {
   return (
-    <form action={toggleFlag} className="inline">
+    <ConfirmForm
+      action={toggleFlag}
+      className="inline"
+      title={`${on ? "Turn off" : "Turn on"} ${label}?`}
+      message={
+        field === "active"
+          ? on
+            ? "The product will be hidden from the store immediately."
+            : "The product will become visible in the store."
+          : `The "${label}" flag will be ${on ? "removed from" : "applied to"} this product.`
+      }
+      confirmLabel={on ? "Yes, turn off" : "Yes, turn on"}
+    >
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="field" value={field} />
       <button
@@ -66,7 +79,7 @@ function ToggleButton({
       >
         {label}
       </button>
-    </form>
+    </ConfirmForm>
   );
 }
 
