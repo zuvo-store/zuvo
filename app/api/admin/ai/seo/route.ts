@@ -19,19 +19,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Product name is required" }, { status: 400 });
     }
     const text = await groqChat({
-      system: `You are an e-commerce SEO expert. For the given product, reply in EXACTLY this format (two lines, nothing else):
-TITLE: <seo title under 60 chars, includes product name and a buying keyword>
-DESC: <meta description under 160 chars, compelling, with a benefit and call to action>`,
-      user: `Product: ${name.trim()}${brand ? `\nBrand: ${brand}` : ""}${category ? `\nCategory: ${category}` : ""}${shortDesc ? `\nSummary: ${shortDesc}` : ""}`,
+      system: `You are an e-commerce SEO expert. Write exactly two lines and nothing else. First line: an SEO title under 60 characters that includes the product name and a buying word like buy or best. Second line: a meta description under 160 characters that is compelling and mentions a benefit.`,
+      user: `Product: ${name.trim()}${brand ? `, Brand: ${brand}` : ""}${category ? `, Category: ${category}` : ""}${shortDesc ? `, About: ${shortDesc}` : ""}`,
       maxTokens: 300,
       temperature: 0.5,
       retries: 2,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
-    const titleM = text.match(/TITLE:\s*(.+)/i);
-    const descM = text.match(/DESC:\s*(.+)/i);
-    const seoTitle = titleM?.[1]?.trim();
-    const seoDescription = descM?.[1]?.trim();
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    // Strip any "Title:"/"Description:" labels the model might add
+    const clean = (l: string) => l.replace(/^(title|seo title|description|meta description)\s*:\s*/i, "").trim();
+    const seoTitle = lines[0] ? clean(lines[0]) : "";
+    const seoDescription = lines[1] ? clean(lines[1]) : "";
     if (!seoTitle || !seoDescription) {
       return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
     }
