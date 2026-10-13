@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getAnnouncements } from "@/lib/settings";
 import { getSessionUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
@@ -14,6 +15,22 @@ import NotificationBell from "@/components/NotificationBell";
 import { getLocale, t } from "@/lib/i18n";
 
 export default async function SiteHeader() {
+  const hdrs = await headers();
+  const path = hdrs.get("x-pathname") ?? hdrs.get("next-url") ?? "";
+
+  // Minimal header on auth pages — logo only, no search/cart/nav (professional auth UX)
+  if (path.startsWith("/auth/")) {
+    return (
+      <header className="border-b border-zinc-100 bg-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-center px-4">
+          <Link href="/" aria-label="ZUVO home">
+            <Logo tagline="Discover More. Shop Smarter." />
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
   const [announcements, user, cart, locale] = await Promise.all([
     getAnnouncements(),
     getSessionUser(),
