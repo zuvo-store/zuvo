@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import SearchBox from "@/components/SearchBox";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
 
 const SHOP_LINKS = [
@@ -115,9 +114,7 @@ export default function MobileMenu() {
       </button>
       {open ? (
         <div className="absolute inset-x-0 top-full z-50 max-h-[85vh] overflow-y-auto bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
-          <SearchBox className="mb-4" />
-
-          {/* Zuzu banner — tap for a surprise! */}
+          {/* Zuzu banner — tap for a surprise! (top of drawer, no search here) */}
           <div className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30">
             <InteractiveZuzu size="sm" showName={false} className="shrink-0" />
             <Link
