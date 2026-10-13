@@ -51,30 +51,32 @@ export async function GET() {
     }
 
     const text = await groqChat({
-      system: `You are a pricing strategist for an online marketplace. For each product below, suggest a new price in USD and a one-line reason. Consider: margin (aim 25-40%), stock levels (high stock + no sales → lower price to move it; low margin → raise slightly), ratings (high-rated can charge more). Return ONLY valid JSON in this exact shape: {"suggestions":[{"id":"...","suggestedPrice":12.99,"reason":"..."}]}. Keep reasons under 15 words. Never suggest below cost.`,
-      user: JSON.stringify(candidates.map((c) => ({
-        id: c.id, name: c.name, category: c.category, price: c.price, cost: c.cost,
-        marginPct: c.marginPct, stock: c.stock, rating: c.rating, sold30d: c.sold30d,
-      }))),
+      system: `You are a pricing strategist for an online marketplace. For each product, suggest a new price in USD and a one-line reason. Consider: margin (aim 25-40%), stock levels (high stock + no sales → lower price to move it; low margin → raise slightly), ratings (high-rated can charge more). Never suggest below cost. Reply with ONE line per product in EXACTLY this format, nothing else:
+<product id> | <suggested price like 12.99> | <reason under 15 words>`,
+      user: candidates.map((c) =>
+        `ID: ${c.id}\nName: ${c.name} (${c.category})\nPrice: $${c.price}, Cost: $${c.cost}, Margin: ${c.marginPct}%, Stock: ${c.stock}, Rating: ${c.rating}, Sold/30d: ${c.sold30d}`
+      ).join("\n---\n"),
       maxTokens: 1500,
       temperature: 0.4,
-      jsonMode: true,
-      retries: 1,
+      retries: 2,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
-    let parsed: { suggestions?: { id: string; suggestedPrice: number; reason: string }[] };
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      const m = text.match(/\[[\s\S]*\]/);
-      if (!m) return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
-      parsed = { suggestions: JSON.parse(m[0]) };
-    }
-    const suggestions = parsed.suggestions ?? [];
     const byId = new Map(rows.map((r) => [r.id, r]));
-    const enriched = suggestions
-      .filter((s) => byId.has(s.id) && typeof s.suggestedPrice === "number")
-      .map((s) => ({ ...s, ...byId.get(s.id)! }));
+    const suggestions: { id: string; suggestedPrice: number; reason: string }[] = [];
+    for (const line of text.split("\n")) {
+      const parts = line.split("|").map((p) => p.trim());
+      if (parts.length < 3) continue;
+      const [id, priceStr, ...reasonParts] = parts;
+      const suggestedPrice = parseFloat(priceStr.replace(/[^0-9.]/g, ""));
+      const reason = reasonParts.join(" | ").trim();
+      if (byId.has(id) && !isNaN(suggestedPrice) && suggestedPrice > 0 && reason) {
+        suggestions.push({ id, suggestedPrice, reason });
+      }
+    }
+    if (suggestions.length === 0) {
+      return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
+    }
+    const enriched = suggestions.map((s) => ({ ...s, ...byId.get(s.id)! }));
     return NextResponse.json({ ok: true, suggestions: enriched });
   } catch {
     return NextResponse.json({ ok: false, error: "Something went wrong" }, { status: 500 });

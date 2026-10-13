@@ -19,24 +19,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Product name is required" }, { status: 400 });
     }
     const text = await groqChat({
-      system: `You are an e-commerce SEO expert. For the given product, write:
-1. An SEO title (under 60 characters, includes the product name and one buying keyword like "buy", "best", or "online").
-2. A meta description (under 160 characters, compelling, includes a benefit and a call to action).
-Return ONLY valid JSON: {"seoTitle": "...", "seoDescription": "..."}. No other text.`,
+      system: `You are an e-commerce SEO expert. For the given product, reply in EXACTLY this format (two lines, nothing else):
+TITLE: <seo title under 60 chars, includes product name and a buying keyword>
+DESC: <meta description under 160 chars, compelling, with a benefit and call to action>`,
       user: `Product: ${name.trim()}${brand ? `\nBrand: ${brand}` : ""}${category ? `\nCategory: ${category}` : ""}${shortDesc ? `\nSummary: ${shortDesc}` : ""}`,
       maxTokens: 300,
       temperature: 0.5,
-      jsonMode: true,
-      retries: 1,
+      retries: 2,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
-    const parsed = JSON.parse(m[0]) as { seoTitle?: string; seoDescription?: string };
-    if (!parsed.seoTitle || !parsed.seoDescription) {
+    const titleM = text.match(/TITLE:\s*(.+)/i);
+    const descM = text.match(/DESC:\s*(.+)/i);
+    const seoTitle = titleM?.[1]?.trim();
+    const seoDescription = descM?.[1]?.trim();
+    if (!seoTitle || !seoDescription) {
       return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, seoTitle: parsed.seoTitle, seoDescription: parsed.seoDescription });
+    return NextResponse.json({ ok: true, seoTitle, seoDescription });
   } catch {
     return NextResponse.json({ ok: false, error: "Something went wrong" }, { status: 500 });
   }
