@@ -94,43 +94,45 @@ export default function SearchBox({ className = "", placeholder = "Search produc
         <label htmlFor={listId} className="sr-only">
           Search products
         </label>
-        <input
-          id={listId}
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder={placeholder}
-          autoComplete="off"
-          role="combobox"
-          aria-expanded={open}
-          aria-controls={`${listId}-list`}
-          aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
-          className="block w-full rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 pl-10 pr-12 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand-600 focus:bg-white focus:outline-none"
-        />
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 20 20"
-          fill="none"
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-        >
-          <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
-          <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-        {/* Clickable search button (Temu-style) */}
-        <button
-          type="submit"
-          aria-label="Search"
-          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:bg-zinc-700 active:scale-95"
-        >
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <div className="flex w-full items-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-50 transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-100">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+            className="ml-4 shrink-0 text-zinc-400"
+          >
             <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
             <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-        </button>
+          <input
+            id={listId}
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            placeholder={placeholder}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={`${listId}-list`}
+            aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
+            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
+          />
+          <button
+            type="submit"
+            aria-label="Search"
+            className="m-1 flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-zinc-900 px-4 text-sm font-bold text-white transition hover:bg-zinc-700 active:scale-95"
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
+              <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="hidden lg:inline">Search</span>
+          </button>
+        </div>
       </form>
       {open && suggestions.length > 0 ? (
         <ul
