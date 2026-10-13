@@ -465,3 +465,16 @@ model Message {
   @@index([conversationId])
   @@index([createdAt])
 }
+
+model Notification {
+  id        String    @id @default(cuid())
+  type      String    // ORDER, CHAT, STOCK
+  title     String
+  body      String    @default("")
+  link      String    @default("")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([readAt])
+}

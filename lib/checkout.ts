@@ -5,6 +5,7 @@ import { getCart, estimateShipping } from "./cart";
 import { audit } from "./audit";
 import { sendOrderStatusEmail, notifyAdminNewOrder, orderEmailData } from "./email";
 import { getGiftWrapCents } from "./settings";
+import { notifyAdmin } from "./notifications";
 
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -330,6 +331,32 @@ export async function transitionOrder(
     notifyAdminNewOrder(emailData.admin).catch((e) =>
       console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
     );
+    // In-app notification
+    notifyAdmin(
+      "ORDER",
+      `🛒 New order ${updated.orderNumber}`,
+      `${emailData.admin.itemCount} item(s) · $${(updated.totalCents / 100).toFixed(2)}`,
+      `/admin/orders/${updated.id}`
+    );
+    // Low-stock check after this order
+    checkLowStock().catch(() => {});
   }
   return updated;
+}
+
+/** Create STOCK notifications for products at/below the low-stock threshold. */
+async function checkLowStock() {
+  const low = await db.product.findMany({
+    where: { active: true, stock: { lte: 10 } },
+    select: { id: true, name: true, stock: true },
+    take: 10,
+  });
+  for (const p of low) {
+    await notifyAdmin(
+      "STOCK",
+      `⚠️ Low stock: ${p.name}`,
+      `Only ${p.stock} left in inventory.`,
+      `/admin/inventory`
+    );
+  }
 }

@@ -10,6 +10,7 @@ import CartIconButton from "@/components/CartIconButton";
 import DealsTicker from "@/components/DealsTicker";
 import HeaderZuzuButton from "@/components/HeaderZuzuButton";
 import LanguageToggle from "@/components/LanguageToggle";
+import NotificationBell from "@/components/NotificationBell";
 import { getLocale, t } from "@/lib/i18n";
 
 export default async function SiteHeader() {
@@ -66,6 +67,7 @@ export default async function SiteHeader() {
               </svg>
             </Link>
             <CartIconButton count={cart.count} />
+            {user?.role === "ADMIN" ? <NotificationBell /> : null}
             <AccountMenu
               user={user ? { name: user.name, email: user.email, role: user.role } : null}
             />

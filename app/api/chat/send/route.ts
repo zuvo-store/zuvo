@@ -82,6 +82,23 @@ export async function POST(req: NextRequest) {
       where: { id: convId },
       data: { lastMessageAt: new Date(), status: "OPEN" },
     });
+
+    // Notify admin of new customer messages
+    if (!isAdmin) {
+      const { notifyAdmin } = await import("@/lib/notifications");
+      const customer = await db.user.findUnique({ where: { id: me.id }, select: { name: true } });
+      const ord = await db.conversation.findUnique({
+        where: { id: convId },
+        select: { order: { select: { orderNumber: true } } },
+      });
+      notifyAdmin(
+        "CHAT",
+        `💬 ${customer?.name ?? "Customer"} sent a message`,
+        ord?.order?.orderNumber ? `Order ${ord.order.orderNumber} · ${text.slice(0, 60)}` : text.slice(0, 80),
+        `/admin/inbox`
+      );
+    }
+
     return NextResponse.json({ ok: true, message: { id: msg.id, createdAt: msg.createdAt } });
   } catch {
     return NextResponse.json({ ok: false, error: "Something went wrong" }, { status: 500 });
