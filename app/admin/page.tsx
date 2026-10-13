@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { cardCls, SectionTitle, Badge } from "@/components/ui";
 import EmptyState from "@/components/EmptyState";
+import DashboardCards from "@/components/admin/DashboardCards";
 import { requireAdminPage } from "@/lib/auth";
 import {
   fmtDate,
@@ -77,6 +78,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     newCustomers,
     byStatus, lowStock, recent,
     topProducts, dailyRev, catItems,
+    revAgg, largest, refundAgg, newCustList,
   ] = await Promise.all([
     db.payment.aggregate({ _sum: { amountCents: true }, where: { status: "SUCCEEDED", createdAt: inRange } }),
     db.payment.aggregate({ _sum: { amountCents: true }, where: { status: "SUCCEEDED", createdAt: inPrev } }),
@@ -118,6 +120,36 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       },
       take: 5000,
     }),
+    db.order.aggregate({
+      _sum: { subtotalCents: true, discountCents: true, shippingCents: true, giftWrapCents: true, zuzuDiscountCents: true },
+      _min: { totalCents: true },
+      _max: { totalCents: true },
+      _avg: { totalCents: true },
+      where: { createdAt: inRange, status: { notIn: ["DRAFT", "CANCELLED", "REFUNDED"] } },
+    }),
+    db.order.findMany({
+      where: { createdAt: inRange, status: { notIn: ["DRAFT", "CANCELLED", "REFUNDED"] } },
+      orderBy: { totalCents: "desc" },
+      take: 5,
+      select: {
+        id: true, orderNumber: true, totalCents: true, status: true, createdAt: true,
+        user: { select: { name: true } }, guestName: true,
+        _count: { select: { items: true } },
+      },
+    }),
+    db.payment.aggregate({
+      _sum: { amountCents: true },
+      where: { status: "REFUNDED", createdAt: inRange },
+    }),
+    db.user.findMany({
+      where: { role: "CUSTOMER", createdAt: inRange },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true, name: true, email: true, createdAt: true,
+        _count: { select: { orders: true } },
+      },
+    }),
   ]);
 
   const revenue = rev._sum.amountCents ?? 0;
@@ -128,11 +160,48 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     prev === 0 ? (cur > 0 ? 100 : 0) : Math.round(((cur - prev) / prev) * 100);
 
   const kpis = [
-    { label: "Revenue", value: formatUSD(revenue), icon: "💰", delta: pct(revenue, revenuePrev), invert: false },
-    { label: "Orders", value: String(orders), icon: "🛒", delta: pct(orders, ordersPrev), invert: false },
-    { label: "Avg. order value", value: formatUSD(avgOrder), icon: "🧾", delta: null as number | null, invert: false },
-    { label: "New customers", value: String(newCustomers), icon: "👥", delta: null as number | null, invert: false },
+    { label: "Revenue", value: formatUSD(revenue), icon: "💰", delta: pct(revenue, revenuePrev) },
+    { label: "Orders", value: String(orders), icon: "🛒", delta: pct(orders, ordersPrev) },
+    { label: "Avg. order value", value: formatUSD(avgOrder), icon: "🧾", delta: null as number | null },
+    { label: "New customers", value: String(newCustomers), icon: "👥", delta: null as number | null },
   ];
+
+  // Revenue breakdown for the modal
+  const refundedSum = refundAgg._sum.amountCents ?? 0;
+  const revenueBreakdown = {
+    productRevenue: revAgg._sum.subtotalCents ?? 0,
+    shipping: revAgg._sum.shippingCents ?? 0,
+    giftWrap: revAgg._sum.giftWrapCents ?? 0,
+    discounts: (revAgg._sum.discountCents ?? 0) + (revAgg._sum.zuzuDiscountCents ?? 0),
+    grossCollected: revenue,
+    refunded: refundedSum,
+    netRevenue: revenue - refundedSum,
+    pendingRefund: 0, // computed below if needed
+  };
+
+  const statusGroups = byStatus.map((g) => ({ status: g.status, count: g._count.status }));
+  const toRecentOrder = (o: { id: string; orderNumber: string; totalCents: number; status: string; createdAt: Date; user: { name: string } | null; guestName: string | null; _count: { items: number } }) => ({
+    id: o.id,
+    orderNumber: o.orderNumber,
+    totalCents: o.totalCents,
+    status: o.status,
+    createdAt: o.createdAt.toISOString(),
+    customerName: o.user?.name ?? o.guestName ?? "Guest",
+    itemCount: o._count.items,
+  });
+  const modalRecent = recent.map(toRecentOrder);
+  const modalLargest = largest.map(toRecentOrder);
+  const modalCustomers = newCustList.map((c) => ({
+    id: c.id, name: c.name, email: c.email,
+    createdAt: c.createdAt.toISOString(), orderCount: c._count.orders,
+  }));
+  const modalOrderStats = {
+    min: revAgg._min.totalCents ?? 0,
+    max: revAgg._max.totalCents ?? 0,
+    avg: Math.round(revAgg._avg.totalCents ?? 0),
+  };
+  const fromLabel = from.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const toLabel = to.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   // Daily revenue buckets for the chart
   const buckets = Math.min(rangeDays, 31);
@@ -267,35 +336,18 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         )}
       </form>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {kpis.map((k) => {
-          const card = (
-            <div className={`${cardCls} p-5 ${k.label === "Revenue" ? "transition hover:shadow-md hover:ring-2 hover:ring-orange-200" : ""}`}>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-zinc-500">{k.label}</p>
-                <span className="text-xl">{k.icon}</span>
-              </div>
-              <p className="mt-1 text-2xl font-extrabold text-zinc-900">{k.value}</p>
-              {k.delta !== null && (
-                <p className={`mt-1 text-xs font-bold ${k.delta >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {k.delta >= 0 ? "▲" : "▼"} {Math.abs(k.delta)}% vs previous period
-                </p>
-              )}
-              {k.label === "Revenue" && (
-                <p className="mt-2 text-xs font-bold text-orange-600">View breakdown →</p>
-              )}
-            </div>
-          );
-          return k.label === "Revenue" ? (
-            <Link key={k.label} href={`/admin/revenue?from=${isoDay(from)}&to=${isoDay(to)}`}>
-              {card}
-            </Link>
-          ) : (
-            <div key={k.label}>{card}</div>
-          );
-        })}
-      </div>
+      {/* KPI cards — tap for detail modals */}
+      <DashboardCards
+        kpis={kpis}
+        revenue={revenueBreakdown}
+        statusGroups={statusGroups}
+        recentOrders={modalRecent}
+        largestOrders={modalLargest}
+        orderStats={modalOrderStats}
+        customers={modalCustomers}
+        fromLabel={fromLabel}
+        toLabel={toLabel}
+      />
 
       {/* Revenue chart */}
       {/* Revenue trend — trading-style line chart */}
