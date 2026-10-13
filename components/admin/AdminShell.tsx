@@ -3,48 +3,11 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import Forbidden from "@/components/Forbidden";
 import Logo from "@/components/Logo";
+import AdminSidebarNav from "@/components/admin/AdminSidebarNav";
 import type { ReactNode } from "react";
 
-const NAV: { href: string; label: string }[] = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/products", label: "Products" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/inventory", label: "Inventory" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/carts", label: "Carts" },
-  { href: "/admin/pricing", label: "Pricing" },
-  { href: "/admin/fraud", label: "Fraud Check" },
-  { href: "/admin/marketing", label: "Marketing" },
-  { href: "/admin/customers", label: "Customers" },
-  { href: "/admin/rewards", label: "Rewards" },
-  { href: "/admin/referrals", label: "Referrals" },
-  { href: "/admin/promotions", label: "Promotions" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/payments", label: "Payments" },
-  { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/visitors", label: "Visitors" },
-  { href: "/admin/audit-logs", label: "Audit Logs" },
-  { href: "/admin/settings", label: "Settings" },
-];
-
 function SidebarNav() {
-  return (
-    <nav aria-label="Admin">
-      <ul className="space-y-1 p-3">
-        {NAV.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+  return <AdminSidebarNav />;
 }
 
 export default async function AdminShell({ children }: { children: ReactNode }) {
