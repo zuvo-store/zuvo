@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     where: { active: true },
     orderBy: { rating: "desc" },
     take: 100,
-    select: { id: true, name: true, priceCents: true, shortDesc: true },
+    select: { id: true, name: true, priceCents: true, shortDesc: true, images: true },
   });
   const filtered = q
     ? products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 12)

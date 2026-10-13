@@ -18,6 +18,17 @@ const TERMINAL: Record<string, string> = {
   REFUNDED: "Refunded",
 };
 
+const STATUS_TONE: Record<string, string> = {
+  DRAFT: "bg-zinc-100 text-zinc-700",
+  PENDING_PAYMENT: "bg-amber-100 text-amber-800",
+  CONFIRMED: "bg-green-100 text-green-800",
+  PROCESSING: "bg-blue-100 text-blue-800",
+  SHIPPED: "bg-purple-100 text-purple-800",
+  DELIVERED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-700",
+  REFUNDED: "bg-zinc-200 text-zinc-700",
+};
+
 function statusLabel(s: string): string {
   if (TERMINAL[s]) return TERMINAL[s];
   return s
@@ -120,7 +131,21 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
           <div className={`${cardCls} p-5`}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xl font-bold text-zinc-900">{order.orderNumber}</h2>
-              <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${
+                  STATUS_TONE[order.status] ?? "bg-orange-100 text-orange-700"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    order.status === "DELIVERED" || order.status === "CONFIRMED"
+                      ? "bg-green-500"
+                      : order.status === "CANCELLED"
+                        ? "bg-red-500"
+                        : "bg-orange-500"
+                  }`}
+                />
                 {statusLabel(order.status)}
               </span>
             </div>
@@ -131,20 +156,33 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
             </p>
 
             {!isTerminal && currentIndex >= 0 && (
-              <ol className="mt-6 flex flex-col gap-0 sm:flex-row">
+              <ol className="mt-6 flex flex-col sm:flex-row">
                 {PIPELINE.map((s, i) => {
                   const done = i < currentIndex;
                   const current = i === currentIndex;
+                  const reached = i <= currentIndex;
                   return (
-                    <li key={s} className="relative flex flex-1 items-start gap-3 sm:flex-col sm:items-center sm:gap-1 sm:text-center">
-                      {/* Connector line */}
+                    <li
+                      key={s}
+                      className="relative flex flex-1 items-start gap-3 pb-5 last:pb-0 sm:flex-col sm:items-center sm:gap-1 sm:pb-0 sm:text-center"
+                    >
+                      {/* Vertical connector (mobile) */}
                       {i > 0 && (
                         <span
                           aria-hidden="true"
-                          className={`absolute left-4 top-4 hidden h-0.5 w-[calc(100%-2rem)] sm:block ${
-                            i <= currentIndex ? "bg-green-500" : "bg-zinc-200"
+                          className={`absolute left-[15px] top-[-20px] h-5 w-0.5 sm:hidden ${
+                            reached ? "bg-green-500" : "bg-zinc-200"
                           }`}
-                          style={{ left: "calc(-50% + 1rem)", width: "calc(100% - 2rem)" }}
+                        />
+                      )}
+                      {/* Horizontal connector (desktop) */}
+                      {i > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className={`absolute top-4 hidden h-0.5 sm:block ${
+                            reached ? "bg-green-500" : "bg-zinc-200"
+                          }`}
+                          style={{ left: "calc(-50% + 1.25rem)", width: "calc(100% - 2.5rem)" }}
                         />
                       )}
                       <span
@@ -165,12 +203,25 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
                         )}
                       </span>
                       <span
-                        className={`pb-4 text-xs font-medium sm:pb-0 ${
-                          current ? "font-bold text-orange-700" : done ? "text-zinc-700" : "text-zinc-400"
+                        className={`text-xs sm:mt-1 ${
+                          current ? "font-bold text-orange-700" : done ? "font-medium text-zinc-700" : "font-medium text-zinc-400"
                         }`}
                       >
                         {statusLabel(s)}
                       </span>
+                      {/* Mobile direction arrow */}
+                      {i < PIPELINE.length - 1 && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          aria-hidden="true"
+                          className={`absolute left-[10px] top-[34px] sm:hidden ${reached ? "text-green-500" : "text-zinc-300"}`}
+                        >
+                          <path d="M10 3v11M6 10l4 4 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
                     </li>
                   );
                 })}

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { cardCls, SectionTitle } from "@/components/ui";
 import { formatUSD } from "@/lib/money";
 
-type Product = { id: string; name: string; priceCents: number; shortDesc: string | null };
+type Product = { id: string; name: string; priceCents: number; shortDesc: string | null; images: string[] };
 type Platform = "instagram" | "facebook" | "whatsapp";
 
 const PLATFORMS: { id: Platform; label: string; icon: string }[] = [
@@ -70,16 +70,35 @@ export default function MarketingPage() {
           className="mt-2 w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm outline-none focus:border-orange-400"
         />
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {products.map((p) => (
-            <button
-              key={p.id} type="button"
-              onClick={() => setSelected(p)}
-              className={`rounded-xl border p-3 text-left transition ${selected?.id === p.id ? "border-orange-500 bg-orange-50 ring-1 ring-orange-300" : "border-zinc-200 hover:border-zinc-300"}`}
-            >
-              <p className="truncate text-sm font-bold text-zinc-900">{p.name}</p>
-              <p className="text-xs text-zinc-500">{formatUSD(p.priceCents)}</p>
-            </button>
-          ))}
+          {products.length === 0 ? (
+            <p className="col-span-full rounded-xl bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-500">
+              🔍 No products found{q ? ` for “${q}”` : ""} — try a different search.
+            </p>
+          ) : (
+            products.map((p) => {
+              const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
+              return (
+                <button
+                  key={p.id} type="button"
+                  onClick={() => setSelected(p)}
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${selected?.id === p.id ? "border-orange-500 bg-orange-50 ring-1 ring-orange-300" : "border-zinc-200 hover:border-zinc-300"}`}
+                >
+                  {img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={img} alt="" className="h-12 w-12 shrink-0 rounded-lg bg-zinc-100 object-cover" />
+                  ) : (
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg">
+                      📦
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <p className="truncate text-sm font-bold text-zinc-900">{p.name}</p>
+                    <p className="text-xs text-zinc-500">{formatUSD(p.priceCents)}</p>
+                  </span>
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -105,15 +124,23 @@ export default function MarketingPage() {
 
       {post && (
         <div className={cardCls + " p-5"}>
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-zinc-800">3. Your post</label>
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-sm font-bold text-zinc-800">
+              3. Your post{" "}
+              <span className="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-500">
+                {post.length} chars
+              </span>
+            </label>
             <button
               type="button" onClick={copy}
-              className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-bold text-white hover:bg-zinc-700"
+              className="shrink-0 rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-bold text-white hover:bg-zinc-700"
             >
               {copied ? "✓ Copied!" : "📋 Copy"}
             </button>
           </div>
+          <p className="mt-1 text-xs text-zinc-400">
+            {platform === "instagram" ? "Tip: keep it under 2,200 chars; hashtags boost reach." : platform === "facebook" ? "Tip: shorter posts (under 250 chars) get more engagement." : "Tip: WhatsApp prefers short, personal messages with a clear call to action."}
+          </p>
           <p className="mt-3 whitespace-pre-line rounded-xl bg-zinc-50 p-4 text-sm leading-relaxed text-zinc-800">{post}</p>
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { cardCls, SectionTitle } from "@/components/ui";
+import { cardCls, SectionTitle, FormError } from "@/components/ui";
 import { formatUSD } from "@/lib/money";
 
 type Suggestion = {
@@ -54,8 +54,57 @@ export default function SmartPricingPage() {
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <FormError message={error} />
       {note && <div className={cardCls + " p-5 text-center"}><p className="font-bold text-emerald-700">✓ {note}</p></div>}
+
+      {/* Empty state — before first analysis */}
+      {!loading && !sugs && !note && (
+        <div className={cardCls + " relative overflow-hidden p-8 text-center sm:p-12"}>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-100 blur-2xl"
+          />
+          <p className="text-5xl">💰</p>
+          <h2 className="mt-3 text-xl font-extrabold text-zinc-900">Let AI price your products</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+            AI looks at your margins, stock levels, ratings and last 30 days of sales —
+            then suggests a better price for each product with a clear reason.
+          </p>
+          <div className="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-2 text-xs font-semibold text-zinc-600">
+            <span className="rounded-full bg-zinc-100 px-3 py-1.5">📊 Margin analysis</span>
+            <span className="rounded-full bg-zinc-100 px-3 py-1.5">📦 Stock-aware</span>
+            <span className="rounded-full bg-zinc-100 px-3 py-1.5">⭐ Rating-aware</span>
+          </div>
+          <button
+            type="button" onClick={analyze}
+            className="mt-6 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95"
+          >
+            ✨ Analyze prices now
+          </button>
+          <p className="mt-3 text-xs text-zinc-400">Nothing changes until you press Apply on a suggestion.</p>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className={cardCls + " overflow-hidden p-0"}>
+          <div className="space-y-3 p-4">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-zinc-100" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
+                  <div className="h-2.5 w-1/3 animate-pulse rounded bg-zinc-100" />
+                </div>
+                <div className="h-6 w-16 animate-pulse rounded-full bg-zinc-100" />
+              </div>
+            ))}
+          </div>
+          <p className="border-t border-zinc-100 px-4 py-3 text-center text-sm font-medium text-zinc-500">
+            ✨ AI is analyzing your catalog…
+          </p>
+        </div>
+      )}
 
       {sugs && sugs.length > 0 && (
         <div className={cardCls + " overflow-hidden p-0"}>

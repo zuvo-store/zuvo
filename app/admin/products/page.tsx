@@ -64,7 +64,7 @@ function ToggleButton({
           on ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
         }`}
       >
-        {on ? label : `no ${label}`}
+        {label}
       </button>
     </form>
   );

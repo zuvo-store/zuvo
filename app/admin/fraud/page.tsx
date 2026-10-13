@@ -101,7 +101,20 @@ export default function FraudPage() {
         </div>
       </div>
       {orders === null ? (
-        <p className="text-sm text-zinc-500">Scanning orders…</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={cardCls + " animate-pulse p-5"}>
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-40 rounded bg-zinc-100" />
+                <div className="h-6 w-16 rounded-full bg-zinc-100" />
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="h-3 w-full rounded bg-zinc-100" />
+                <div className="h-3 w-2/3 rounded bg-zinc-100" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : shown.length === 0 ? (
         <div className={cardCls + " p-8 text-center"}>
           <p className="text-3xl">✅</p>

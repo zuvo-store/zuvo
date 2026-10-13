@@ -6,7 +6,7 @@ import { getSessionUser, requireAdminPage} from "@/lib/auth";
 import { DemoPaymentProvider, SCENARIO_LABELS } from "@/lib/payments";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Badge, FormError, SectionTitle } from "@/components/ui";
+import { Badge, FormError, SectionTitle, cardCls } from "@/components/ui";
 import Pagination from "@/components/Pagination";
 import { qp, pageNumber, fmtDate, statusTone, tableWrapCls, tableCls, thCls, tdCls, btnDanger, btnSm, type SearchParams } from "../_helpers";
 
@@ -52,6 +52,19 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       </p>
       <FormError message={qp(sp, "error")} />
 
+      {total === 0 ? (
+        <div className={cardCls + " p-10 text-center"}>
+          <p className="text-4xl">💳</p>
+          <p className="mt-2 text-lg font-bold text-zinc-900">No payments yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+            Payments appear here once customers complete checkout. This store uses the demo
+            payment provider — no real money moves.
+          </p>
+          <Link href="/admin/orders" className="mt-4 inline-block rounded-full bg-zinc-900 px-6 py-2 text-sm font-bold text-white hover:bg-zinc-700">
+            View orders →
+          </Link>
+        </div>
+      ) : (
       <div className={tableWrapCls}>
         <table className={tableCls}>
           <thead>
@@ -97,8 +110,9 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
           </tbody>
         </table>
       </div>
+      )}
 
-      <Pagination page={page} totalPages={totalPages} basePath="/admin/payments" />
+      {total > 0 && <Pagination page={page} totalPages={totalPages} basePath="/admin/payments" />}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { cardCls, SectionTitle } from "@/components/ui";
 import { formatUSD } from "@/lib/money";
 
+type CartItem = { name: string; qty: number; image: string | null };
+
 type Cart = {
   userId: string;
   name: string | null;
@@ -10,7 +12,7 @@ type Cart = {
   itemCount: number;
   totalCents: number;
   lastActivity: string;
-  items: string[];
+  items: CartItem[];
 };
 
 function timeAgo(iso: string): string {
@@ -33,7 +35,7 @@ function CartCard({ cart }: { cart: Cart }) {
       const res = await fetch("/api/admin/ai/cart-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerName: cart.name, items: cart.items, total: cart.totalCents / 100 }),
+        body: JSON.stringify({ customerName: cart.name, items: cart.items.map((i) => `${i.qty}× ${i.name}`), total: cart.totalCents / 100 }),
       });
       const d = await res.json();
       if (d?.ok) setMsg(d.message);
@@ -70,16 +72,33 @@ function CartCard({ cart }: { cart: Cart }) {
           <p className="text-xs text-zinc-500">{cart.itemCount} items</p>
         </div>
       </div>
-      <p className="mt-2 text-sm text-zinc-600">{cart.items.join(" · ")}</p>
+      <ul className="mt-3 space-y-2">
+        {cart.items.map((it, idx) => (
+          <li key={idx} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2">
+            {it.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={it.image} alt="" className="h-10 w-10 shrink-0 rounded-lg bg-white object-cover" />
+            ) : (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-base">
+                📦
+              </span>
+            )}
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-800">{it.name}</p>
+            <span className="shrink-0 rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-bold text-zinc-700">
+              ×{it.qty}
+            </span>
+          </li>
+        ))}
+      </ul>
       {msg && (
         <div className="mt-3 whitespace-pre-line rounded-xl bg-violet-50 p-3 text-sm text-zinc-700">{msg}</div>
       )}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button" onClick={generate} disabled={busy}
           className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
         >
-          {busy ? "✨ Writing…" : "✨ AI win-back message"}
+          {busy ? "✨ Writing…" : msg ? "↻ Regenerate message" : "✨ AI win-back message"}
         </button>
         {msg && !sent && (
           <button
@@ -109,7 +128,21 @@ export default function AbandonedCartsPage() {
     <div className="space-y-6">
       <SectionTitle title="Abandoned Carts" subtitle="Shoppers who left items behind — win them back with AI-crafted emails." />
       {carts === null ? (
-        <p className="text-sm text-zinc-500">Loading…</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={cardCls + " animate-pulse p-5"}>
+              <div className="flex justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 rounded bg-zinc-100" />
+                  <div className="h-3 w-48 rounded bg-zinc-100" />
+                </div>
+                <div className="h-6 w-20 rounded bg-zinc-100" />
+              </div>
+              <div className="mt-3 h-12 rounded-xl bg-zinc-100" />
+              <div className="mt-3 h-9 w-44 rounded-full bg-zinc-100" />
+            </div>
+          ))}
+        </div>
       ) : carts.length === 0 ? (
         <div className={cardCls + " p-8 text-center"}>
           <p className="text-3xl">🎉</p>

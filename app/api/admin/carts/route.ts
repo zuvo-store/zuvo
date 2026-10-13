@@ -18,7 +18,7 @@ export async function GET() {
       where: { userId: { not: null }, updatedAt: { lt: cutoff } },
       select: {
         userId: true, qty: true, updatedAt: true,
-        product: { select: { name: true, priceCents: true } },
+        product: { select: { name: true, priceCents: true, images: true } },
         user: { select: { id: true, name: true, email: true } },
       },
       orderBy: { updatedAt: "desc" },
@@ -52,7 +52,11 @@ export async function GET() {
         itemCount: list.reduce((s, it) => s + it.qty, 0),
         totalCents,
         lastActivity: lastActivity.toISOString(),
-        items: list.map((it) => `${it.qty}× ${it.product.name}`),
+        items: list.map((it) => ({
+          name: it.product.name,
+          qty: it.qty,
+          image: Array.isArray(it.product.images) && it.product.images.length > 0 ? String(it.product.images[0]) : null,
+        })),
       });
     }
     carts.sort((a, b) => b.totalCents - a.totalCents);
