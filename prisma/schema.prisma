@@ -126,6 +126,7 @@ model Product {
   wishlistItems WishlistItem[]
   orderItems  OrderItem[]
   stockAlerts StockAlert[]
+  movements          StockMovement[]
 }
 
 model ProductVariant {
@@ -477,4 +478,20 @@ model Notification {
 
   @@index([createdAt])
   @@index([readAt])
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?
+  type      String   // PURCHASE, SALE, DAMAGE, MISSING, RETURN, ADJUSTMENT
+  qty       Int      // signed: +stock in, -stock out
+  reason    String   @default("")
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
 }

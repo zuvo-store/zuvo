@@ -1,221 +1,356 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { Fragment } from "react";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
-import { audit } from "@/lib/audit";
-import { notifyBackInStock } from "@/lib/stock-alerts";
-import { getSessionUser, requireAdminPage} from "@/lib/auth";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { btnSecondary, Badge, FormError, SectionTitle } from "@/components/ui";
-import EmptyState from "@/components/EmptyState";
-import { qp, tableWrapCls, tableCls, thCls, tdCls, type SearchParams } from "../_helpers";
+import { cardCls, SectionTitle, Badge, inputCls, btnPrimary } from "@/components/ui";
+import { requireAdminPage } from "@/lib/auth";
+import { qp, pageNumber, fmtDate, tableWrapCls, tableCls, thCls, tdCls } from "../_helpers";
+import AdjustStockModal from "./AdjustStockModal";
 
-async function setStock(formData: FormData) {
-  "use server";
-  const me = await getSessionUser();
-  const productId = String(formData.get("productId") ?? "") || null;
-  const variantId = String(formData.get("variantId") ?? "") || null;
-  const qtyRaw = String(formData.get("qty") ?? "").trim();
-  const qty = Number(qtyRaw);
-  const back = "/admin/inventory" + (formData.get("low") ? "?low=1" : "");
-  if (!Number.isInteger(qty) || qty < 0) {
-    redirect(back + (back.includes("?") ? "&" : "?") + "error=" + encodeURIComponent("Stock must be a non-negative integer."));
-  }
-  const outcome = await (async () => {
-    try {
-      if (variantId) {
-        const v = await db.productVariant.findUniqueOrThrow({ where: { id: variantId } });
-        await db.productVariant.update({ where: { id: variantId }, data: { stock: qty } });
-        await audit("inventory.set", {
-          actorId: me?.id,
-          entity: "ProductVariant",
-          entityId: variantId,
-          meta: { from: v.stock, to: qty },
-        });
-        // Back-in-stock check: did the whole product go from 0 to >0?
-        if (v.stock === 0 && qty > 0) {
-          const siblings = await db.productVariant.findMany({
-            where: { productId: v.productId, id: { not: variantId } },
-            select: { stock: true },
-          });
-          const totalAfter = qty + siblings.reduce((s, x) => s + x.stock, 0);
-          if (totalAfter === qty) {
-            // every other variant was also 0 before → product is back in stock
-            await notifyBackInStock(v.productId);
-          }
-        }
-      } else if (productId) {
-        const p = await db.product.findUniqueOrThrow({ where: { id: productId } });
-        await db.product.update({ where: { id: productId }, data: { stock: qty } });
-        await audit("inventory.set", {
-          actorId: me?.id,
-          entity: "Product",
-          entityId: productId,
-          meta: { from: p.stock, to: qty },
-        });
-        // Back-in-stock: product (no variants) went from 0 to >0
-        if (p.stock === 0 && qty > 0) {
-          await notifyBackInStock(productId);
-        }
-      } else {
-        throw new Error("Missing product or variant id.");
-      }
-      return { ok: true as const };
-    } catch (e) {
-      return { ok: false as const, error: e instanceof Error ? e.message : "Failed to set stock." };
-    }
-  })();
-  if (!outcome.ok) {
-    redirect(back + (back.includes("?") ? "&" : "?") + "error=" + encodeURIComponent(outcome.error));
-  }
-  revalidatePath("/admin/inventory");
+type SP = { q?: string; cat?: string; from?: string; to?: string; view?: string; mtype?: string; page?: string };
+
+const PAGE_SIZE = 20;
+const MOVE_TYPES = ["PURCHASE", "SALE", "DAMAGE", "MISSING", "RETURN", "ADJUSTMENT"] as const;
+const TYPE_META: Record<string, { icon: string; tone: string; label: string }> = {
+  PURCHASE: { icon: "📥", tone: "green", label: "Purchase" },
+  SALE: { icon: "🛒", tone: "blue", label: "Sale" },
+  DAMAGE: { icon: "🔴", tone: "red", label: "Damage" },
+  MISSING: { icon: "🟡", tone: "amber", label: "Missing" },
+  RETURN: { icon: "🟢", tone: "emerald", label: "Return" },
+  ADJUSTMENT: { icon: "✏️", tone: "zinc", label: "Adjustment" },
+};
+
+function isoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function StockForm({
-  productId,
-  variantId,
-  stock,
-  low,
-}: {
-  productId?: string;
-  variantId?: string;
-  stock: number;
-  low: boolean;
-}) {
-  return (
-    <form action={setStock} className="flex items-center gap-1.5">
-      {productId ? <input type="hidden" name="productId" value={productId} /> : null}
-      {variantId ? <input type="hidden" name="variantId" value={variantId} /> : null}
-      {low ? <input type="hidden" name="low" value="1" /> : null}
-      <input
-        name="qty"
-        inputMode="numeric"
-        defaultValue={String(stock)}
-        aria-label="Stock quantity"
-        className="w-20 rounded-lg border border-zinc-300 px-2 py-1 text-sm"
-      />
-      <button type="submit" className={`${btnSecondary} px-2.5 py-1 text-xs`}>
-        Set
-      </button>
-    </form>
-  );
-}
-
-export default async function AdminInventoryPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireAdminPage(); // must run before any data fetch (see lib/auth.ts)
+export default async function AdminInventoryPage({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireAdminPage();
   const sp = await searchParams;
-  const lowOnly = qp(sp, "low") === "1";
+  const q = (sp.q ?? "").trim();
+  const cat = sp.cat ?? "";
+  const view = sp.view === "movements" ? "movements" : "stock";
+  const mtype = (MOVE_TYPES as readonly string[]).includes(sp.mtype ?? "") ? sp.mtype! : "";
+  const page = pageNumber(sp);
+  const now = new Date();
+  const fromStr = sp.from ?? isoDay(new Date(now.getTime() - 29 * 864e5));
+  const toStr = sp.to ?? isoDay(now);
 
-  const products = await db.product.findMany({
-    where: lowOnly
-      ? { OR: [{ stock: { lt: 10 } }, { variants: { some: { stock: { lt: 10 } } } }] }
-      : {},
-    include: { variants: { orderBy: { name: "asc" } }, category: { select: { name: true } } },
-    orderBy: { name: "asc" },
-    take: 200,
-  });
+  const categories = await db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
+
+  // --- Tiles ---
+  const [productCount, productsForValue, moveAgg] = await Promise.all([
+    db.product.count(),
+    db.product.findMany({ select: { stock: true, priceCents: true } }),
+    db.stockMovement.findMany({
+      where: {
+        createdAt: { gte: new Date(fromStr + "T00:00:00"), lte: new Date(toStr + "T23:59:59") },
+        type: { in: ["DAMAGE", "MISSING", "RETURN"] },
+      },
+      select: { qty: true, type: true, product: { select: { priceCents: true } } },
+      take: 10000,
+    }),
+  ]);
+  const stockUnits = productsForValue.reduce((a, p) => a + p.stock, 0);
+  const stockValue = productsForValue.reduce((a, p) => a + p.stock * p.priceCents, 0);
+
+  const tileStats: Record<string, { qty: number; value: number }> = {
+    DAMAGE: { qty: 0, value: 0 },
+    MISSING: { qty: 0, value: 0 },
+    RETURN: { qty: 0, value: 0 },
+  };
+  for (const m of moveAgg) {
+    const s = tileStats[m.type];
+    if (s) {
+      const aq = Math.abs(m.qty);
+      s.qty += aq;
+      s.value += aq * (m.product?.priceCents ?? 0);
+    }
+  }
+
+  const baseParams = new URLSearchParams();
+  if (q) baseParams.set("q", q);
+  if (cat) baseParams.set("cat", cat);
+  baseParams.set("from", fromStr);
+  baseParams.set("to", toStr);
+
+  const tileLink = (t: string) => {
+    const p = new URLSearchParams(baseParams);
+    p.set("view", "movements");
+    p.set("mtype", t);
+    return `/admin/inventory?${p.toString()}`;
+  };
+
+  const tiles = [
+    { icon: "📦", label: "Products", value: String(productCount), sub: null as string | null, href: null as string | null, active: false },
+    { icon: "📊", label: "Stock units", value: stockUnits.toLocaleString(), sub: null, href: null, active: false },
+    { icon: "💰", label: "Stock value", value: formatUSD(stockValue), sub: null, href: null, active: false },
+    { icon: "🔴", label: "Damaged", value: `${tileStats.DAMAGE.qty.toLocaleString()} units`, sub: formatUSD(tileStats.DAMAGE.value), href: tileLink("DAMAGE"), active: mtype === "DAMAGE" },
+    { icon: "🟡", label: "Missing", value: `${tileStats.MISSING.qty.toLocaleString()} units`, sub: formatUSD(tileStats.MISSING.value), href: tileLink("MISSING"), active: mtype === "MISSING" },
+    { icon: "🟢", label: "Returned", value: `${tileStats.RETURN.qty.toLocaleString()} units`, sub: formatUSD(tileStats.RETURN.value), href: tileLink("RETURN"), active: mtype === "RETURN" },
+  ];
+
+  // --- Main list ---
+  let listContent: React.ReactNode;
+  let totalPages = 1;
+
+  if (view === "movements") {
+    const where = {
+      type: mtype || undefined,
+      createdAt: { gte: new Date(fromStr + "T00:00:00"), lte: new Date(toStr + "T23:59:59") },
+      ...(q ? { product: { name: { contains: q, mode: "insensitive" as const } } } : {}),
+    };
+    const [total, moves] = await Promise.all([
+      db.stockMovement.count({ where }),
+      db.stockMovement.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        include: { product: { select: { name: true } } },
+      }),
+    ]);
+    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    listContent = (
+      <div className={tableWrapCls}>
+        <table className={tableCls}>
+          <thead>
+            <tr>
+              <th className={thCls}>Date</th>
+              <th className={thCls}>Product</th>
+              <th className={thCls}>Type</th>
+              <th className={thCls}>Qty</th>
+              <th className={thCls}>Reason</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {moves.map((m) => {
+              const meta = TYPE_META[m.type] ?? { icon: "📦", tone: "zinc", label: m.type };
+              return (
+                <tr key={m.id} className="hover:bg-zinc-50">
+                  <td className={tdCls}>{fmtDate(m.createdAt)}</td>
+                  <td className={tdCls}>
+                    <Link href={`/admin/products/${m.productId}`} className="font-medium text-zinc-900 hover:text-orange-700 hover:underline">
+                      {m.product.name}
+                    </Link>
+                  </td>
+                  <td className={tdCls}>
+                    <Badge tone={meta.tone as never}>{meta.icon} {meta.label}</Badge>
+                  </td>
+                  <td className={tdCls}>
+                    <span className={`font-extrabold ${m.qty < 0 ? "text-red-600" : "text-green-600"}`}>
+                      {m.qty > 0 ? "+" : ""}{m.qty}
+                    </span>
+                  </td>
+                  <td className={tdCls}>{m.reason || <span className="text-zinc-400">—</span>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {moves.length === 0 && (
+          <p className="px-4 py-10 text-center text-sm text-zinc-400">No movements in this period.</p>
+        )}
+      </div>
+    );
+  } else {
+    const where = {
+      ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+      ...(cat ? { categoryId: cat } : {}),
+    };
+    const [total, products] = await Promise.all([
+      db.product.count({ where }),
+      db.product.findMany({
+        where,
+        include: { category: { select: { name: true } }, variants: { select: { id: true } } },
+        orderBy: { name: "asc" },
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      }),
+    ]);
+    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    listContent = (
+      <div className={tableWrapCls}>
+        <table className={tableCls}>
+          <thead>
+            <tr>
+              <th className={thCls}>Product</th>
+              <th className={thCls}>Category</th>
+              <th className={thCls}>Price</th>
+              <th className={thCls}>Stock</th>
+              <th className={thCls}>Value</th>
+              <th className={thCls}>Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {products.map((p) => (
+              <tr key={p.id} className="hover:bg-zinc-50">
+                <td className={tdCls}>
+                  <Link href={`/admin/products/${p.id}`} className="font-medium text-zinc-900 hover:text-orange-700 hover:underline">
+                    {p.name}
+                  </Link>
+                  {p.variants.length > 0 && (
+                    <span className="ml-2 text-xs text-zinc-400">{p.variants.length} variants</span>
+                  )}
+                </td>
+                <td className={tdCls}>{p.category.name}</td>
+                <td className={tdCls}>{formatUSD(p.priceCents)}</td>
+                <td className={tdCls}>
+                  <Badge tone={p.stock === 0 ? "red" : p.stock < 10 ? "amber" : "green"}>{p.stock}</Badge>
+                </td>
+                <td className={tdCls}>{formatUSD(p.stock * p.priceCents)}</td>
+                <td className={tdCls}>
+                  <AdjustStockModal productId={p.id} productName={p.name} currentStock={p.stock} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {products.length === 0 && (
+          <p className="px-4 py-10 text-center text-sm text-zinc-400">No products found.</p>
+        )}
+      </div>
+    );
+  }
+
+  const pageHref = (pg: number) => {
+    const p = new URLSearchParams(baseParams);
+    p.set("view", view);
+    if (mtype) p.set("mtype", mtype);
+    p.set("page", String(pg));
+    return `/admin/inventory?${p.toString()}`;
+  };
+  const viewHref = (v: string) => {
+    const p = new URLSearchParams(baseParams);
+    p.set("view", v);
+    return `/admin/inventory?${p.toString()}`;
+  };
+
+  const pageNums: number[] = [];
+  for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) pageNums.push(i);
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <SectionTitle title="Inventory" className="mb-0" />
-          <p className="mt-1 text-sm text-zinc-500">
-            {products.length} product{products.length === 1 ? "" : "s"} shown
-          </p>
-        </div>
-        {lowOnly ? (
-          <Link href="/admin/inventory" className={btnSecondary}>
-            Show all
+      <SectionTitle title="Inventory" />
+
+      {/* Tiles */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {tiles.map((t) => {
+          const inner = (
+            <div className={`h-full rounded-3xl bg-white p-4 shadow-sm ring-1 transition ${
+              t.active ? "ring-2 ring-orange-500" : "ring-zinc-100 hover:shadow-md"
+            }`}>
+              <span className="text-xl">{t.icon}</span>
+              <p className="mt-2 text-lg font-extrabold text-zinc-900">{t.value}</p>
+              <p className="text-xs font-medium text-zinc-500">{t.label}</p>
+              {t.sub && <p className="text-xs font-bold text-zinc-700">{t.sub}</p>}
+            </div>
+          );
+          return t.href ? (
+            <Link key={t.label} href={t.href} className="block h-full">{inner}</Link>
+          ) : (
+            <div key={t.label} className="h-full">{inner}</div>
+          );
+        })}
+      </div>
+
+      {/* Filters */}
+      <form action="/admin/inventory" method="get" className={`${cardCls} mb-4 flex flex-wrap items-end gap-2 p-4`}>
+        <input type="hidden" name="view" value={view} />
+        {mtype && <input type="hidden" name="mtype" value={mtype} />}
+        <label className="min-w-40 flex-1">
+          <span className="mb-1 block text-xs font-bold text-zinc-500">Search</span>
+          <input name="q" defaultValue={q} placeholder="Product name…" className={inputCls} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-bold text-zinc-500">Category</span>
+          <select name="cat" defaultValue={cat} className={inputCls}>
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-bold text-zinc-500">From</span>
+          <input type="date" name="from" defaultValue={fromStr} max={toStr} className={inputCls} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-bold text-zinc-500">To</span>
+          <input type="date" name="to" defaultValue={toStr} min={fromStr} max={isoDay(new Date())} className={inputCls} />
+        </label>
+        <button type="submit" className={btnPrimary}>Apply</button>
+        {(q || cat || mtype) && (
+          <Link href="/admin/inventory" className="px-2 py-2 text-sm font-bold text-zinc-500 hover:text-zinc-800">
+            Clear
           </Link>
-        ) : (
-          <Link href="/admin/inventory?low=1" className={btnSecondary}>
-            Low stock only
+        )}
+      </form>
+
+      {/* View toggle */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { id: "stock", label: "📦 Stock list" },
+          { id: "movements", label: "📝 Movements" },
+        ].map((v) => (
+          <Link
+            key={v.id}
+            href={viewHref(v.id)}
+            className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+              view === v.id ? "bg-zinc-900 text-white shadow" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+          >
+            {v.label}
           </Link>
+        ))}
+        {mtype && view === "movements" && (
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1.5 text-xs font-bold text-orange-800">
+            {TYPE_META[mtype]?.icon} {TYPE_META[mtype]?.label}
+            <Link href={viewHref("movements")} className="ml-2 font-extrabold hover:text-orange-900">✕</Link>
+          </span>
         )}
       </div>
 
-      <FormError message={qp(sp, "error")} />
+      {listContent}
 
-      {products.length === 0 ? (
-        <EmptyState
-          title={lowOnly ? "No low-stock items" : "No products"}
-          message={lowOnly ? "Nothing is below 10 units." : "Add products to manage inventory."}
-          actionHref="/admin/products/new"
-          actionLabel="New product"
-        />
-      ) : (
-        <div className={tableWrapCls}>
-          <table className={tableCls}>
-            <thead>
-              <tr>
-                <th className={thCls}>Product / Variant</th>
-                <th className={thCls}>SKU</th>
-                <th className={thCls}>Price</th>
-                <th className={thCls}>Stock</th>
-                <th className={thCls}>Set stock</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {products.map((p) => (
-                <Fragment key={p.id}>
-                  <tr key={p.id} className="bg-zinc-50/60 hover:bg-zinc-50">
-                    <td className={tdCls}>
-                      <Link href={`/admin/products/${p.id}`} className="font-semibold text-zinc-900 hover:text-orange-700 hover:underline">
-                        {p.name}
-                      </Link>
-                      <span className="ml-2 text-xs text-zinc-500">{p.category.name}</span>
-                      {p.variants.length > 0 ? (
-                        <span className="ml-2 text-xs text-zinc-400">({p.variants.length} variants)</span>
-                      ) : null}
-                    </td>
-                    <td className={tdCls}>{p.sku ?? "—"}</td>
-                    <td className={tdCls}>{formatUSD(p.priceCents)}</td>
-                    <td className={tdCls}>
-                      {p.variants.length === 0 ? (
-                        <Badge tone={p.stock === 0 ? "red" : p.stock < 10 ? "amber" : "zinc"}>{p.stock}</Badge>
-                      ) : (
-                        <span className="text-xs text-zinc-400">via variants</span>
-                      )}
-                    </td>
-                    <td className={tdCls}>
-                      {p.variants.length === 0 ? (
-                        <StockForm productId={p.id} stock={p.stock} low={lowOnly} />
-                      ) : null}
-                    </td>
-                  </tr>
-                  {p.variants.map((v) => (
-                    <tr key={v.id} className="hover:bg-zinc-50">
-                      <td className={`${tdCls} pl-8`}>
-                        <span className="text-zinc-600">
-                          {v.name}: {v.value}
-                        </span>
-                      </td>
-                      <td className={tdCls}>{v.sku ?? "—"}</td>
-                      <td className={tdCls}>
-                        {v.priceDeltaCents !== 0 ? (
-                          <span className="text-xs text-zinc-500">
-                            {v.priceDeltaCents > 0 ? "+" : ""}
-                            {formatUSD(v.priceDeltaCents)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-zinc-400">base</span>
-                        )}
-                      </td>
-                      <td className={tdCls}>
-                        <Badge tone={v.stock === 0 ? "red" : v.stock < 10 ? "amber" : "zinc"}>{v.stock}</Badge>
-                      </td>
-                      <td className={tdCls}>
-                        <StockForm variantId={v.id} stock={v.stock} low={lowOnly} />
-                      </td>
-                    </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-1.5">
+          {page > 1 && (
+            <Link href={pageHref(page - 1)} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-bold text-zinc-600 hover:bg-zinc-50">
+              ←
+            </Link>
+          )}
+          {pageNums[0] > 1 && (
+            <>
+              <Link href={pageHref(1)} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-bold text-zinc-600 hover:bg-zinc-50">1</Link>
+              {pageNums[0] > 2 && <span className="text-zinc-400">…</span>}
+            </>
+          )}
+          {pageNums.map((n) => (
+            <Link
+              key={n}
+              href={pageHref(n)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-bold ${
+                n === page
+                  ? "bg-zinc-900 text-white shadow"
+                  : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+              }`}
+            >
+              {n}
+            </Link>
+          ))}
+          {pageNums[pageNums.length - 1] < totalPages && (
+            <>
+              {pageNums[pageNums.length - 1] < totalPages - 1 && <span className="text-zinc-400">…</span>}
+              <Link href={pageHref(totalPages)} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-bold text-zinc-600 hover:bg-zinc-50">{totalPages}</Link>
+            </>
+          )}
+          {page < totalPages && (
+            <Link href={pageHref(page + 1)} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-bold text-zinc-600 hover:bg-zinc-50">
+              →
+            </Link>
+          )}
         </div>
       )}
     </div>

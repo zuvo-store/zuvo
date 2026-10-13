@@ -268,6 +268,9 @@ export async function deductInventory(orderId: string) {
   const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true } });
   await db.$transaction(async (tx) => {
     for (const item of order.items) {
+      const pid = item.variantId
+        ? (await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } })).productId
+        : item.productId;
       if (item.variantId) {
         const v = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
         if (v.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}".`);
@@ -276,6 +279,17 @@ export async function deductInventory(orderId: string) {
         const p = await tx.product.findUniqueOrThrow({ where: { id: item.productId } });
         if (p.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}".`);
         await tx.product.update({ where: { id: p.id }, data: { stock: p.stock - item.qty } });
+      }
+      if (pid) {
+        await tx.stockMovement.create({
+          data: {
+            productId: pid,
+            variantId: item.variantId ?? null,
+            type: "SALE",
+            qty: -item.qty,
+            reason: `Order ${order.orderNumber}`,
+          },
+        });
       }
     }
   });
@@ -286,10 +300,24 @@ export async function restoreInventory(orderId: string) {
   const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true } });
   await db.$transaction(async (tx) => {
     for (const item of order.items) {
+      const pid = item.variantId
+        ? (await tx.productVariant.findUnique({ where: { id: item.variantId } }))?.productId
+        : item.productId;
       if (item.variantId) {
         await tx.productVariant.update({ where: { id: item.variantId }, data: { stock: { increment: item.qty } } });
       } else if (item.productId) {
         await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.qty } } });
+      }
+      if (pid) {
+        await tx.stockMovement.create({
+          data: {
+            productId: pid,
+            variantId: item.variantId ?? null,
+            type: "RETURN",
+            qty: item.qty,
+            reason: `Cancel/refund of ${order.orderNumber}`,
+          },
+        });
       }
     }
   });
