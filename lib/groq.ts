@@ -44,8 +44,10 @@ export async function groqChat(opts: {
     }
     const d = await res.json();
     const text = d?.choices?.[0]?.message?.content?.trim();
+    if (!text) console.error(`groqChat empty reply: model=${opts.model ?? GROQ_TEXT_MODEL}`);
     return text || null;
-  } catch {
+  } catch (e) {
+    console.error(`groqChat exception: model=${opts.model ?? GROQ_TEXT_MODEL} ${e instanceof Error ? e.message : String(e)}`);
     return null;
   }
 }
