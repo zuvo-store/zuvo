@@ -19,8 +19,15 @@ export async function POST(req: NextRequest) {
     if (file.size > 4 * 1024 * 1024) {
       return NextResponse.json({ ok: false, error: "Image too large (max 4MB)" }, { status: 400 });
     }
-    const buf = Buffer.from(await file.arrayBuffer());
-    const mime = file.type || "image/jpeg";
+    // Downscale server-side: vision is faster + more reliable on small images.
+    let buf = Buffer.from(await file.arrayBuffer());
+    let mime = "image/jpeg";
+    try {
+      const sharp = (await import("sharp")).default;
+      buf = await sharp(buf).resize(768, 768, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+    } catch {
+      mime = file.type || "image/jpeg"; // fall back to original bytes
+    }
     const dataUrl = `data:${mime};base64,${buf.toString("base64")}`;
 
     // Step 1: vision model describes what's in the photo.

@@ -37,7 +37,11 @@ export async function groqChat(opts: {
         ],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.error(`groqChat failed: ${res.status} model=${opts.model ?? GROQ_TEXT_MODEL} ${errText.slice(0, 200)}`);
+      return null;
+    }
     const d = await res.json();
     const text = d?.choices?.[0]?.message?.content?.trim();
     return text || null;
