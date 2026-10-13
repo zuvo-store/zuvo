@@ -235,6 +235,7 @@ model Order {
   giftMessage      String?  // gift note from buyer
   cancelledAt      DateTime? // customer/admin cancellation time
   cancelReason     String?  // reason for cancellation
+  hiddenByCustomer Boolean  @default(false) // customer dismissed it from their order list
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

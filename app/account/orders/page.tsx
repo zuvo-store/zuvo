@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import EmptyState from "@/components/EmptyState";
+import HideOrderButton from "@/components/HideOrderButton";
 import { cardCls } from "@/components/ui";
 
 const STATUS_TONE: Record<string, string> = {
@@ -32,7 +33,7 @@ const STATUS_DOT: Record<string, string> = {
 export default async function OrdersPage() {
   const user = await requireUser();
   const orders = await db.order.findMany({
-    where: { userId: user.id, status: { not: "DRAFT" } },
+    where: { userId: user.id, status: { not: "DRAFT" }, hiddenByCustomer: false },
     include: {
       items: {
         select: { id: true, name: true, image: true, qty: true, variantLabel: true },
@@ -70,7 +71,10 @@ export default async function OrdersPage() {
           const shown = o.items.slice(0, 3);
           const extra = o._count.items - shown.length;
           return (
-            <li key={o.id}>
+            <li key={o.id} id={`order-card-${o.id}`} className="relative">
+              {["CANCELLED", "REFUNDED"].includes(o.status) ? (
+                <HideOrderButton orderId={o.id} />
+              ) : null}
               <Link
                 href={`/account/orders/${o.id}`}
                 className={`${cardCls} block p-4 transition hover:shadow-md sm:p-5`}
