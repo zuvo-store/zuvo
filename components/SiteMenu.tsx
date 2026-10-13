@@ -125,7 +125,14 @@ export default function SiteMenu({ locale }: { locale: Locale }) {
         )}
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-2 max-h-[85vh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-3xl border border-zinc-200/70 bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
+        <>
+          {/* Click outside to close (professional drawer behavior) */}
+          <div
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute left-0 top-full z-50 mt-2 max-h-[85vh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-3xl border border-zinc-200/70 bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
           {/* Zuzu banner — tap for a surprise! (top of drawer, no search here) */}
           <div className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30">
             <InteractiveZuzu size="sm" showName={false} className="shrink-0" />
@@ -218,7 +225,8 @@ export default function SiteMenu({ locale }: { locale: Locale }) {
               <LanguageToggle initial={locale} />
             </div>
           </nav>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
