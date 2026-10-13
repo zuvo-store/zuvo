@@ -39,7 +39,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { order: { select: { id: true, orderNumber: true } } },
+      include: { order: { select: { id: true, orderNumber: true, status: true } } },
     }),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -72,7 +72,8 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
               <th className={thCls}>Transaction ref</th>
               <th className={thCls}>Order</th>
               <th className={thCls}>Scenario</th>
-              <th className={thCls}>Status</th>
+              <th className={thCls}>Payment status</th>
+              <th className={thCls}>Order status</th>
               <th className={thCls}>Amount</th>
               <th className={thCls}>Date</th>
               <th className={thCls}>Actions</th>
@@ -90,6 +91,12 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
                 <td className={tdCls}>{SCENARIO_LABELS[p.scenario as keyof typeof SCENARIO_LABELS] ?? p.scenario}</td>
                 <td className={tdCls}>
                   <Badge tone={statusTone(p.status)}>{p.status}</Badge>
+                </td>
+                <td className={tdCls}>
+                  <Badge tone={statusTone(p.order.status)}>{p.order.status.replace(/_/g, " ")}</Badge>
+                  {["CANCELLED", "REFUNDED"].includes(p.order.status) && p.status === "SUCCEEDED" && (
+                    <span className="mt-1 block text-[11px] font-bold text-red-600">⚠️ Refund needed</span>
+                  )}
                 </td>
                 <td className={tdCls}>{formatUSD(p.amountCents)}</td>
                 <td className={tdCls}>{fmtDate(p.createdAt)}</td>
