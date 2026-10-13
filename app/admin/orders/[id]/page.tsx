@@ -16,6 +16,7 @@ import {
   SectionTitle,
 } from "@/components/ui";
 import { fmtDate, statusTone, tableWrapCls, tableCls, thCls, tdCls, btnDanger, btnSm, qp, type SearchParams } from "../../_helpers";
+import ConfirmForm from "@/components/ConfirmForm";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -131,18 +132,31 @@ export default async function AdminOrderDetailPage({
             ))
           )}
           {hasPending ? (
-            <form action={confirmPending} className="inline">
+            <ConfirmForm
+              action={confirmPending}
+              className="inline"
+              title="Confirm payment?"
+              message={`Mark the payment for order ${order.orderNumber} as received? The order will proceed to fulfillment.`}
+              confirmLabel="Yes, confirm"
+            >
               <button type="submit" className={`${btnSecondary} ${btnSm}`}>
                 Confirm pending payment
               </button>
-            </form>
+            </ConfirmForm>
           ) : null}
           {hasSucceeded ? (
-            <form action={refund} className="inline">
+            <ConfirmForm
+              action={refund}
+              className="inline"
+              title="Refund this order?"
+              message={`Refund ${formatUSD(order.totalCents)} for order ${order.orderNumber}? The customer will be notified.`}
+              confirmLabel="Yes, refund"
+              danger
+            >
               <button type="submit" className={`${btnDanger} ${btnSm}`}>
                 Refund (demo)
               </button>
-            </form>
+            </ConfirmForm>
           ) : null}
         </div>
       </div>

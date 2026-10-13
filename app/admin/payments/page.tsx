@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import ConfirmForm from "@/components/ConfirmForm";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { getSessionUser, requireAdminPage} from "@/lib/auth";
@@ -102,12 +103,19 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
                 <td className={tdCls}>{fmtDate(p.createdAt)}</td>
                 <td className={tdCls}>
                   {p.status === "SUCCEEDED" ? (
-                    <form action={refundPayment} className="inline">
+                    <ConfirmForm
+                      action={refundPayment}
+                      className="inline"
+                      title={`Refund ${formatUSD(p.amountCents)}?`}
+                      message={`Refund the payment for order ${p.order.orderNumber}? The customer will be notified and inventory restored.`}
+                      confirmLabel="Yes, refund"
+                      danger
+                    >
                       <input type="hidden" name="orderId" value={p.order.id} />
                       <button type="submit" className={`${btnDanger} ${btnSm}`}>
                         Refund
                       </button>
-                    </form>
+                    </ConfirmForm>
                   ) : (
                     <span className="text-xs text-zinc-400">—</span>
                   )}

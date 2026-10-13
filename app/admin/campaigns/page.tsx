@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import ConfirmForm from "@/components/ConfirmForm";
 import { db } from "@/lib/db";
 import { formatUSD, toCents } from "@/lib/money";
 import { audit } from "@/lib/audit";
@@ -269,10 +270,16 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
                         <input type="hidden" name="active" value={c.active ? "off" : "on"} />
                         <button type="submit" className={btnSm}>{c.active ? "Pause" : "Resume"}</button>
                       </form>
-                      <form action={deleteCampaign}>
+                      <ConfirmForm
+                        action={deleteCampaign}
+                        title={`Delete campaign "${c.name}"?`}
+                        message="The campaign and its discounts will be permanently removed."
+                        confirmLabel="Yes, delete"
+                        danger
+                      >
                         <input type="hidden" name="id" value={c.id} />
                         <button type="submit" className={btnSm}>Delete</button>
-                      </form>
+                      </ConfirmForm>
                     </div>
                   </td>
                 </tr>

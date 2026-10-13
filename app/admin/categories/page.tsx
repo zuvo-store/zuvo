@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import ConfirmForm from "@/components/ConfirmForm";
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { getSessionUser, requireAdminPage} from "@/lib/auth";
@@ -214,12 +215,19 @@ export default async function AdminCategoriesPage({ searchParams }: { searchPara
                       <Link href={`/admin/categories?edit=${c.id}`} className={`${btnSecondary} ${btnSm}`}>
                         Edit
                       </Link>
-                      <form action={deleteCategory} className="inline">
+                      <ConfirmForm
+                        action={deleteCategory}
+                        className="inline"
+                        title={`Delete "${c.name}"?`}
+                        message="The category will be permanently deleted. Products in it must be moved first."
+                        confirmLabel="Yes, delete"
+                        danger
+                      >
                         <input type="hidden" name="id" value={c.id} />
                         <button type="submit" className={`${btnDanger} ${btnSm}`}>
                           Delete
                         </button>
-                      </form>
+                      </ConfirmForm>
                     </div>
                   </td>
                 </tr>
