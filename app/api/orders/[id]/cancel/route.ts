@@ -37,6 +37,12 @@ export async function POST(
     }
 
     const { reason } = (await req.json().catch(() => ({}))) as { reason?: string };
+    if (!reason || !reason.trim()) {
+      return NextResponse.json(
+        { ok: false, error: "A cancellation reason is required." },
+        { status: 400 }
+      );
+    }
 
     await db.$transaction(async (tx) => {
       await tx.order.update({

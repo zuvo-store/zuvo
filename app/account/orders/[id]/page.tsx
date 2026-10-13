@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { cardCls } from "@/components/ui";
 import CancelOrderButton from "@/components/CancelOrderButton";
+import OrderChat from "@/components/OrderChat";
 
 const TIMELINE = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"];
 
@@ -236,6 +237,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </section>
         </div>
       </div>
+
+      {/* Support chat for this order */}
+      <section className={`${cardCls} mt-6`}>
+        <h2 className="mb-1 text-base font-extrabold text-zinc-900">💬 Chat with support</h2>
+        <p className="mb-3 text-sm text-zinc-500">Questions about this order? Message us right here.</p>
+        <OrderChat orderId={order.id} />
+      </section>
     </main>
   );
 }

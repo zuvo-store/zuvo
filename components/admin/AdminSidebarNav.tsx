@@ -9,6 +9,7 @@ const NAV: { href: string; label: string }[] = [
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/inbox", label: "Inbox" },
   { href: "/admin/carts", label: "Carts" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/fraud", label: "Fraud Check" },

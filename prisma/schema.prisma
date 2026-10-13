@@ -37,6 +37,7 @@ model User {
   reviews       Review[]
   auditLogs     AuditLog[]
   vouchers      Promotion[] // user-specific vouchers assigned to this customer
+  conversations Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -239,6 +240,7 @@ model Order {
 
   items    OrderItem[]
   payments Payment[]
+  conversations Conversation[]
 
   @@index([userId])
   @@index([guestToken])
@@ -431,4 +433,34 @@ model PageView {
 
   @@index([createdAt])
   @@index([path])
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status        String    @default("OPEN") // OPEN, CLOSED
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  messages      Message[]
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  senderRole     String       // CUSTOMER, ADMIN
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
 }
