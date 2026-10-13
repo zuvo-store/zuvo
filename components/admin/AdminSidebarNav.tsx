@@ -5,25 +5,32 @@ import { usePathname } from "next/navigation";
 import UnreadBadge from "./UnreadBadge";
 
 const NAV: { href: string; label: string }[] = [
-  { href: "/admin/inbox", label: "Inbox" },
+  // Daily operations
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/inbox", label: "Inbox" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/payments", label: "Payments" },
+  // Catalog
   { href: "/admin/products", label: "Products" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/inventory", label: "Inventory" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/carts", label: "Carts" },
-  { href: "/admin/pricing", label: "Pricing" },
-  { href: "/admin/fraud", label: "Fraud Check" },
-  { href: "/admin/marketing", label: "Marketing" },
+  // Customers
   { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/carts", label: "Carts" },
+  // Growth & marketing
+  { href: "/admin/marketing", label: "Marketing" },
+  { href: "/admin/campaigns", label: "Campaigns" },
+  { href: "/admin/promotions", label: "Promotions" },
   { href: "/admin/rewards", label: "Rewards" },
   { href: "/admin/referrals", label: "Referrals" },
-  { href: "/admin/promotions", label: "Promotions" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/payments", label: "Payments" },
+  // AI tools
+  { href: "/admin/pricing", label: "Pricing" },
+  { href: "/admin/fraud", label: "Fraud Check" },
+  // Insights
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/visitors", label: "Visitors" },
+  // System
   { href: "/admin/audit-logs", label: "Audit Logs" },
   { href: "/admin/settings", label: "Settings" },
 ];
