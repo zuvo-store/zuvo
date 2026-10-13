@@ -5,7 +5,6 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import EmptyState from "@/components/EmptyState";
-import HideOrderButton from "@/components/HideOrderButton";
 import { cardCls } from "@/components/ui";
 
 const STATUS_TONE: Record<string, string> = {
@@ -30,10 +29,21 @@ const STATUS_DOT: Record<string, string> = {
   REFUNDED: "bg-zinc-400",
 };
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const user = await requireUser();
-  const orders = await db.order.findMany({
-    where: { userId: user.id, status: { not: "DRAFT" }, hiddenByCustomer: false },
+  const sp = await searchParams;
+  const tab = sp.tab === "cancelled" ? "cancelled" : sp.tab === "all" ? "all" : "active";
+
+  const statusFilter =
+    tab === "cancelled"
+      ? { in: ["CANCELLED", "REFUNDED"] }
+      : tab === "active"
+        ? { notIn: ["CANCELLED", "REFUNDED", "DRAFT"] }
+        : { not: "DRAFT" };
+
+  const [orders, activeCount, cancelledCount] = await Promise.all([
+    db.order.findMany({
+      where: { userId: user.id, status: statusFilter },
     include: {
       items: {
         select: { id: true, name: true, image: true, qty: true, variantLabel: true },
@@ -42,9 +52,18 @@ export default async function OrdersPage() {
       _count: { select: { items: true } },
     },
     orderBy: { createdAt: "desc" },
-  });
+    }),
+    db.order.count({ where: { userId: user.id, status: { notIn: ["CANCELLED", "REFUNDED", "DRAFT"] } } }),
+    db.order.count({ where: { userId: user.id, status: { in: ["CANCELLED", "REFUNDED"] } } }),
+  ]);
 
-  if (orders.length === 0) {
+  const tabs = [
+    { id: "active", label: "Active", count: activeCount },
+    { id: "cancelled", label: "Cancelled", count: cancelledCount },
+    { id: "all", label: "All", count: activeCount + cancelledCount },
+  ];
+
+  if (orders.length === 0 && tab === "active" && activeCount === 0 && cancelledCount === 0) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-12">
         <EmptyState
@@ -65,16 +84,36 @@ export default async function OrdersPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-zinc-900">Your orders</h1>
+      <h1 className="mb-4 text-2xl font-bold text-zinc-900">Your orders</h1>
+      <div className="mb-6 flex gap-2">
+        {tabs.map((t) => (
+          <Link
+            key={t.id}
+            href={t.id === "active" ? "/account/orders" : `/account/orders?tab=${t.id}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+              tab === t.id
+                ? "bg-zinc-900 text-white shadow"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+          >
+            {t.label}
+            <span className={`ml-1.5 text-xs ${tab === t.id ? "text-zinc-300" : "text-zinc-400"}`}>
+              {t.count}
+            </span>
+          </Link>
+        ))}
+      </div>
+      {orders.length === 0 ? (
+        <p className="rounded-2xl bg-zinc-50 px-4 py-10 text-center text-sm text-zinc-500">
+          {tab === "cancelled" ? "No cancelled orders." : "No orders in this view."}
+        </p>
+      ) : (
       <ul className="space-y-4">
         {orders.map((o) => {
           const shown = o.items.slice(0, 3);
           const extra = o._count.items - shown.length;
           return (
-            <li key={o.id} id={`order-card-${o.id}`} className="relative">
-              {["CANCELLED", "REFUNDED"].includes(o.status) ? (
-                <HideOrderButton orderId={o.id} />
-              ) : null}
+            <li key={o.id}>
               <Link
                 href={`/account/orders/${o.id}`}
                 className={`${cardCls} block p-4 transition hover:shadow-md sm:p-5`}
@@ -151,6 +190,7 @@ export default async function OrdersPage() {
           );
         })}
       </ul>
+      )}
     </main>
   );
 }
