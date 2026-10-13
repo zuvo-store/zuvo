@@ -185,11 +185,18 @@ export default function AIAssistant() {
     return () => window.removeEventListener("zuzu-open", onOpen);
   }, []);
 
+  const [flying, setFlying] = useState(false);
+
   function minimizeToHeader() {
+    // Animate flying up toward the header first, then actually minimize
     setOpen(false);
-    setMinimized(true);
-    try { localStorage.setItem("zuzu-minimized", "1"); } catch { /* ignore */ }
-    window.dispatchEvent(new CustomEvent("zuzu-minimized"));
+    setFlying(true);
+    setTimeout(() => {
+      setFlying(false);
+      setMinimized(true);
+      try { localStorage.setItem("zuzu-minimized", "1"); } catch { /* ignore */ }
+      window.dispatchEvent(new CustomEvent("zuzu-minimized"));
+    }, 650);
   }
 
   if (hidden && !open) return null;
@@ -294,7 +301,7 @@ export default function AIAssistant() {
         type="button"
         onClick={() => { setOpen((o) => !o); if (!open) greet(); }}
         aria-label={open ? "Close Zuzu assistant" : "Chat with Zuzu"}
-        className="group relative"
+        className={`group relative transition-all duration-500 ease-in ${flying ? "pointer-events-none -translate-y-[72vh] scale-[0.35] opacity-0" : ""}`}
       >
         <span className={`block h-16 w-16 overflow-hidden rounded-full shadow-xl shadow-orange-500/30 ring-4 ring-white transition-transform group-active:scale-90 ${waving && !open ? "ai-wave" : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
