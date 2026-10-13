@@ -94,18 +94,7 @@ export default function SearchBox({ className = "", placeholder = "Search produc
         <label htmlFor={listId} className="sr-only">
           Search products
         </label>
-        <div className="flex w-full items-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-50 transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-100">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 20 20"
-            fill="none"
-            aria-hidden="true"
-            className="ml-4 shrink-0 text-zinc-400"
-          >
-            <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
-            <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+        <div className="flex w-full items-center overflow-hidden rounded-full border border-zinc-900/60 bg-white transition focus-within:border-zinc-900">
           <input
             id={listId}
             type="search"
@@ -119,18 +108,17 @@ export default function SearchBox({ className = "", placeholder = "Search produc
             aria-expanded={open}
             aria-controls={`${listId}-list`}
             aria-activedescendant={active >= 0 ? `${listId}-opt-${active}` : undefined}
-            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent px-5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
           />
           <button
             type="submit"
             aria-label="Search"
-            className="m-1 flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-zinc-900 px-4 text-sm font-bold text-white transition hover:bg-zinc-700 active:scale-95"
+            className="flex h-10 w-12 shrink-0 items-center justify-center bg-zinc-900 text-white transition hover:bg-zinc-700 active:scale-95"
           >
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
               <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            <span className="hidden lg:inline">Search</span>
           </button>
         </div>
       </form>
