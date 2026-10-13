@@ -64,9 +64,8 @@ function ProductCards({ products }: { products: ProductCard[] }) {
  */
 export default function AIAssistant() {
   const pathname = usePathname();
-  // Hide floating assistant on the full AI Chat page
-  if (pathname === "/ai-chat") return null;
   const [open, setOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [waving, setWaving] = useState(false);
   const [talking, setTalking] = useState(false);
   const [input, setInput] = useState("");
@@ -169,6 +168,32 @@ export default function AIAssistant() {
     }
   }
 
+  // Hide on AI Chat page or when minimized to header (all hooks already called above)
+  const hidden = pathname === "/ai-chat" || minimized;
+
+  // Sync minimized state + listen for restore from header icon
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("zuzu-minimized") === "1") setMinimized(true);
+    } catch { /* ignore */ }
+    const onOpen = () => {
+      try { localStorage.removeItem("zuzu-minimized"); } catch { /* ignore */ }
+      setMinimized(false);
+      setOpen(true);
+    };
+    window.addEventListener("zuzu-open", onOpen);
+    return () => window.removeEventListener("zuzu-open", onOpen);
+  }, []);
+
+  function minimizeToHeader() {
+    setOpen(false);
+    setMinimized(true);
+    try { localStorage.setItem("zuzu-minimized", "1"); } catch { /* ignore */ }
+    window.dispatchEvent(new CustomEvent("zuzu-minimized"));
+  }
+
+  if (hidden && !open) return null;
+
   return (
     <div className="fixed bottom-5 right-5 z-[90] flex flex-col items-end">
       {/* Chat panel */}
@@ -263,7 +288,8 @@ export default function AIAssistant() {
         </div>
       )}
 
-      {/* Floating waving button */}
+      {/* Floating waving button (hidden when minimized to header) */}
+      {!minimized && (
       <button
         type="button"
         onClick={() => { setOpen((o) => !o); if (!open) greet(); }}
@@ -284,6 +310,20 @@ export default function AIAssistant() {
             AI
           </span>
         )}
+        {/* Minimize-to-header cross */}
+        {!open && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label="Move Zuzu to header"
+            title="Header me lagao"
+            onClick={(e) => { e.stopPropagation(); minimizeToHeader(); }}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); minimizeToHeader(); } }}
+            className="absolute -left-1 -top-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-zinc-800/90 text-white shadow-md transition hover:bg-zinc-900"
+          >
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+          </span>
+        )}
         {/* Attention bubble */}
         {waving && !open && (
           <span className="ai-wave-bubble absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-2xl rounded-br-sm bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 shadow-xl ring-1 ring-zinc-100">
@@ -291,6 +331,7 @@ export default function AIAssistant() {
           </span>
         )}
       </button>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import AccountMenu from "@/components/AccountMenu";
 import MobileMenu from "@/components/MobileMenu";
 import CartIconButton from "@/components/CartIconButton";
 import DealsTicker from "@/components/DealsTicker";
+import HeaderZuzuButton from "@/components/HeaderZuzuButton";
 
 const NAV = [
   { href: "/categories", label: "Categories" },
@@ -44,6 +45,7 @@ export default async function SiteHeader() {
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
+            <HeaderZuzuButton />
             <Link
               href="/wishlist"
               aria-label="Wishlist"
