@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
+import LanguageToggle from "@/components/LanguageToggle";
+import type { Locale } from "@/lib/i18n";
 
 const SHOP_LINKS = [
   {
@@ -90,7 +92,7 @@ const ACCOUNT_LINKS = [
   { href: "/account", label: "My Account" },
 ];
 
-export default function MobileMenu() {
+export default function MobileMenu({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -196,6 +198,15 @@ export default function MobileMenu() {
                 </li>
               ))}
             </ul>
+            <p className="px-2 pb-2 pt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">
+              {locale === "ur" ? "زبان" : "Language"}
+            </p>
+            <div className="flex items-center justify-between rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm">
+              <span className="text-sm font-semibold text-zinc-700">
+                {locale === "ur" ? "ویب سائٹ کی زبان" : "Website language"}
+              </span>
+              <LanguageToggle initial={locale} />
+            </div>
           </nav>
         </div>
       ) : null}

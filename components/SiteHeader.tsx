@@ -32,7 +32,7 @@ export default async function SiteHeader() {
       <DealsTicker />
       <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 shadow-lg shadow-zinc-900/5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
         <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
-          <MobileMenu />
+          <MobileMenu locale={locale} />
           <Logo tagline="Discover More. Shop Smarter." />
           <SearchBox className="hidden min-w-0 flex-1 md:block" placeholder={t(locale, "search.placeholder")} />
           <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
@@ -47,7 +47,9 @@ export default async function SiteHeader() {
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
-            <LanguageToggle initial={locale} />
+            <span className="hidden md:inline-flex">
+              <LanguageToggle initial={locale} />
+            </span>
             <HeaderZuzuButton />
             <Link
               href="/wishlist"
