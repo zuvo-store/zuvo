@@ -70,6 +70,8 @@ export default async function CheckoutPage() {
         savedAddresses={saved}
         initialDeliveryMethod={draft.deliveryMethod === "EXPRESS" ? "EXPRESS" : "STANDARD"}
         initialPromoCode={draft.promoCode ?? ""}
+        initialGiftWrap={draft.giftWrap}
+        initialGiftMessage={draft.giftMessage ?? ""}
       />
     </main>
   );

@@ -144,6 +144,12 @@ export default async function ReviewPage() {
               )}
             </dd>
           </div>
+          {order.giftWrap && (
+            <div className="flex justify-between rounded-lg bg-pink-50 px-3 py-1.5 text-pink-700">
+              <dt>🎁 Gift wrap{order.giftMessage ? " + note" : ""}</dt>
+              <dd className="font-bold">{formatUSD(order.giftWrapCents)}</dd>
+            </div>
+          )}
           <div className="flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3 text-base">
             <dt className="font-bold text-white">Total</dt>
             <dd className="text-xl font-extrabold text-white">{formatUSD(order.totalCents)}</dd>

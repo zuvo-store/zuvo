@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { cardCls } from "@/components/ui";
+import CancelOrderButton from "@/components/CancelOrderButton";
 
 const TIMELINE = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"];
 
@@ -52,7 +53,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             Placed {new Date(order.createdAt).toLocaleString("en-US")}
           </p>
         </div>
-        <span
+        <div className="flex items-center gap-3">
+          {["PENDING_PAYMENT", "CONFIRMED", "PROCESSING"].includes(order.status) && (
+            <CancelOrderButton orderId={order.id} />
+          )}
+          <span
           className={`rounded-full px-3 py-1 text-sm font-semibold ${
             order.status === "CANCELLED" || order.status === "REFUNDED"
               ? "bg-zinc-200 text-zinc-700"
@@ -61,6 +66,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         >
           {order.status.replace(/_/g, " ")}
         </span>
+        </div>
       </div>
 
       {timelineIdx >= 0 && (
@@ -130,11 +136,23 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 {order.shippingCents === 0 ? "FREE" : formatUSD(order.shippingCents)}
               </dd>
             </div>
+            {order.giftWrap && (
+              <div className="flex justify-between text-pink-700">
+                <dt>🎁 Gift wrap</dt>
+                <dd className="font-medium">{formatUSD(order.giftWrapCents)}</dd>
+              </div>
+            )}
             <div className="flex justify-between border-t border-zinc-200 pt-2 text-base">
               <dt className="font-semibold text-zinc-900">Total</dt>
               <dd className="font-bold text-zinc-900">{formatUSD(order.totalCents)}</dd>
             </div>
           </dl>
+          {order.giftWrap && order.giftMessage && (
+            <div className="mt-4 rounded-xl bg-pink-50 p-4 ring-1 ring-pink-100">
+              <p className="text-sm font-bold text-pink-700">🎁 Your gift message</p>
+              <p className="mt-1 text-sm italic text-pink-800">“{order.giftMessage}”</p>
+            </div>
+          )}
         </section>
 
         <div className="space-y-6">

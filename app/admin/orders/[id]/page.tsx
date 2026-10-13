@@ -183,8 +183,17 @@ export default async function AdminOrderDetailPage({
             <div className="flex justify-between"><dt className="text-zinc-500">Discount{order.promoCode ? ` (${order.promoCode})` : ""}</dt><dd>−{formatUSD(order.discountCents)}</dd></div>
             <div className="flex justify-between"><dt className="text-zinc-500">Shipping{order.deliveryLabel ? ` (${order.deliveryLabel})` : ""}</dt><dd>{formatUSD(order.shippingCents)}</dd></div>
             <div className="flex justify-between"><dt className="text-zinc-500">Tax</dt><dd>{formatUSD(order.taxCents)}</dd></div>
+            {order.giftWrap && (
+              <div className="flex justify-between"><dt className="text-pink-600">🎁 Gift wrap</dt><dd>{formatUSD(order.giftWrapCents)}</dd></div>
+            )}
             <div className="flex justify-between border-t border-zinc-200 pt-2 font-bold"><dt>Total</dt><dd>{formatUSD(order.totalCents)}</dd></div>
           </dl>
+          {order.giftWrap && order.giftMessage && (
+            <div className="mt-4 rounded-xl bg-pink-50 p-4 ring-1 ring-pink-100">
+              <p className="text-sm font-bold text-pink-700">🎁 Gift message</p>
+              <p className="mt-1 text-sm italic text-pink-800">“{order.giftMessage}”</p>
+            </div>
+          )}
         </div>
 
         {/* Contact / address */}

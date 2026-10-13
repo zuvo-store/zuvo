@@ -3,6 +3,7 @@ import { db } from "./db";
 import { getGuestToken, getSessionUser } from "./auth";
 import { getCart, estimateShipping } from "./cart";
 import { audit } from "./audit";
+import { sendOrderStatusEmail } from "./email";
 
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -94,6 +95,23 @@ export type ShippingAddress = {
   apartment?: string;
   postalCode: string;
 };
+
+/** Flat gift-wrap charge (cents). */
+export const GIFT_WRAP_CENTS = 499;
+
+export async function saveGiftWrap(orderId: string, giftWrap: boolean, giftMessage?: string) {
+  const order = await getOrderOwned(orderId);
+  if (!order || order.status !== "DRAFT") throw new Error("Order not available.");
+  const message = giftWrap ? (giftMessage ?? "").trim().slice(0, 200) : null;
+  return db.order.update({
+    where: { id: orderId },
+    data: {
+      giftWrap,
+      giftWrapCents: giftWrap ? GIFT_WRAP_CENTS : 0,
+      giftMessage: message || null,
+    },
+  });
+}
 
 export async function saveDraftContact(orderId: string, contact: ContactInfo) {
   const order = await getOrderOwned(orderId);
@@ -203,7 +221,7 @@ export async function rebuildDraftOrder(orderId: string) {
     }
   }
 
-  const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents);
+  const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents + (order.giftWrap ? GIFT_WRAP_CENTS : 0));
 
   // ZUZU points redemption: 1000 pts = $1 (100 cents), capped by balance & total
   let zuzuPointsRedeemed = 0;
@@ -235,7 +253,7 @@ export async function rebuildDraftOrder(orderId: string) {
     });
     await tx.order.update({
       where: { id: orderId },
-      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents, campaignId, campaignName },
+      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents, campaignId, campaignName, giftWrapCents: order.giftWrap ? GIFT_WRAP_CENTS : 0 },
     });
   });
 
@@ -274,12 +292,31 @@ export async function restoreInventory(orderId: string) {
   });
 }
 
-export async function transitionOrder(orderId: string, to: string, actorId?: string, note?: string) {
-  const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
+export async function transitionOrder(
+  orderId: string,
+  to: string,
+  actorId?: string,
+  note?: string,
+  opts?: { silent?: boolean }
+) {
+  const order = await db.order.findUniqueOrThrow({
+    where: { id: orderId },
+    include: { user: { select: { email: true, name: true } } },
+  });
   if (!canTransition(order.status, to)) {
     throw new Error(`Cannot move order from ${order.status} to ${to}.`);
   }
   const updated = await db.order.update({ where: { id: orderId }, data: { status: to } });
   await audit("order.status", { actorId, entity: "Order", entityId: orderId, meta: { from: order.status, to, note } });
+
+  // Notify the customer — fire and forget, never breaks the transition.
+  if (!opts?.silent) {
+    const contact = (order.contactJson as Record<string, string> | null) ?? null;
+    const to_ = order.user?.email ?? order.guestEmail ?? contact?.email ?? null;
+    const name = order.user?.name ?? order.guestName ?? contact?.name ?? null;
+    sendOrderStatusEmail({ to: to_, name, orderNumber: updated.orderNumber, status: to }).catch((e) =>
+      console.error("[zuvo] order status email failed:", e instanceof Error ? e.message : e)
+    );
+  }
   return updated;
 }

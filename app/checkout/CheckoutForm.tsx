@@ -32,6 +32,8 @@ type Props = {
   savedAddresses: SavedAddress[];
   initialDeliveryMethod: "STANDARD" | "EXPRESS";
   initialPromoCode: string;
+  initialGiftWrap: boolean;
+  initialGiftMessage: string;
 };
 
 const fieldLabel = "mb-1 block text-sm font-medium text-zinc-700";
@@ -43,12 +45,16 @@ export default function CheckoutForm({
   savedAddresses,
   initialDeliveryMethod,
   initialPromoCode,
+  initialGiftWrap,
+  initialGiftMessage,
 }: Props) {
   const router = useRouter();
   const [contact, setContact] = useState(initialContact);
   const [address, setAddress] = useState(initialAddress);
   const [method, setMethod] = useState<"STANDARD" | "EXPRESS">(initialDeliveryMethod);
   const [promoCode, setPromoCode] = useState(initialPromoCode);
+  const [giftWrap, setGiftWrap] = useState(initialGiftWrap);
+  const [giftMessage, setGiftMessage] = useState(initialGiftMessage);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,6 +121,14 @@ export default function CheckoutForm({
       });
       if (!d.ok) {
         setError(d.error ?? "Could not save delivery method.");
+        return;
+      }
+      const g = await postJson("/api/checkout/gift", {
+        giftWrap,
+        giftMessage: giftWrap ? giftMessage.trim() : undefined,
+      });
+      if (!g.ok) {
+        setError(g.error ?? "Could not save gift wrap option.");
         return;
       }
       router.push("/checkout/review");
@@ -253,6 +267,43 @@ export default function CheckoutForm({
           <p className="mt-1 text-xs text-zinc-500">Applied to your order at review time.</p>
           <VoucherPicker onPick={(code) => setPromoCode(code)} />
         </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className={sectionTitle}>Gift options</h2>
+        <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+          giftWrap ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500" : "border-zinc-200 hover:border-zinc-300"
+        }`}>
+          <input
+            type="checkbox"
+            id="co-giftwrap"
+            className="mt-1 h-5 w-5 accent-orange-600"
+            checked={giftWrap}
+            onChange={(e) => setGiftWrap(e.target.checked)}
+            disabled={pending}
+          />
+          <span>
+            <span className="block font-semibold text-zinc-900">🎁 Gift wrap this order (+$4.99)</span>
+            <span className="block text-sm text-zinc-600">Beautiful gift packaging with a personal note.</span>
+          </span>
+        </label>
+        {giftWrap && (
+          <div className="mt-4">
+            <label htmlFor="co-giftmsg" className={fieldLabel}>
+              Gift message (optional, max 200 chars)
+            </label>
+            <textarea
+              id="co-giftmsg"
+              className={`${inputCls} min-h-[80px]`}
+              value={giftMessage}
+              onChange={(e) => setGiftMessage(e.target.value.slice(0, 200))}
+              placeholder="Write a sweet note for the recipient… 💝"
+              maxLength={200}
+              disabled={pending}
+            />
+            <p className="mt-1 text-right text-xs text-zinc-400">{giftMessage.length}/200</p>
+          </div>
+        )}
       </section>
 
       <button type="submit" className={`${btn} w-full sm:w-auto`} disabled={pending}>

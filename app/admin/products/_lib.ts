@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { toCents } from "@/lib/money";
 import { audit } from "@/lib/audit";
+import { notifyBackInStock } from "@/lib/stock-alerts";
 
 export type VariantInput = {
   id?: string;
@@ -172,7 +173,7 @@ export async function saveProduct(id: string | null, d: ProductFormData, actorId
     if (id) {
       const existing = await db.product.findUniqueOrThrow({
         where: { id },
-        include: { variants: { select: { id: true } } },
+        include: { variants: { select: { id: true, stock: true } } },
       });
       const keep = new Set(
         d.variants.map((v) => v.id).filter((x): x is string => Boolean(x))
@@ -216,6 +217,14 @@ export async function saveProduct(id: string | null, d: ProductFormData, actorId
         entityId: id,
         meta: { slug: d.slug, variants: d.variants.length },
       });
+      // Back-in-stock: total stock (product + variants) went from 0 to >0
+      const beforeTotal =
+        existing.stock + existing.variants.reduce((s, v) => s + v.stock, 0);
+      const afterTotal =
+        d.stock + d.variants.reduce((s, v) => s + (v.stock ?? 0), 0);
+      if (beforeTotal === 0 && afterTotal > 0) {
+        await notifyBackInStock(id);
+      }
       return updated;
     }
     const created = await db.product.create({

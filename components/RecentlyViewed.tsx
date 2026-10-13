@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SectionTitle } from "@/components/ui";
+import { formatUSD } from "@/lib/money";
 
-const KEY = "zuvo_recently_viewed";
+const KEY = "zuvo-recently-viewed";
 const MAX = 8;
 
 export type RecentProduct = {
@@ -21,6 +22,7 @@ export function recordProductView(p: RecentProduct) {
     const list: RecentProduct[] = raw ? JSON.parse(raw) : [];
     const next = [p, ...list.filter((x) => x.slug !== p.slug)].slice(0, MAX);
     localStorage.setItem(KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("zuvo-recently-viewed-updated"));
   } catch {
     /* ignore */
   }
@@ -31,19 +33,28 @@ export function RecentlyViewed() {
   const [items, setItems] = useState<RecentProduct[]>([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
+    const load = () => {
+      try {
+        const raw = localStorage.getItem(KEY);
+        setItems(raw ? JSON.parse(raw) : []);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    window.addEventListener("zuvo-recently-viewed-updated", load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener("zuvo-recently-viewed-updated", load);
+      window.removeEventListener("storage", load);
+    };
   }, []);
 
   if (items.length === 0) return null;
 
   return (
     <section className="mt-12">
-      <SectionTitle title="Recently viewed" subtitle="Pick up where you left off" />
+      <SectionTitle title="👁️ Recently Viewed" subtitle="Pick up where you left off" />
       <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
         {items.map((p) => (
           <Link
@@ -63,7 +74,7 @@ export function RecentlyViewed() {
             <div className="p-3">
               <p className="truncate text-sm font-medium text-zinc-900">{p.name}</p>
               <p className="mt-1 text-sm font-bold text-zinc-900">
-                ${(p.priceCents / 100).toFixed(2)}
+                {formatUSD(p.priceCents)}
               </p>
             </div>
           </Link>

@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { audit } from "@/lib/audit";
+import { notifyBackInStock } from "@/lib/stock-alerts";
 import { getSessionUser, requireAdminPage} from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -33,6 +34,18 @@ async function setStock(formData: FormData) {
           entityId: variantId,
           meta: { from: v.stock, to: qty },
         });
+        // Back-in-stock check: did the whole product go from 0 to >0?
+        if (v.stock === 0 && qty > 0) {
+          const siblings = await db.productVariant.findMany({
+            where: { productId: v.productId, id: { not: variantId } },
+            select: { stock: true },
+          });
+          const totalAfter = qty + siblings.reduce((s, x) => s + x.stock, 0);
+          if (totalAfter === qty) {
+            // every other variant was also 0 before → product is back in stock
+            await notifyBackInStock(v.productId);
+          }
+        }
       } else if (productId) {
         const p = await db.product.findUniqueOrThrow({ where: { id: productId } });
         await db.product.update({ where: { id: productId }, data: { stock: qty } });
@@ -42,6 +55,10 @@ async function setStock(formData: FormData) {
           entityId: productId,
           meta: { from: p.stock, to: qty },
         });
+        // Back-in-stock: product (no variants) went from 0 to >0
+        if (p.stock === 0 && qty > 0) {
+          await notifyBackInStock(productId);
+        }
       } else {
         throw new Error("Missing product or variant id.");
       }

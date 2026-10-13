@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import RatingStars from "@/components/RatingStars";
 import Price from "@/components/Price";
 import WishlistButton from "@/components/WishlistButton";
+import StockAlertBox from "@/components/StockAlertBox";
 import StickyBuyBar from "@/components/StickyBuyBar";
 import { SectionTitle, cardCls, cardFlushCls } from "@/components/ui";
 import ProductGallery from "./ProductGallery";
@@ -168,6 +169,10 @@ export default async function ProductPage({
           <div className="mt-4">
             <WishlistButton productId={product.id} initialActive={wishlisted} />
           </div>
+
+          {!inStock && (
+            <StockAlertBox productId={product.id} initialEmail={user?.email ?? ""} />
+          )}
 
           <div className={`${cardCls} mt-6 p-5`}>
             <h2 className="font-semibold text-zinc-900">Delivery & returns</h2>

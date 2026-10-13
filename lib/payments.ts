@@ -197,7 +197,8 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
       const path: Record<string, string> = { CONFIRMED: "CANCELLED", PROCESSING: "CANCELLED", SHIPPED: "CANCELLED", DELIVERED: "REFUNDED" };
       let cur = order.status;
       while (cur !== "REFUNDED" && path[cur]) {
-        await transitionOrder(orderId, path[cur], actorId, "demo refund");
+        // Intermediate CANCELLED step is bookkeeping — only email the final REFUNDED status.
+        await transitionOrder(orderId, path[cur], actorId, "demo refund", { silent: path[cur] === "CANCELLED" });
         cur = path[cur];
       }
       if (cur === "DELIVERED") await transitionOrder(orderId, "REFUNDED", actorId, "demo refund");

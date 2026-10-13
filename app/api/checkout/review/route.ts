@@ -29,6 +29,9 @@ export async function GET() {
       promoCode: order.promoCode,
       deliveryMethod: order.deliveryMethod,
       deliveryLabel: order.deliveryLabel,
+      giftWrap: order.giftWrap,
+      giftWrapCents: order.giftWrapCents,
+      giftMessage: order.giftMessage,
       contactJson: order.contactJson,
       addressJson: order.addressJson,
       items: order.items.map((i) => ({
