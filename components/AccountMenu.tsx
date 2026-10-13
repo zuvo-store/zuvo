@@ -68,9 +68,14 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-800 hover:bg-brand-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-800 hover:bg-brand-200"
       >
         {initial}
+        {user.role === "ADMIN" ? (
+          <span className="absolute -right-1 -top-1">
+            <UnreadBadge className="h-4 min-w-4 px-1 text-[10px] ring-2 ring-white" />
+          </span>
+        ) : null}
       </button>
       {open ? (
         <div
@@ -91,7 +96,7 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
                 className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
               >
                 {l.label}
-                {l.href === "/admin" && user.role === "ADMIN" ? <UnreadBadge /> : null}
+                {l.href === "/admin" && user.role === "ADMIN" ? <UnreadBadge className="ml-auto" /> : null}
               </Link>
             ))}
             <button

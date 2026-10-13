@@ -56,7 +56,7 @@ export default function AdminSidebarNav() {
                   <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />
                 ) : null}
                 {item.label}
-                {item.href === "/admin/inbox" ? <UnreadBadge /> : null}
+                {item.href === "/admin/inbox" ? <UnreadBadge className="ml-auto" /> : null}
               </Link>
             </li>
           );

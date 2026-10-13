@@ -22,7 +22,7 @@ export default async function AdminShell({ children }: { children: ReactNode }) 
       <details className="border-b border-zinc-200 bg-white md:hidden">
         <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-zinc-900">
           Admin menu
-          <UnreadBadge />
+          <UnreadBadge className="ml-auto" />
         </summary>
         <SidebarNav />
       </details>

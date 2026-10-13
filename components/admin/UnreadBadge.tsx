@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /** Red unread-message badge. Polls the chat API; renders nothing when zero. */
-export default function UnreadBadge() {
+export default function UnreadBadge({ className = "" }: { className?: string }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function UnreadBadge() {
   return (
     <span
       aria-label={`${count} unread messages`}
-      className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-extrabold text-white"
+      className={`inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-extrabold text-white ${className}`}
     >
       {count > 99 ? "99+" : count}
     </span>
