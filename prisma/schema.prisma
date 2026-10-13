@@ -225,6 +225,11 @@ model Order {
   campaignName   String? // campaign name snapshot for display
   zuzuPointsRedeemed Int @default(0) // points applied as discount
   zuzuDiscountCents  Int @default(0) // discount from points (1000 pts = $1)
+  giftWrap         Boolean  @default(false) // gift wrapping requested
+  giftWrapCents    Int      @default(0)     // gift wrap charge
+  giftMessage      String?  // gift note from buyer
+  cancelledAt      DateTime? // customer/admin cancellation time
+  cancelReason     String?  // reason for cancellation
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -385,4 +390,31 @@ model Setting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model StockAlert {
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  email     String
+  userId    String?
+  createdAt DateTime  @default(now())
+  notifiedAt DateTime? // set when back-in-stock email sent
+
+  @@unique([productId, email])
+  @@index([productId])
+}
+
+model CartReminder {
+  id         String   @id @default(cuid())
+  email      String
+  userId     String?
+  guestToken String?
+  itemCount  Int      @default(0)
+  totalCents Int      @default(0)
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
 }
