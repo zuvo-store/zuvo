@@ -20,36 +20,43 @@ export async function groqChat(opts: {
   user: string | ChatMessage["content"];
   maxTokens?: number;
   temperature?: number;
+  jsonMode?: boolean;
+  retries?: number;
 }): Promise<string | null> {
   const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  try {
-    const res = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: opts.model ?? GROQ_TEXT_MODEL,
-        max_tokens: opts.maxTokens ?? 500,
-        temperature: opts.temperature ?? 0.5,
-        messages: [
-          { role: "system", content: opts.system },
-          { role: "user", content: opts.user },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error(`groqChat failed: ${res.status} model=${opts.model ?? GROQ_TEXT_MODEL} ${errText.slice(0, 200)}`);
+  const attempts = Math.max(1, (opts.retries ?? 1) + 1);
+  for (let a = 0; a < attempts; a++) {
+    try {
+      const res = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: opts.model ?? GROQ_TEXT_MODEL,
+          max_tokens: opts.maxTokens ?? 500,
+          temperature: opts.temperature ?? 0.5,
+          ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
+          messages: [
+            { role: "system", content: opts.system },
+            { role: "user", content: opts.user },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        console.error(`groqChat failed: ${res.status} model=${opts.model ?? GROQ_TEXT_MODEL} ${errText.slice(0, 200)}`);
+        return null;
+      }
+      const d = await res.json();
+      const text = d?.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+      console.error(`groqChat empty reply (attempt ${a + 1}/${attempts}): model=${opts.model ?? GROQ_TEXT_MODEL}`);
+    } catch (e) {
+      console.error(`groqChat exception: model=${opts.model ?? GROQ_TEXT_MODEL} ${e instanceof Error ? e.message : String(e)}`);
       return null;
     }
-    const d = await res.json();
-    const text = d?.choices?.[0]?.message?.content?.trim();
-    if (!text) console.error(`groqChat empty reply: model=${opts.model ?? GROQ_TEXT_MODEL}`);
-    return text || null;
-  } catch (e) {
-    console.error(`groqChat exception: model=${opts.model ?? GROQ_TEXT_MODEL} ${e instanceof Error ? e.message : String(e)}`);
-    return null;
   }
+  return null;
 }
 
 /** Extract a JSON array of strings from a model reply (tolerates fences/prose). */

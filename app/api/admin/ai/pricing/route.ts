@@ -51,18 +51,26 @@ export async function GET() {
     }
 
     const text = await groqChat({
-      system: `You are a pricing strategist for an online marketplace. For each product below, suggest a new price in USD and a one-line reason. Consider: margin (aim 25-40%), stock levels (high stock + no sales → lower price to move it; low margin → raise slightly), ratings (high-rated can charge more). Return ONLY valid JSON: [{"id":"...","suggestedPrice":12.99,"reason":"..."}]. Keep reasons under 15 words. Never suggest below cost.`,
+      system: `You are a pricing strategist for an online marketplace. For each product below, suggest a new price in USD and a one-line reason. Consider: margin (aim 25-40%), stock levels (high stock + no sales → lower price to move it; low margin → raise slightly), ratings (high-rated can charge more). Return ONLY valid JSON in this exact shape: {"suggestions":[{"id":"...","suggestedPrice":12.99,"reason":"..."}]}. Keep reasons under 15 words. Never suggest below cost.`,
       user: JSON.stringify(candidates.map((c) => ({
         id: c.id, name: c.name, category: c.category, price: c.price, cost: c.cost,
         marginPct: c.marginPct, stock: c.stock, rating: c.rating, sold30d: c.sold30d,
       }))),
       maxTokens: 1500,
       temperature: 0.4,
+      jsonMode: true,
+      retries: 1,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
-    const m = text.match(/\[[\s\S]*\]/);
-    if (!m) return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
-    const suggestions = JSON.parse(m[0]) as { id: string; suggestedPrice: number; reason: string }[];
+    let parsed: { suggestions?: { id: string; suggestedPrice: number; reason: string }[] };
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const m = text.match(/\[[\s\S]*\]/);
+      if (!m) return NextResponse.json({ ok: false, error: "AI returned invalid format" }, { status: 502 });
+      parsed = { suggestions: JSON.parse(m[0]) };
+    }
+    const suggestions = parsed.suggestions ?? [];
     const byId = new Map(rows.map((r) => [r.id, r]));
     const enriched = suggestions
       .filter((s) => byId.has(s.id) && typeof s.suggestedPrice === "number")

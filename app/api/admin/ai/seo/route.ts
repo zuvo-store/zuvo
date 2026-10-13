@@ -26,6 +26,8 @@ Return ONLY valid JSON: {"seoTitle": "...", "seoDescription": "..."}. No other t
       user: `Product: ${name.trim()}${brand ? `\nBrand: ${brand}` : ""}${category ? `\nCategory: ${category}` : ""}${shortDesc ? `\nSummary: ${shortDesc}` : ""}`,
       maxTokens: 300,
       temperature: 0.5,
+      jsonMode: true,
+      retries: 1,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
     const m = text.match(/\{[\s\S]*\}/);
