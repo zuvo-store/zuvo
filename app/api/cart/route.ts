@@ -22,7 +22,11 @@ export async function POST(req: Request) {
   const qty = Number(body?.qty ?? 1);
   const result = await addToCart(productId, variantId, qty);
   if (!result.ok) {
-    return Response.json({ ok: false, error: result.error ?? "Could not add to cart." }, { status: 400 });
+    const status = result.loginRequired ? 401 : 400;
+    return Response.json(
+      { ok: false, error: result.error ?? "Could not add to cart.", loginRequired: result.loginRequired ?? false },
+      { status }
+    );
   }
   await trackCartReminder();
   return Response.json({ ok: true, count: result.count });

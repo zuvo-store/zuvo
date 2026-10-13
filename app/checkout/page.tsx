@@ -15,6 +15,7 @@ export default async function CheckoutPage() {
   if (cart.lines.length === 0) redirect("/cart");
 
   const user = await getSessionUser();
+  if (!user) redirect("/auth/login?next=" + encodeURIComponent("/checkout"));
   const draft = await getOrCreateDraftOrder();
   const giftWrapCents = await getGiftWrapCents();
 

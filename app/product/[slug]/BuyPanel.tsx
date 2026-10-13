@@ -93,7 +93,9 @@ export default function BuyPanel({
     setError(null);
     try {
       const res = await buyNow(productId, cartVariantId, qty);
-      if (res.ok) {
+      if (res.loginRequired) {
+        router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`);
+      } else if (res.ok) {
         router.push("/checkout");
       } else {
         setError(res.error ?? "Could not add this item to your cart.");

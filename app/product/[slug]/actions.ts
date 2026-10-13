@@ -7,6 +7,6 @@ export async function buyNow(
   productId: string,
   variantId: string | null,
   qty: number
-): Promise<{ ok: boolean; error?: string; count?: number }> {
+): Promise<{ ok: boolean; error?: string; count?: number; loginRequired?: boolean }> {
   return addToCart(productId, variantId, qty);
 }

@@ -32,6 +32,11 @@ export default function AddToCartButton({
         body: JSON.stringify({ productId, variantId: variantId ?? null, qty }),
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401 || data.loginRequired) {
+        const next = encodeURIComponent(window.location.pathname + window.location.search);
+        router.push(`/auth/login?next=${next}`);
+        return;
+      }
       if (!res.ok || !data.ok) {
         setError(data.error || "Could not add to cart. Please try again.");
         return;

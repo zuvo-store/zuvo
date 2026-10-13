@@ -72,7 +72,10 @@ export async function addToCart(
   productId: string,
   variantId: string | null,
   qty: number
-): Promise<{ ok: boolean; error?: string; count?: number }> {
+): Promise<{ ok: boolean; error?: string; count?: number; loginRequired?: boolean }> {
+  const { getSessionUser } = await import("./auth");
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return { ok: false, error: "Please log in to add items to your cart.", loginRequired: true };
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) return { ok: false, error: "Quantity must be between 1 and 99." };
   const product = await db.product.findUnique({
     where: { id: productId },
