@@ -236,3 +236,90 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
 
 // Exported for the admin "simulate provider confirmation" action.
 export { confirmPendingDemoPayment };
+
+/**
+ * CASH ON DELIVERY flow. No card is charged: the order is confirmed
+ * immediately, stock is reserved, and payment is collected in cash when the
+ * order is delivered. The Payment row is recorded with provider "cod" and
+ * status PENDING until the admin marks it received.
+ */
+export async function processCodPayment(orderId: string): Promise<{ ok: boolean; orderNumber: string }> {
+  const owned = await getOrderOwned(orderId);
+  if (!owned) throw new Error("Order not found.");
+  if (owned.status !== "DRAFT" && owned.status !== "PENDING_PAYMENT") {
+    throw new Error("This order can no longer be placed.");
+  }
+
+  // Re-price everything from the database right before confirming.
+  const order = await rebuildDraftOrder(orderId);
+  if (order.totalCents <= 0) throw new Error("Order total is invalid.");
+
+  await db.$transaction(async (tx) => {
+    // Atomic stock check + deduction; throws on insufficient stock (rolls back).
+    for (const item of order.items) {
+      if (item.variantId) {
+        const v = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
+        if (v.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${v.stock} left.`);
+        await tx.productVariant.update({ where: { id: v.id }, data: { stock: v.stock - item.qty } });
+      } else if (item.productId) {
+        const p = await tx.product.findUniqueOrThrow({ where: { id: item.productId } });
+        if (p.stock < item.qty) throw new Error(`Insufficient stock for "${item.name}". Only ${p.stock} left.`);
+        await tx.product.update({ where: { id: p.id }, data: { stock: p.stock - item.qty } });
+      }
+    }
+    await tx.payment.create({
+      data: {
+        orderId,
+        provider: "cod",
+        scenario: "cod",
+        amountCents: order.totalCents,
+        currency: order.currency,
+        status: "PENDING",
+        resultJson: { cod: true },
+      },
+    });
+    await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "PENDING", status: "CONFIRMED" } });
+    // Deduct redeemed ZUZU points
+    const cod2 = await tx.order.findUnique({ where: { id: orderId }, select: { userId: true, zuzuPointsRedeemed: true, orderNumber: true } });
+    if (cod2?.userId && cod2.zuzuPointsRedeemed > 0) {
+      await tx.user.update({
+        where: { id: cod2.userId },
+        data: {
+          zuzuPoints: { decrement: cod2.zuzuPointsRedeemed },
+          zuzuPointsLogs: { create: { amount: -cod2.zuzuPointsRedeemed, kind: "REDEEM", note: `Redeemed on order ${cod2.orderNumber}` } },
+        },
+      });
+    }
+  });
+  await audit("payment.cod", { actorId: order.userId ?? undefined, entity: "Order", entityId: orderId, meta: { cod: true } });
+  await clearCartForOrder(order);
+  // Build email data here in request context (DB healthy); the sends below never touch the DB.
+  const codEmailUser = order.userId
+    ? await db.user.findUnique({ where: { id: order.userId }, select: { email: true, name: true } })
+    : null;
+  const codEmailData = orderEmailData({ ...order, user: codEmailUser });
+  // Notify admin of the new order — fire and forget.
+  notifyAdminNewOrder(codEmailData.admin).catch((e) =>
+    console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
+  );
+  // Notify the customer that their order is confirmed — fire and forget.
+  notifyCustomerOrderConfirmed(codEmailData.customer).catch((e) =>
+    console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
+  );
+  return { ok: true, orderNumber: order.orderNumber };
+}
+
+/**
+ * Admin marks a COD order's cash as received (e.g. on delivery). Only flips
+ * payment statuses — stock was already reserved when the COD order was placed.
+ */
+export async function markCodPaymentReceived(orderId: string, actorId?: string): Promise<void> {
+  const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { payments: true } });
+  const codPayment = [...order.payments].reverse().find((p) => p.provider === "cod" && p.status === "PENDING");
+  if (!codPayment) throw new Error("No pending COD payment to mark as received.");
+  await db.$transaction(async (tx) => {
+    await tx.payment.update({ where: { id: codPayment.id }, data: { status: "SUCCEEDED" } });
+    await tx.order.update({ where: { id: orderId }, data: { paymentStatus: "SUCCEEDED" } });
+  });
+  await audit("payment.cod_received", { actorId, entity: "Order", entityId: orderId });
+}

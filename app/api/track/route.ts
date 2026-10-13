@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   }
   const order = await db.order.findUnique({
     where: { orderNumber },
-    include: { user: { select: { email: true } }, items: true },
+    include: { user: { select: { email: true } }, items: true, payments: { select: { provider: true }, orderBy: { createdAt: "desc" }, take: 1 } },
   });
   const matches =
     order &&
@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       orderNumber: order.orderNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      isCod: order.payments.some((p) => p.provider === "cod"),
       totalCents: order.totalCents,
       currency: order.currency,
       createdAt: order.createdAt,

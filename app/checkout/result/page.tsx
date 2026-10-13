@@ -88,9 +88,16 @@ export default async function ResultPage({
     );
   }
 
-  const confirmed = order.status === "CONFIRMED" && order.paymentStatus === "SUCCEEDED";
+  const isCod = order.payments.some((p) => p.provider === "cod");
+  const confirmed = order.status === "CONFIRMED" && (order.paymentStatus === "SUCCEEDED" || isCod);
   const copy = confirmed
-    ? STATUS_COPY.SUCCEEDED
+    ? isCod
+      ? {
+          tone: "green",
+          title: "Order confirmed — pay on delivery",
+          body: `Thank you! Your order is confirmed and stock is reserved. Please keep ${formatUSD(order.totalCents)} in cash ready — you'll pay when your order arrives.`,
+        }
+      : STATUS_COPY.SUCCEEDED
     : (STATUS_COPY[order.paymentStatus] ?? {
         tone: "amber",
         title: "Order not completed",

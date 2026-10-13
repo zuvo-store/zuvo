@@ -22,6 +22,7 @@ const SCENARIOS: { value: DemoScenario; hint: string }[] = [
 
 export default function PaymentClient({ orderNumber, totalCents, scenarioLabels }: Props) {
   const router = useRouter();
+  const [method, setMethod] = useState<"card" | "cod">("card");
   const [scenario, setScenario] = useState<DemoScenario>("success");
   const [pending, setPending] = useState(false);
   const [isPendingPayment, setIsPendingPayment] = useState(false);
@@ -76,6 +77,28 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels 
     }
   }
 
+  async function placeCodOrder() {
+    setError(null);
+    setPending(true);
+    try {
+      const res = await fetch("/api/payments/cod", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        orderNumber?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Order could not be placed.");
+        return;
+      }
+      router.push(`/checkout/result?order=${encodeURIComponent(data.orderNumber ?? orderNumber)}&s=cod`);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   if (isPendingPayment) {
     return (
       <div className="rounded-xl border border-amber-300 bg-amber-50 p-6">
@@ -108,6 +131,74 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels 
 
   return (
     <div>
+      {/* Payment method selector */}
+      <fieldset className="mb-6">
+        <legend className="mb-3 text-lg font-semibold text-zinc-900">Payment method</legend>
+        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+              method === "card"
+                ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
+                : "border-zinc-200 bg-white hover:border-zinc-300"
+            }`}
+          >
+            <input
+              type="radio"
+              name="payment-method"
+              className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+              checked={method === "card"}
+              onChange={() => setMethod("card")}
+              disabled={pending}
+            />
+            <span>
+              <span className="block font-medium text-zinc-900">💳 Demo Card</span>
+              <span className="block text-sm text-zinc-500">Pay now with the demo gateway.</span>
+            </span>
+          </label>
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+              method === "cod"
+                ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
+                : "border-zinc-200 bg-white hover:border-zinc-300"
+            }`}
+          >
+            <input
+              type="radio"
+              name="payment-method"
+              className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+              checked={method === "cod"}
+              onChange={() => setMethod("cod")}
+              disabled={pending}
+            />
+            <span>
+              <span className="block font-medium text-zinc-900">💵 Cash on Delivery</span>
+              <span className="block text-sm text-zinc-500">Pay in cash when your order arrives.</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
+      {method === "cod" ? (
+        <div className="rounded-xl border border-green-300 bg-green-50 p-6">
+          <h2 className="mb-2 text-lg font-semibold text-green-900">💵 Cash on Delivery</h2>
+          <p className="mb-1 text-sm text-green-800">
+            Your order will be confirmed right away and shipped to you.
+          </p>
+          <p className="mb-4 text-sm font-semibold text-green-900">
+            Pay {formatUSD(totalCents)} in cash when your order arrives.
+          </p>
+          <button type="button" onClick={placeCodOrder} disabled={pending} className={`${btn} w-full sm:w-auto`}>
+            {pending ? "Placing order…" : `Place order — pay ${formatUSD(totalCents)} on delivery`}
+          </button>
+        </div>
+      ) : (
+        <>
       <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
         <p className="text-sm font-semibold text-amber-900">
           DEMO ONLY — No real payment will be processed. Do not enter real card details.
@@ -167,6 +258,8 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels 
       <button type="button" onClick={pay} disabled={pending} className={`${btn} w-full sm:w-auto`}>
         {pending ? "Processing…" : `Pay ${formatUSD(totalCents)} (demo)`}
       </button>
+        </>
+      )}
     </div>
   );
 }

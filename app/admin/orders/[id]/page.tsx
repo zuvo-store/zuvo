@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { formatUSD } from "@/lib/money";
 import { getSessionUser, requireAdminPage} from "@/lib/auth";
 import { VALID_TRANSITIONS, transitionOrder } from "@/lib/checkout";
-import { DemoPaymentProvider, confirmPendingDemoPayment, SCENARIO_LABELS } from "@/lib/payments";
+import { DemoPaymentProvider, confirmPendingDemoPayment, markCodPaymentReceived, SCENARIO_LABELS } from "@/lib/payments";
 import { revalidatePath } from "next/cache";
 import {
   btnPrimary,
@@ -41,7 +41,10 @@ export default async function AdminOrderDetailPage({
 
   const nextStatuses = VALID_TRANSITIONS[order.status] ?? [];
   const hasSucceeded = order.payments.some((p) => p.status === "SUCCEEDED");
-  const hasPending = order.payments.some((p) => p.status === "PENDING");
+  // Demo-provider pending payments only — COD pending payments get their own "Mark payment received" action.
+  const hasPending = order.payments.some((p) => p.status === "PENDING" && p.provider !== "cod");
+  const isCodOrder = order.payments.some((p) => p.provider === "cod");
+  const hasPendingCod = order.payments.some((p) => p.provider === "cod" && p.status === "PENDING");
 
   async function transition(formData: FormData) {
     "use server";
@@ -90,6 +93,21 @@ export default async function AdminOrderDetailPage({
     revalidatePath(`/admin/orders/${id}`);
   }
 
+  async function markReceived() {
+    "use server";
+    const me = await getSessionUser();
+    const outcome = await (async () => {
+      try {
+        await markCodPaymentReceived(id, me?.id);
+        return { ok: true as const };
+      } catch (e) {
+        return { ok: false as const, error: e instanceof Error ? e.message : "Could not mark payment received." };
+      }
+    })();
+    if (!outcome.ok) redirect(`/admin/orders/${id}?error=` + encodeURIComponent(outcome.error));
+    revalidatePath(`/admin/orders/${id}`);
+  }
+
   const contact = (order.contactJson as Record<string, string> | null) ?? null;
   const address = (order.addressJson as Record<string, string> | null) ?? null;
 
@@ -112,6 +130,9 @@ export default async function AdminOrderDetailPage({
         <Badge tone={statusTone(order.status)}>{order.status}</Badge>
         <span className="text-sm text-zinc-500">payment:</span>
         <Badge tone={statusTone(order.paymentStatus)}>{order.paymentStatus}</Badge>
+        {isCodOrder && (
+          <Badge tone="bg-green-100 text-green-800">💵 Cash on Delivery</Badge>
+        )}
         <span className="text-sm text-zinc-500">placed {fmtDate(order.createdAt)}</span>
       </div>
 
@@ -153,6 +174,19 @@ export default async function AdminOrderDetailPage({
             >
               <button type="submit" className={`${btnSecondary} ${btnSm}`}>
                 Confirm pending payment
+              </button>
+            </ConfirmForm>
+          ) : null}
+          {hasPendingCod ? (
+            <ConfirmForm
+              action={markReceived}
+              className="inline"
+              title="Mark cash received?"
+              message={`Mark the ${formatUSD(order.totalCents)} cash payment for order ${order.orderNumber} as received?`}
+              confirmLabel="Yes, cash received"
+            >
+              <button type="submit" className={`${btnSecondary} ${btnSm}`}>
+                💵 Mark payment received
               </button>
             </ConfirmForm>
           ) : null}
@@ -275,7 +309,7 @@ export default async function AdminOrderDetailPage({
               {order.payments.map((p) => (
                 <tr key={p.id} className="hover:bg-zinc-50">
                   <td className={tdCls}>{p.transactionRef ?? "—"}</td>
-                  <td className={tdCls}>{SCENARIO_LABELS[p.scenario as keyof typeof SCENARIO_LABELS] ?? p.scenario}</td>
+                  <td className={tdCls}>{p.provider === "cod" ? "💵 Cash on Delivery" : (SCENARIO_LABELS[p.scenario as keyof typeof SCENARIO_LABELS] ?? p.scenario)}</td>
                   <td className={tdCls}>
                     <Badge tone={statusTone(p.status)}>{p.status}</Badge>
                   </td>

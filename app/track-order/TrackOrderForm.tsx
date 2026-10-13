@@ -41,6 +41,7 @@ type TrackedOrder = {
   orderNumber: string;
   status: string;
   paymentStatus?: string;
+  isCod?: boolean;
   createdAt?: string;
   deliveryLabel?: string | null;
   deliveryMethod?: string | null;
@@ -154,6 +155,11 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
               {order.createdAt ? new Date(order.createdAt).toLocaleString("en-US") : "—"}
               {order.deliveryLabel ? ` · ${order.deliveryLabel}` : ""}
             </p>
+            {order.isCod && (
+              <p className="mt-2 inline-block rounded-lg bg-green-50 px-3 py-1.5 text-sm font-medium text-green-800">
+                💵 Cash on Delivery — pay in cash when your order arrives.
+              </p>
+            )}
 
             {!isTerminal && currentIndex >= 0 && (
               <ol className="mt-6 flex flex-col sm:flex-row">
