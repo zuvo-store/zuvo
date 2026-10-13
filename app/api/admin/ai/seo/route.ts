@@ -19,10 +19,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Product name is required" }, { status: 400 });
     }
     const text = await groqChat({
-      system: `You are an e-commerce SEO expert. Write exactly two lines and nothing else. First line: an SEO title under 60 characters that includes the product name and a buying word like buy or best. Second line: a meta description under 160 characters that is compelling and mentions a benefit.`,
+      system: `You are an e-commerce SEO expert. Write exactly two lines for the product: line 1 is an SEO title (under 60 characters, includes product name), line 2 is a meta description (under 160 characters, compelling).
+
+Example:
+Product: Sony WH-1000XM5 Headphones
+Sony WH-1000XM5 Headphones - Buy Online | Best Price
+Industry-leading noise cancelling headphones with 30-hour battery. Free shipping at ZUVO. Order now!
+
+Now do the same for the product below. Output ONLY the two lines.`,
       user: `Product: ${name.trim()}${brand ? `, Brand: ${brand}` : ""}${category ? `, Category: ${category}` : ""}${shortDesc ? `, About: ${shortDesc}` : ""}`,
       maxTokens: 300,
-      temperature: 0.5,
+      temperature: 0.7,
       retries: 2,
     });
     if (!text) return NextResponse.json({ ok: false, error: "AI unavailable" }, { status: 502 });
