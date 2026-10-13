@@ -269,20 +269,32 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.label} className={`${cardCls} p-5`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">{k.label}</p>
-              <span className="text-xl">{k.icon}</span>
+        {kpis.map((k) => {
+          const card = (
+            <div className={`${cardCls} p-5 ${k.label === "Revenue" ? "transition hover:shadow-md hover:ring-2 hover:ring-orange-200" : ""}`}>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-zinc-500">{k.label}</p>
+                <span className="text-xl">{k.icon}</span>
+              </div>
+              <p className="mt-1 text-2xl font-extrabold text-zinc-900">{k.value}</p>
+              {k.delta !== null && (
+                <p className={`mt-1 text-xs font-bold ${k.delta >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {k.delta >= 0 ? "▲" : "▼"} {Math.abs(k.delta)}% vs previous period
+                </p>
+              )}
+              {k.label === "Revenue" && (
+                <p className="mt-2 text-xs font-bold text-orange-600">View breakdown →</p>
+              )}
             </div>
-            <p className="mt-1 text-2xl font-extrabold text-zinc-900">{k.value}</p>
-            {k.delta !== null && (
-              <p className={`mt-1 text-xs font-bold ${k.delta >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {k.delta >= 0 ? "▲" : "▼"} {Math.abs(k.delta)}% vs previous period
-              </p>
-            )}
-          </div>
-        ))}
+          );
+          return k.label === "Revenue" ? (
+            <Link key={k.label} href={`/admin/revenue?from=${isoDay(from)}&to=${isoDay(to)}`}>
+              {card}
+            </Link>
+          ) : (
+            <div key={k.label}>{card}</div>
+          );
+        })}
       </div>
 
       {/* Revenue chart */}
