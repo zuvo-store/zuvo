@@ -65,6 +65,7 @@ export default function DashboardCards({
   customers,
   fromLabel,
   toLabel,
+  avgOrdersPerDay,
 }: {
   kpis: { label: string; value: string; icon: string; delta: number | null }[];
   revenue: RevenueBreakdown;
@@ -75,6 +76,7 @@ export default function DashboardCards({
   customers: CustomerRow[];
   fromLabel: string;
   toLabel: string;
+  avgOrdersPerDay: number;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const period = `${fromLabel} → ${toLabel}`;
@@ -140,6 +142,12 @@ export default function DashboardCards({
       {open === "Orders" && (
         <Modal title="🛒 Orders" onClose={() => setOpen(null)}>
           <p className="mb-3 text-xs text-zinc-500">{period}</p>
+          <div className="mb-4 rounded-2xl bg-zinc-50 p-3 text-center">
+            <p className="text-[11px] font-medium text-zinc-500">Average per day</p>
+            <p className="text-2xl font-extrabold text-zinc-900">
+              {avgOrdersPerDay < 10 ? avgOrdersPerDay.toFixed(1) : Math.round(avgOrdersPerDay)}
+            </p>
+          </div>
           <div className="mb-4 flex flex-wrap gap-2">
             {statusGroups.map((g) => (
               <Link

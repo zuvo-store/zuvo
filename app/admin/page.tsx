@@ -339,6 +339,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       {/* KPI cards — tap for detail modals */}
       <DashboardCards
         kpis={kpis}
+        avgOrdersPerDay={rangeDays > 0 ? orders / rangeDays : 0}
         revenue={revenueBreakdown}
         statusGroups={statusGroups}
         recentOrders={modalRecent}
