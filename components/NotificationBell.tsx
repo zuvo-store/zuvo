@@ -92,11 +92,25 @@ export default function NotificationBell() {
         type="button"
         onClick={() => { setOpen((o) => !o); if (!open) load(); }}
         aria-label="Notifications"
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-xl text-zinc-700 transition hover:bg-zinc-100"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-zinc-700 transition hover:bg-zinc-100"
       >
-        🔔
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M10 3a5 5 0 0 0-5 5v2.6L3.8 12.7a.6.6 0 0 0 .5.9h11.4a.6.6 0 0 0 .5-.9L15 10.6V8a5 5 0 0 0-5-5z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M8.2 15.8a2 2 0 0 0 3.6 0"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold text-white ring-2 ring-white">
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}

@@ -102,17 +102,6 @@ export default async function ProductPage({
           priceCents: product.priceCents,
         }}
       />
-      <nav className="text-sm text-zinc-500">
-        <Link href="/" className="hover:text-orange-600">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <Link href={`/category/${product.category.slug}`} className="hover:text-orange-600">
-          {product.category.name}
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="font-medium text-zinc-900">{product.name}</span>
-      </nav>
 
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
         <ProductGallery images={images} name={product.name} />
