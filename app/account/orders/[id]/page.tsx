@@ -72,23 +72,47 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       {timelineIdx >= 0 && (
         <section className={`${cardCls} mb-6`}>
           <h2 className="mb-4 font-semibold text-zinc-900">Delivery progress</h2>
-          <ol className="flex items-center">
+          <ol className="flex items-start">
             {TIMELINE.map((step, i) => {
               const done = i <= timelineIdx;
+              const passed = i < timelineIdx;
               return (
                 <li key={step} className="flex flex-1 items-center last:flex-none">
                   <div className="flex flex-col items-center">
                     <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                        done ? "bg-orange-500 text-white" : "bg-zinc-200 text-zinc-500"
+                      className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold shadow-md ${
+                        done ? "bg-orange-500 text-white shadow-orange-500/30" : "bg-zinc-200 text-zinc-500"
                       }`}
                     >
                       {i + 1}
                     </span>
-                    <span className="mt-1 text-xs font-medium text-zinc-600">{step}</span>
+                    <span
+                      className={`mt-1.5 text-[10px] font-bold uppercase tracking-wide sm:text-xs ${
+                        done ? "text-orange-700" : "text-zinc-400"
+                      }`}
+                    >
+                      {step}
+                    </span>
                   </div>
                   {i < TIMELINE.length - 1 && (
-                    <div className={`mx-2 h-0.5 flex-1 ${i < timelineIdx ? "bg-orange-500" : "bg-zinc-200"}`} />
+                    <div className="mx-1 flex flex-1 items-center sm:mx-2" aria-hidden="true">
+                      <div className={`h-0.5 flex-1 rounded-full ${passed ? "bg-orange-500" : "bg-zinc-200"}`} />
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        className={`-ml-0.5 shrink-0 ${passed ? "text-orange-500" : "text-zinc-300"}`}
+                      >
+                        <path
+                          d="M4 10h11M11 6l4 4-4 4"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
                   )}
                 </li>
               );
