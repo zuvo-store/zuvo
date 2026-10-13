@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
  * Edge proxy: guarantees every visitor has a `zuvo_guest` cart token cookie
  * before any page or API route runs. Next 16 forbids *setting* cookies during
  * Server Component renders, so issuance happens here instead of in lib code.
+ * Also exposes the current pathname to server components via header.
  */
 function randomHex(bytes = 16): string {
   const arr = new Uint8Array(bytes);
@@ -14,6 +15,7 @@ function randomHex(bytes = 16): string {
 
 export function proxy(req: NextRequest) {
   const res = NextResponse.next();
+  res.headers.set("x-pathname", req.nextUrl.pathname);
   if (!req.cookies.get("zuvo_guest")) {
     res.cookies.set("zuvo_guest", randomHex(), {
       httpOnly: true,
