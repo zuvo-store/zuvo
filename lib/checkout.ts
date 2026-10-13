@@ -4,6 +4,7 @@ import { getGuestToken, getSessionUser } from "./auth";
 import { getCart, estimateShipping } from "./cart";
 import { audit } from "./audit";
 import { sendOrderStatusEmail, notifyAdminNewOrder, orderEmailData } from "./email";
+import { getGiftWrapCents } from "./settings";
 
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -96,7 +97,7 @@ export type ShippingAddress = {
   postalCode: string;
 };
 
-/** Flat gift-wrap charge (cents). */
+/** Flat gift-wrap charge (cents). @deprecated Use getGiftWrapCents() — admin-adjustable. */
 export const GIFT_WRAP_CENTS = 499;
 
 export async function saveGiftWrap(orderId: string, giftWrap: boolean, giftMessage?: string) {
@@ -107,7 +108,7 @@ export async function saveGiftWrap(orderId: string, giftWrap: boolean, giftMessa
     where: { id: orderId },
     data: {
       giftWrap,
-      giftWrapCents: giftWrap ? GIFT_WRAP_CENTS : 0,
+      giftWrapCents: giftWrap ? await getGiftWrapCents() : 0,
       giftMessage: message || null,
     },
   });
@@ -221,7 +222,8 @@ export async function rebuildDraftOrder(orderId: string) {
     }
   }
 
-  const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents + (order.giftWrap ? GIFT_WRAP_CENTS : 0));
+  const wrapCents = order.giftWrap ? await getGiftWrapCents() : 0;
+  const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents + wrapCents);
 
   // ZUZU points redemption: 1000 pts = $1 (100 cents), capped by balance & total
   let zuzuPointsRedeemed = 0;
@@ -253,7 +255,7 @@ export async function rebuildDraftOrder(orderId: string) {
     });
     await tx.order.update({
       where: { id: orderId },
-      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents, campaignId, campaignName, giftWrapCents: order.giftWrap ? GIFT_WRAP_CENTS : 0 },
+      data: { subtotalCents, discountCents, shippingCents, taxCents: 0, totalCents: finalTotalCents, currency: "USD", zuzuPointsRedeemed, zuzuDiscountCents, campaignId, campaignName, giftWrapCents: wrapCents },
     });
   });
 

@@ -18,6 +18,21 @@ async function saveAnnouncements(formData: FormData) {
   redirect("/admin/settings?saved=1");
 }
 
+async function saveGiftWrapPrice(formData: FormData) {
+  "use server";
+  const me = await getSessionUser();
+  const raw = String(formData.get("gift_wrap_cents") ?? "").trim();
+  const cents = Math.round(parseFloat(raw) * 100);
+  if (!Number.isFinite(cents) || cents < 0) {
+    redirect("/admin/settings?error=" + encodeURIComponent("Enter a valid price (e.g. 4.99)."));
+  }
+  await setSetting("gift_wrap_cents", String(cents));
+  await audit("setting.update", { actorId: me?.id, entity: "Setting", entityId: "gift_wrap_cents", meta: { cents } });
+  revalidatePath("/admin/settings");
+  revalidatePath("/checkout");
+  redirect("/admin/settings?saved=1");
+}
+
 async function saveSetting(formData: FormData) {
   "use server";
   const me = await getSessionUser();
@@ -63,6 +78,8 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
   const sp = await searchParams;
   const all = await getAllSettings();
   const announcements = parseAnnouncements(all["announcements"] ?? "[]");
+  const giftWrapCents = parseInt(all["gift_wrap_cents"] ?? "499", 10);
+  const giftWrapPrice = (Number.isFinite(giftWrapCents) ? giftWrapCents : 499) / 100;
   const rest = Object.entries(all)
     .filter(([k]) => k !== "announcements")
     .sort(([a], [b]) => a.localeCompare(b));
@@ -87,6 +104,26 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
         </Field>
         <button type="submit" className={`${btnPrimary} mt-4`}>
           Save announcements
+        </button>
+      </form>
+
+      <form action={saveGiftWrapPrice} className={`${cardCls} mb-6 p-5`}>
+        <h2 className="mb-1 text-base font-bold text-zinc-900">🎁 Gift wrap price</h2>
+        <p className="mb-3 text-sm text-zinc-500">
+          What customers pay for gift wrapping at checkout. Set 0 to make it free.
+        </p>
+        <Field label="Price (USD)">
+          <input
+            name="gift_wrap_cents"
+            type="number"
+            min="0"
+            step="0.01"
+            defaultValue={giftWrapPrice.toFixed(2)}
+            className={inputCls}
+          />
+        </Field>
+        <button type="submit" className={`${btnPrimary} mt-4`}>
+          Save gift wrap price
         </button>
       </form>
 

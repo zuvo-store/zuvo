@@ -16,6 +16,13 @@ export async function getAllSettings(): Promise<Record<string, string>> {
   return out;
 }
 
+/** Gift wrap charge in cents. Admin-adjustable via settings; defaults to 499 ($4.99). */
+export async function getGiftWrapCents(): Promise<number> {
+  const raw = await getSetting("gift_wrap_cents", "499");
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 499;
+}
+
 /** Announcement bar messages, stored as JSON array of strings. */
 export async function getAnnouncements(): Promise<string[]> {
   const raw = await getSetting("announcements", "");

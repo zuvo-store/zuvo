@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
 import { getOrCreateDraftOrder } from "@/lib/checkout";
+import { getGiftWrapCents } from "@/lib/settings";
 import { db } from "@/lib/db";
 import CheckoutSteps from "@/components/CheckoutSteps";
 import CheckoutForm from "./CheckoutForm";
@@ -15,6 +16,7 @@ export default async function CheckoutPage() {
 
   const user = await getSessionUser();
   const draft = await getOrCreateDraftOrder();
+  const giftWrapCents = await getGiftWrapCents();
 
   const contactJson = (draft.contactJson ?? {}) as { name?: string; email?: string; phone?: string };
   const addressJson = (draft.addressJson ?? {}) as {
@@ -72,6 +74,7 @@ export default async function CheckoutPage() {
         initialPromoCode={draft.promoCode ?? ""}
         initialGiftWrap={draft.giftWrap}
         initialGiftMessage={draft.giftMessage ?? ""}
+        giftWrapCents={giftWrapCents}
       />
     </main>
   );
