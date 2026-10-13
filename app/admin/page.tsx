@@ -76,7 +76,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     orders, ordersPrev,
     newCustomers,
     byStatus, lowStock, recent,
-    topProducts, dailyRev,
+    topProducts, dailyRev, catItems,
   ] = await Promise.all([
     db.payment.aggregate({ _sum: { amountCents: true }, where: { status: "SUCCEEDED", createdAt: inRange } }),
     db.payment.aggregate({ _sum: { amountCents: true }, where: { status: "SUCCEEDED", createdAt: inPrev } }),
@@ -110,6 +110,14 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       where: { status: "SUCCEEDED", createdAt: inRange },
       select: { amountCents: true, createdAt: true },
     }),
+    db.orderItem.findMany({
+      where: { order: { createdAt: inRange, status: { notIn: ["DRAFT", "CANCELLED", "REFUNDED"] } } },
+      select: {
+        lineTotalCents: true,
+        product: { select: { category: { select: { name: true } } } },
+      },
+      take: 5000,
+    }),
   ]);
 
   const revenue = rev._sum.amountCents ?? 0;
@@ -139,6 +147,53 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     if (idx >= 0 && idx < buckets) daily[idx].cents += p.amountCents;
   }
   const maxCents = Math.max(1, ...daily.map((d) => d.cents));
+
+  // Category revenue aggregation
+  const catMap = new Map<string, number>();
+  for (const it of catItems) {
+    const name = it.product?.category?.name ?? "Uncategorized";
+    catMap.set(name, (catMap.get(name) ?? 0) + it.lineTotalCents);
+  }
+  const catTotal = [...catMap.values()].reduce((a, b) => a + b, 0);
+  const DONUT_COLORS = ["#f97316", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280"];
+  const catDonut = [...catMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7)
+    .map(([name, cents], i) => ({ name, cents, color: DONUT_COLORS[i % DONUT_COLORS.length] }));
+  const catGradient = catDonut.length
+    ? (() => {
+        let acc = 0;
+        const parts = catDonut.map((c) => {
+          const start = (acc / catTotal) * 100;
+          acc += c.cents;
+          const end = (acc / catTotal) * 100;
+          return `${c.color} ${start.toFixed(1)}% ${end.toFixed(1)}%`;
+        });
+        return `conic-gradient(${parts.join(", ")})`;
+      })()
+    : "";
+
+  // Orders-by-status donut
+  const statusTotal = byStatus.reduce((a, g) => a + g._count.status, 0);
+  const STATUS_COLORS: Record<string, string> = {
+    CONFIRMED: "#3b82f6", PROCESSING: "#f59e0b", SHIPPED: "#8b5cf6",
+    DELIVERED: "#10b981", CANCELLED: "#ef4444", REFUNDED: "#6b7280",
+    PENDING_PAYMENT: "#f97316", DRAFT: "#a1a1aa",
+  };
+  const statusGradient = byStatus.length
+    ? (() => {
+        let acc = 0;
+        const parts = [...byStatus]
+          .sort((a, b) => b._count.status - a._count.status)
+          .map((g) => {
+            const start = (acc / statusTotal) * 100;
+            acc += g._count.status;
+            const end = (acc / statusTotal) * 100;
+            return `${STATUS_COLORS[g.status] ?? "#a1a1aa"} ${start.toFixed(1)}% ${end.toFixed(1)}%`;
+          });
+        return `conic-gradient(${parts.join(", ")})`;
+      })()
+    : "";
 
   const presetHref = (id: string) => `/admin${id === "30d" ? "" : `?preset=${id}`}`;
   const customHref = `/admin?preset=custom&from=${isoDay(from)}&to=${isoDay(to)}`;
@@ -263,24 +318,46 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Orders by status */}
+        {/* Orders by status — donut */}
         <div>
           <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Orders by status</h2>
-          <div className={`${cardCls} p-4`}>
+          <div className={`${cardCls} p-5`}>
             {byStatus.length === 0 ? (
               <p className="text-sm text-zinc-500">No orders in this period.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {byStatus.map((g) => (
-                  <Link
-                    key={g.status}
-                    href={`/admin/orders?status=${g.status}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:border-orange-300"
-                  >
-                    <Badge tone={statusTone(g.status)}>{g.status.replace(/_/g, " ")}</Badge>
-                    <span className="font-semibold text-zinc-800">{g._count.status}</span>
-                  </Link>
-                ))}
+              <div className="flex items-center gap-6">
+                <div
+                  className="relative h-36 w-36 shrink-0 rounded-full"
+                  style={{ background: statusGradient }}
+                  role="img"
+                  aria-label="Orders by status chart"
+                >
+                  <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-2xl font-extrabold text-zinc-900">{statusTotal}</p>
+                    <p className="text-[11px] font-medium text-zinc-500">orders</p>
+                  </div>
+                </div>
+                <ul className="min-w-0 flex-1 space-y-2">
+                  {[...byStatus]
+                    .sort((a, b) => b._count.status - a._count.status)
+                    .map((g) => (
+                      <li key={g.status}>
+                        <Link
+                          href={`/admin/orders?status=${g.status}`}
+                          className="flex items-center gap-2 text-sm hover:opacity-80"
+                        >
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-sm"
+                            style={{ background: STATUS_COLORS[g.status] ?? "#a1a1aa" }}
+                          />
+                          <span className="truncate font-medium text-zinc-700">
+                            {g.status.replace(/_/g, " ")}
+                          </span>
+                          <span className="ml-auto font-extrabold text-zinc-900">{g._count.status}</span>
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
               </div>
             )}
           </div>
@@ -315,6 +392,38 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 
         {/* Low stock */}
         <div>
+          <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Revenue by category</h2>
+          <div className={`${cardCls} p-5`}>
+            {catDonut.length === 0 ? (
+              <p className="text-sm text-zinc-500">No sales in this period.</p>
+            ) : (
+              <div className="flex items-center gap-6">
+                <div
+                  className="relative h-36 w-36 shrink-0 rounded-full"
+                  style={{ background: catGradient }}
+                  role="img"
+                  aria-label="Revenue by category chart"
+                >
+                  <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-lg font-extrabold text-zinc-900">{formatUSD(catTotal)}</p>
+                    <p className="text-[11px] font-medium text-zinc-500">total</p>
+                  </div>
+                </div>
+                <ul className="min-w-0 flex-1 space-y-2">
+                  {catDonut.map((c) => (
+                    <li key={c.name} className="flex items-center gap-2 text-sm">
+                      <span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: c.color }} />
+                      <span className="truncate font-medium text-zinc-700">{c.name}</span>
+                      <span className="ml-auto shrink-0 font-extrabold text-zinc-900">
+                        {formatUSD(c.cents)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
           <h2 className="mb-3 mt-8 text-lg font-bold text-zinc-900">Low stock</h2>
           {lowStock.length === 0 ? (
             <EmptyState
