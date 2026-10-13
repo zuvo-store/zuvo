@@ -67,7 +67,7 @@ export default function AIChatPage() {
         <img src="/zuvo-assistant-wave.jpg" alt="Zuzu AI" className="h-10 w-10 rounded-full object-cover ring-2 ring-orange-200" />
         <div>
           <h1 className="text-base font-extrabold text-gray-900">Zuzu AI Chat</h1>
-          <p className="text-xs text-gray-500">Ask anything • Generate images • Fully open 🧠</p>
+          <p className="text-xs text-gray-500">Ask anything • Shopping help • Fully open 🧠</p>
         </div>
       </div>
 
@@ -79,10 +79,10 @@ export default function AIChatPage() {
             <img src="/zuvo-assistant-wave.jpg" alt="Zuzu" className="mx-auto h-20 w-20 rounded-full object-cover ring-4 ring-orange-100" />
             <h2 className="mt-4 text-xl font-extrabold text-gray-900">Hey, I&apos;m Zuzu! 👋</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-              Kuch bhi pucho — shopping, jokes, advice, stories... ya bolo <b>&quot;generate image of a cute cat&quot;</b> 🎨
+              Kuch bhi pucho — shopping help, fashion ideas, gift suggestions, ya bas gappein! 🛍️
             </p>
             <div className="mx-auto mt-4 flex max-w-sm flex-wrap justify-center gap-2">
-              {["Tell me a joke 😄", "Generate image of a sunset 🌅", "Shopping tips de do 🛍️", "Motivate me! 💪"].map((s) => (
+              {["Fashion ideas 💡", "Gift ideas 🎁", "Today's deals 🔥", "Style tips 👗"].map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s.replace(/ [^ ]*$/, ""))}
@@ -147,7 +147,7 @@ export default function AIChatPage() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Kuch bhi pucho... ya 'generate image of...'"
+          placeholder="Kuch bhi pucho... 🛍️"
           className="h-10 flex-1 rounded-full bg-gray-100 px-4 text-sm outline-none focus:ring-2 focus:ring-orange-300"
         />
         <button
