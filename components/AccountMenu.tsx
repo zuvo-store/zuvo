@@ -14,6 +14,7 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!open) return;
     function onDocClick(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
@@ -26,7 +27,7 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [open ]);
 
   if (!user) {
     return (

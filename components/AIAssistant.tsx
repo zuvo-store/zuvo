@@ -69,6 +69,24 @@ export default function AIAssistant() {
   const [waving, setWaving] = useState(false);
   const [talking, setTalking] = useState(false);
   const [input, setInput] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Close panel when clicking anywhere outside (standard behavior)
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open ]);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -202,7 +220,7 @@ export default function AIAssistant() {
   if (hidden && !open) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[90] flex flex-col items-end">
+    <div ref={rootRef} className="fixed bottom-5 right-5 z-[90] flex flex-col items-end">
       {/* Chat panel */}
       {open && (
         <div className="ai-chat-panel mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import InteractiveZuzu from "@/components/InteractiveZuzu";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -94,6 +94,7 @@ const ACCOUNT_LINKS = [
 
 export default function SiteMenu({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // Lock background page scroll while the menu is open
   useEffect(() => {
@@ -105,8 +106,25 @@ export default function SiteMenu({ locale }: { locale: Locale }) {
     };
   }, [open ]);
 
+  // Close when clicking anywhere outside the menu (standard drawer behavior)
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open ]);
+
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -125,14 +143,7 @@ export default function SiteMenu({ locale }: { locale: Locale }) {
         )}
       </button>
       {open ? (
-        <>
-          {/* Click outside to close (professional drawer behavior) */}
-          <div
-            className="fixed inset-0 z-40 cursor-default"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="absolute left-0 top-full z-50 mt-2 max-h-[85vh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-3xl border border-zinc-200/70 bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
+        <div className="absolute left-0 top-full z-50 mt-2 max-h-[85vh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-3xl border border-zinc-200/70 bg-gradient-to-b from-orange-50/80 to-white px-4 pb-8 pt-4 shadow-2xl">
           {/* Zuzu banner — tap for a surprise! (top of drawer, no search here) */}
           <div className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-white shadow-lg shadow-orange-500/30">
             <InteractiveZuzu size="sm" showName={false} className="shrink-0" />
@@ -225,8 +236,7 @@ export default function SiteMenu({ locale }: { locale: Locale }) {
               <LanguageToggle initial={locale} />
             </div>
           </nav>
-          </div>
-        </>
+        </div>
       ) : null}
     </div>
   );
