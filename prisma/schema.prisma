@@ -19,6 +19,7 @@ model User {
   passwordHash  String
   role          String    @default("CUSTOMER") // CUSTOMER | ADMIN
   emailVerified DateTime?
+  provider      String    @default("password") // password | google
   referralCode  String    @unique // personal code, e.g. "A1B2C3D4"
   referredById  String?
   referredBy    User?     @relation("ReferrerRelation", fields: [referredById], references: [id])
@@ -121,6 +122,7 @@ model Product {
   cartItems   CartItem[]
   wishlistItems WishlistItem[]
   orderItems  OrderItem[]
+  stockAlerts StockAlert[]
 }
 
 model ProductVariant {
