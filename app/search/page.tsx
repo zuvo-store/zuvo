@@ -7,7 +7,6 @@ import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 import EmptyState from "@/components/EmptyState";
 import { SectionTitle } from "@/components/ui";
 import SearchFilters from "./SearchFilters";
-import VisualSearchButton from "@/components/VisualSearchButton";
 
 export const metadata = { title: "Search — ZUVO" };
 
@@ -135,7 +134,6 @@ export default async function SearchPage({
             </Link>
           </div>
         )}
-        <VisualSearchButton />
       </div>
 
       {chips.length > 0 && (
