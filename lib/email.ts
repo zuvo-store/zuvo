@@ -179,6 +179,27 @@ export async function sendAdminNewOrderEmail(opts: {
 }
 
 /**
+ * Fire-and-forget customer notification for a newly confirmed order.
+ * Fetches order details and sends the "Order confirmed!" email; never throws.
+ */
+export async function notifyCustomerOrderConfirmed(orderId: string): Promise<void> {
+  try {
+    const { db } = await import("./db");
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!order) return;
+    const contact = (order.contactJson as Record<string, string> | null) ?? null;
+    const to = order.user?.email ?? order.guestEmail ?? contact?.email ?? null;
+    const name = order.user?.name ?? order.guestName ?? contact?.name ?? null;
+    await sendOrderStatusEmail({ to, name, orderNumber: order.orderNumber, status: "CONFIRMED" });
+  } catch (e) {
+    console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/**
  * Fire-and-forget admin notification for a newly placed order.
  * Fetches order details and sends; never throws.
  */

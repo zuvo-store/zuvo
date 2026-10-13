@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { db } from "./db";
 import { getOrderOwned, rebuildDraftOrder, transitionOrder } from "./checkout";
 import { audit } from "./audit";
-import { notifyAdminNewOrder } from "./email";
+import { notifyAdminNewOrder, notifyCustomerOrderConfirmed } from "./email";
 
 /**
  * DEMO-ONLY payment provider. No real charge is ever attempted: there is no
@@ -76,6 +76,10 @@ async function confirmPendingDemoPayment(orderId: string, actorId?: string): Pro
   // Notify admin of the new order — fire and forget.
   notifyAdminNewOrder(orderId).catch((e) =>
     console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
+  );
+  // Notify the customer that their order is confirmed — fire and forget.
+  notifyCustomerOrderConfirmed(orderId).catch((e) =>
+    console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
   );
 }
 
@@ -151,6 +155,10 @@ export const DemoPaymentProvider: DemoPaymentProvider = {
         // Notify admin of the new order — fire and forget.
         notifyAdminNewOrder(orderId).catch((e) =>
           console.error("[zuvo] admin new-order email failed:", e instanceof Error ? e.message : e)
+        );
+        // Notify the customer that their order is confirmed — fire and forget.
+        notifyCustomerOrderConfirmed(orderId).catch((e) =>
+          console.error("[zuvo] customer order-confirmed email failed:", e instanceof Error ? e.message : e)
         );
         return { ok: true, paymentStatus: "SUCCEEDED", orderStatus: "CONFIRMED", message: "Demo payment successful.", transactionRef };
       }
