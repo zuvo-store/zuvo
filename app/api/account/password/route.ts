@@ -22,12 +22,18 @@ export async function POST(req: Request) {
   const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
   const newPassword = typeof body?.newPassword === "string" ? body.newPassword : "";
   const confirmPassword = typeof body?.confirmPassword === "string" ? body.confirmPassword : "";
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    return Response.json({ ok: false, error: "All password fields are required." }, { status: 400 });
-  }
   const record = await db.user.findUniqueOrThrow({ where: { id: user.id } });
-  if (!(await verifyPassword(currentPassword, record.passwordHash))) {
-    return Response.json({ ok: false, error: "Current password is incorrect." }, { status: 400 });
+  const isGoogleUser = record.provider === "google";
+  if (!newPassword || !confirmPassword) {
+    return Response.json({ ok: false, error: "New password and confirmation are required." }, { status: 400 });
+  }
+  if (!isGoogleUser) {
+    if (!currentPassword) {
+      return Response.json({ ok: false, error: "All password fields are required." }, { status: 400 });
+    }
+    if (!(await verifyPassword(currentPassword, record.passwordHash))) {
+      return Response.json({ ok: false, error: "Current password is incorrect." }, { status: 400 });
+    }
   }
   if (newPassword !== confirmPassword) {
     return Response.json({ ok: false, error: "New passwords do not match." }, { status: 400 });

@@ -5,7 +5,7 @@ import { inputCls, btn } from "@/components/ui";
 
 const fieldLabel = "mb-1 block text-sm font-medium text-zinc-700";
 
-export function PasswordForm() {
+export function PasswordForm({ isGoogleUser = false }: { isGoogleUser?: boolean }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,16 +17,18 @@ export function PasswordForm() {
     setMessage(null);
     setPending(true);
     try {
+      const body: Record<string, string> = { newPassword, confirmPassword };
+      if (!isGoogleUser) body.currentPassword = currentPassword;
       const res = await fetch("/api/account/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        body: JSON.stringify(body),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
         setMessage({ ok: false, text: data.error ?? "Could not change your password." });
       } else {
-        setMessage({ ok: true, text: "Password changed." });
+        setMessage({ ok: true, text: isGoogleUser ? "Password set. You can now log in with your email too." : "Password changed." });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -40,7 +42,14 @@ export function PasswordForm() {
 
   return (
     <form onSubmit={save} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-zinc-900">Change password</h2>
+      <h2 className="mb-2 text-lg font-semibold text-zinc-900">
+        {isGoogleUser ? "Set a password" : "Change password"}
+      </h2>
+      {isGoogleUser && (
+        <p className="mb-4 text-sm text-zinc-600">
+          You signed in with Google. Set a password to also log in with your email.
+        </p>
+      )}
       {message && (
         <p
           role="alert"
@@ -52,12 +61,14 @@ export function PasswordForm() {
         </p>
       )}
       <div className="grid max-w-md grid-cols-1 gap-4">
-        <div>
-          <label htmlFor="pw-current" className={fieldLabel}>Current password</label>
-          <input id="pw-current" type="password" className={inputCls} value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password"
-            required disabled={pending} />
-        </div>
+        {!isGoogleUser && (
+          <div>
+            <label htmlFor="pw-current" className={fieldLabel}>Current password</label>
+            <input id="pw-current" type="password" className={inputCls} value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password"
+              required disabled={pending} />
+          </div>
+        )}
         <div>
           <label htmlFor="pw-new" className={fieldLabel}>New password</label>
           <input id="pw-new" type="password" className={inputCls} value={newPassword}
@@ -73,13 +84,13 @@ export function PasswordForm() {
         </div>
       </div>
       <button type="submit" className={`${btn} mt-4`} disabled={pending}>
-        {pending ? "Saving…" : "Change password"}
+        {pending ? "Saving…" : isGoogleUser ? "Set password" : "Change password"}
       </button>
     </form>
   );
 }
 
-export function DeleteAccountForm({ email }: { email: string }) {
+export function DeleteAccountForm({ email, isGoogleUser = false }: { email: string; isGoogleUser?: boolean }) {
   const [typedEmail, setTypedEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -91,10 +102,12 @@ export function DeleteAccountForm({ email }: { email: string }) {
     setError(null);
     setPending(true);
     try {
+      const body: Record<string, string> = { email: typedEmail };
+      if (!isGoogleUser) body.password = password;
       const res = await fetch("/api/account/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: typedEmail, password }),
+        body: JSON.stringify(body),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
@@ -133,8 +146,11 @@ export function DeleteAccountForm({ email }: { email: string }) {
             </p>
           )}
           <p className="mb-3 text-sm font-medium text-zinc-700">
-            Type your email (<span className="font-mono">{email}</span>) and enter your password to
-            confirm deletion.
+            {isGoogleUser ? (
+              <>Type your email (<span className="font-mono">{email}</span>) to confirm deletion (no password needed — you signed in with Google).</>
+            ) : (
+              <>Type your email (<span className="font-mono">{email}</span>) and enter your password to confirm deletion.</>
+            )}
           </p>
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -143,12 +159,14 @@ export function DeleteAccountForm({ email }: { email: string }) {
                 onChange={(e) => setTypedEmail(e.target.value)} autoComplete="email"
                 required disabled={pending} />
             </div>
-            <div>
-              <label htmlFor="del-password" className={fieldLabel}>Password</label>
-              <input id="del-password" type="password" className={inputCls} value={password}
-                onChange={(e) => setPassword(e.target.value)} autoComplete="current-password"
-                required disabled={pending} />
-            </div>
+            {!isGoogleUser && (
+              <div>
+                <label htmlFor="del-password" className={fieldLabel}>Password</label>
+                <input id="del-password" type="password" className={inputCls} value={password}
+                  onChange={(e) => setPassword(e.target.value)} autoComplete="current-password"
+                  required disabled={pending} />
+              </div>
+            )}
           </div>
           <div className="mt-4 flex gap-3">
             <button

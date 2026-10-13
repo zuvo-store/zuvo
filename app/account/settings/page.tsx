@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
       <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
 
-      <PasswordForm />
+      <PasswordForm isGoogleUser={user.provider === "google"} />
 
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className="mb-2 text-lg font-semibold text-zinc-900">Sessions</h2>
@@ -34,7 +34,7 @@ export default async function SettingsPage() {
         </form>
       </div>
 
-      <DeleteAccountForm email={user.email} />
+      <DeleteAccountForm email={user.email} isGoogleUser={user.provider === "google"} />
     </main>
   );
 }

@@ -88,6 +88,7 @@ export type SessionUser = {
   username: string;
   email: string;
   role: string;
+  provider: string;
   emailVerified: Date | null;
   referralCode: string;
   createdAt: Date;
@@ -113,6 +114,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     username: u.username,
     email: u.email,
     role: u.role,
+    provider: u.provider,
     emailVerified: u.emailVerified,
     referralCode: u.referralCode,
     createdAt: u.createdAt,

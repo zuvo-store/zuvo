@@ -6,7 +6,8 @@ import { audit } from "@/lib/audit";
 
 /**
  * Permanently deletes the signed-in account. The caller must confirm by
- * typing their account email and providing their current password.
+ * typing their account email and providing their current password
+ * (Google-OAuth users skip the password check — typed email only).
  * Cascades remove sessions, addresses, cart, wishlist and rewards; orders are
  * kept but detached (userId set to null) so business records survive.
  */
@@ -19,14 +20,15 @@ export async function POST(req: Request) {
   } | null;
   const email = typeof body?.email === "string" ? normalizeEmail(body.email) : "";
   const password = typeof body?.password === "string" ? body.password : "";
-  if (!email || !password) {
-    return Response.json({ ok: false, error: "Type your email and enter your password to confirm." }, { status: 400 });
+  const record = await db.user.findUniqueOrThrow({ where: { id: user.id } });
+  const isGoogleUser = record.provider === "google";
+  if (!email || (!isGoogleUser && !password)) {
+    return Response.json({ ok: false, error: isGoogleUser ? "Type your email to confirm." : "Type your email and enter your password to confirm." }, { status: 400 });
   }
   if (email !== user.email) {
     return Response.json({ ok: false, error: "The typed email does not match this account." }, { status: 400 });
   }
-  const record = await db.user.findUniqueOrThrow({ where: { id: user.id } });
-  if (!(await verifyPassword(password, record.passwordHash))) {
+  if (!isGoogleUser && !(await verifyPassword(password, record.passwordHash))) {
     return Response.json({ ok: false, error: "Password is incorrect." }, { status: 400 });
   }
   // Referral attributions pointing at this user as referrer have no cascade;
