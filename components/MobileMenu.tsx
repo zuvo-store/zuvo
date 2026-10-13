@@ -60,6 +60,29 @@ const SHOP_LINKS = [
       <path d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.5 1.5 0 1 0 0-.01M17 18a1.5 1.5 0 1 0 0-.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     ),
   },
+  {
+    href: "/account/vouchers",
+    label: "My Vouchers",
+    desc: "Your promo codes & discounts",
+    gradient: "from-amber-400 to-orange-500",
+    icon: (
+      <path d="M3 8a2 2 0 0 1 2-2h14v3a2 2 0 0 0 0 6v3H5a2 2 0 0 1-2-2V8ZM13 6v2M13 11v2M13 16v-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    ),
+  },
+  {
+    href: "/account/referrals",
+    label: "Invite Friends",
+    desc: "Share & earn rewards",
+    gradient: "from-pink-400 to-rose-500",
+    icon: (
+      <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 17c0-2.2 2.7-4 6-4s6 1.8 6 4M16 4l4 4-4 4M20 8h-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    ),
+  },
+];
+
+const SUPPORT_LINKS = [
+  { href: "/help", label: "Help & FAQ" },
+  { href: "/contact", label: "Contact Us" },
 ];
 
 const ACCOUNT_LINKS = [
@@ -132,6 +155,25 @@ export default function MobileMenu() {
                       <span className="block truncate text-xs text-zinc-500">{item.desc}</span>
                     </span>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 text-zinc-300">
+                      <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="px-2 pb-2 pt-5 text-xs font-bold uppercase tracking-widest text-zinc-400">
+              Support
+            </p>
+            <ul className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+              {SUPPORT_LINKS.map((item, i) => (
+                <li key={item.href} className={i > 0 ? "border-t border-zinc-100" : ""}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-zinc-700 transition active:bg-zinc-50"
+                  >
+                    {item.label}
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="text-zinc-300">
                       <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </Link>
