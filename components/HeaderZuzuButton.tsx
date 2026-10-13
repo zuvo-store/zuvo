@@ -29,7 +29,7 @@ export default function HeaderZuzuButton() {
       onClick={() => window.dispatchEvent(new CustomEvent("zuzu-open"))}
       aria-label="Chat with Zuzu"
       title="Zuzu Assistant"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-zinc-100"
+      className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-zinc-100"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -38,6 +38,9 @@ export default function HeaderZuzuButton() {
         draggable={false}
         className="h-7 w-7 rounded-full object-cover ring-2 ring-orange-200"
       />
+      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white shadow">
+        AI
+      </span>
     </button>
   );
 }
