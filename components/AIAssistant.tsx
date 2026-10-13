@@ -205,7 +205,7 @@ export default function AIAssistant() {
     <div className="fixed bottom-5 right-5 z-[90] flex flex-col items-end">
       {/* Chat panel */}
       {open && (
-        <div className="ai-chat-panel mb-3 flex h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">
+        <div className="ai-chat-panel mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">
           {/* Header */}
           <div className="flex items-center gap-3 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}

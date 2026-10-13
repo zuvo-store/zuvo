@@ -85,6 +85,15 @@ export default async function ProductPage({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-sm text-zinc-500">
+        <Link href="/" className="hover:text-orange-600 hover:underline">Home</Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/categories/${product.category.slug}`} className="hover:text-orange-600 hover:underline">
+          {product.category.name}
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="truncate font-medium text-zinc-800">{product.name}</span>
+      </nav>
       <RecordView
         product={{
           slug: product.slug,
