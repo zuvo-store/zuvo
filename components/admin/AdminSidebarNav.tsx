@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import UnreadBadge from "./UnreadBadge";
 
 const NAV: { href: string; label: string }[] = [
+  { href: "/admin/inbox", label: "Inbox" },
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/inbox", label: "Inbox" },
   { href: "/admin/carts", label: "Carts" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/fraud", label: "Fraud Check" },
@@ -48,13 +49,14 @@ export default function AdminSidebarNav() {
                 className={
                   active
                     ? "flex items-center gap-2 rounded-lg bg-orange-100 px-3 py-2 text-sm font-bold text-orange-800"
-                    : "block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+                    : "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                 }
               >
                 {active ? (
                   <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />
                 ) : null}
                 {item.label}
+                {item.href === "/admin/inbox" ? <UnreadBadge /> : null}
               </Link>
             </li>
           );

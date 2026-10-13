@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import Forbidden from "@/components/Forbidden";
 import Logo from "@/components/Logo";
 import AdminSidebarNav from "@/components/admin/AdminSidebarNav";
+import UnreadBadge from "@/components/admin/UnreadBadge";
 import type { ReactNode } from "react";
 
 function SidebarNav() {
@@ -19,8 +20,9 @@ export default async function AdminShell({ children }: { children: ReactNode }) 
     <div className="min-h-[60vh] bg-zinc-50">
       {/* Mobile nav (no JS needed) */}
       <details className="border-b border-zinc-200 bg-white md:hidden">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900">
+        <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-zinc-900">
           Admin menu
+          <UnreadBadge />
         </summary>
         <SidebarNav />
       </details>

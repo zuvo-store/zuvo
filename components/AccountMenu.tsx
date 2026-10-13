@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import UnreadBadge from "./admin/UnreadBadge";
 
 type MenuUser = { name: string; email: string; role: string };
 
@@ -87,9 +88,10 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
                 href={l.href}
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
               >
                 {l.label}
+                {l.href === "/admin" && user.role === "ADMIN" ? <UnreadBadge /> : null}
               </Link>
             ))}
             <button
