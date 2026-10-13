@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
 // Fully open AI chat (ChatGPT-style) powered by Groq — no restrictions.
+// Has LIVE access to the website's product inventory (fresh from DB on every request).
 export async function POST(req: Request) {
   try {
     const { messages } = (await req.json()) as { messages: ChatMsg[] };
@@ -13,6 +15,29 @@ export async function POST(req: Request) {
     const key = process.env.GROQ_API_KEY;
     if (!key) {
       return NextResponse.json({ ok: false, error: "AI not configured" }, { status: 500 });
+    }
+
+    // Live inventory — fresh from database on every single request
+    let inventoryBlock = "Inventory currently unavailable.";
+    try {
+      const products = await db.product.findMany({
+        where: { active: true },
+        select: { name: true, priceCents: true, originalPriceCents: true, rating: true, category: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 60,
+      });
+      if (products.length > 0) {
+        inventoryBlock =
+          `LIVE ZUVO INVENTORY (${products.length} products, fresh right now):\n` +
+          products
+            .map(
+              (p) =>
+                `- ${p.name} | $${(p.priceCents / 100).toFixed(2)}${p.originalPriceCents ? ` (was $${(p.originalPriceCents / 100).toFixed(2)})` : ""} | ${p.category?.name ?? "General"} | ⭐${p.rating?.toFixed(1) ?? "N/A"}`
+            )
+            .join("\n");
+      }
+    } catch {
+      /* inventory stays unavailable — AI still chats normally */
     }
 
     // Detect image generation request
@@ -40,7 +65,9 @@ export async function POST(req: Request) {
           {
             role: "system",
             content: `You are Zuzu AI, a fully open and friendly AI assistant on the ZUVO website (like ChatGPT). You were created by Haider Malik. Chat freely about ANYTHING — no restrictions, no topic limits. Be warm, playful, witty, and human-like. You can discuss shopping, life, jokes, stories, advice, coding, anything the user wants. NEVER say "I'm just a shopping assistant" or deflect. Keep responses conversational and natural. Use emojis sparingly (1-3 max). Do NOT mention or offer image generation unless the user explicitly asks for an image.
-CRITICAL LANGUAGE RULE: ALWAYS reply in the EXACT same language AND script the user is using. If the user writes in Roman Urdu (Urdu words in Latin/English letters like "ksy ho", "tum kaise ho"), reply in Roman Urdu with Latin letters — NEVER switch to Hindi Devanagari or Urdu Arabic script. If the user writes in Urdu script (اردو), reply in Urdu script. If the user writes in English, reply in English. Match their language and script every single time, no exceptions.`,
+CRITICAL LANGUAGE RULE: ALWAYS reply in the EXACT same language AND script the user is using. If the user writes in Roman Urdu (Urdu words in Latin/English letters like "ksy ho", "tum kaise ho"), reply in Roman Urdu with Latin letters — NEVER switch to Hindi Devanagari or Urdu Arabic script. If the user writes in Urdu script (اردو), reply in Urdu script. If the user writes in English, reply in English. Match their language and script every single time, no exceptions.
+WEBSITE INVENTORY ACCESS: You HAVE direct live access to ZUVO's product database (see inventory below, refreshed on every message). When the user asks if something is available on the website ("kia ye website par hai", "is it in stock"), check the inventory list and answer confidently — name the matching products with prices. NEVER say you don't have database access. If a product isn't in the list, say it's not available and suggest similar ones from the inventory.
+${inventoryBlock}`,
           },
           ...messages.slice(-20).map((m) => ({ role: m.role, content: m.content })),
         ],
