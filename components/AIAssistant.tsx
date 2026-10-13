@@ -223,7 +223,14 @@ export default function AIAssistant() {
     <div ref={rootRef} className="fixed bottom-5 right-5 z-[90] flex flex-col items-end">
       {/* Chat panel */}
       {open && (
-        <div className="ai-chat-panel mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">
+        <>
+          {/* Click-outside-to-close overlay (transparent; panel + button stay above it) */}
+          <div
+            aria-hidden="true"
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 cursor-default"
+          />
+          <div className="ai-chat-panel relative z-[1] mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">
           {/* Header */}
           <div className="flex items-center gap-3 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -311,6 +318,7 @@ export default function AIAssistant() {
             </button>
           </form>
         </div>
+      </>
       )}
 
       {/* Floating waving button (hidden when minimized to header) */}
@@ -319,7 +327,7 @@ export default function AIAssistant() {
         type="button"
         onClick={() => { setOpen((o) => !o); if (!open) greet(); }}
         aria-label={open ? "Close Zuzu assistant" : "Chat with Zuzu"}
-        className={`group relative transition-all duration-500 ease-in ${flying ? "pointer-events-none -translate-y-[72vh] scale-[0.35] opacity-0" : ""}`}
+        className={`group relative z-[1] transition-all duration-500 ease-in ${flying ? "pointer-events-none -translate-y-[72vh] scale-[0.35] opacity-0" : ""}`}
       >
         <span className={`block h-16 w-16 overflow-hidden rounded-full shadow-xl shadow-orange-500/30 ring-4 ring-white transition-transform group-active:scale-90 ${waving && !open ? "ai-wave" : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

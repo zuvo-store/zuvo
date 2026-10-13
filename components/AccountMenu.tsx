@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UnreadBadge from "./admin/UnreadBadge";
@@ -79,10 +80,22 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
         ) : null}
       </button>
       {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg"
-        >
+        <>
+          {/* Transparent click-outside overlay (portaled to body so it truly covers
+              the viewport — the header's backdrop-blur would otherwise contain it).
+              z-[40] sits below the header (z-50) so the dropdown stays clickable. */}
+          {createPortal(
+            <div
+              aria-hidden="true"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-[40] cursor-default"
+            />,
+            document.body
+          )}
+          <div
+            role="menu"
+            className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg"
+          >
           <div className="border-b border-zinc-100 px-4 py-3">
             <p className="truncate text-sm font-semibold text-zinc-900">{user.name}</p>
             <p className="truncate text-xs text-zinc-500">{user.email}</p>
@@ -111,6 +124,7 @@ export default function AccountMenu({ user }: { user: MenuUser | null }) {
             </button>
           </div>
         </div>
+        </>
       ) : null}
     </div>
   );
