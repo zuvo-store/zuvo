@@ -1,18 +1,16 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LOCALE_COOKIE, type Locale } from "@/lib/i18n";
 
-/** EN / اردو toggle — sets a cookie and refreshes so server components re-render. */
+/** EN / اردو toggle — sets a cookie and reloads so the whole page re-renders in the new language. */
 export default function LanguageToggle({ initial }: { initial: Locale }) {
-  const router = useRouter();
   const [locale, setLocale] = useState<Locale>(initial);
 
   function switchTo(next: Locale) {
     if (next === locale) return;
     document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}`;
     setLocale(next);
-    router.refresh();
+    window.location.reload();
   }
 
   return (
