@@ -3,6 +3,7 @@ import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import AIAssistant from "@/components/AIAssistant";
+import ViewTracker from "@/components/ViewTracker";
 
 export const metadata: Metadata = {
   title: "ZUVO — Discover More. Shop Smarter.",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="min-h-[60vh]">{children}</main>
         <SiteFooter />
         <AIAssistant />
+        <ViewTracker />
       </body>
     </html>
   );

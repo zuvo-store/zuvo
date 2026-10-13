@@ -420,3 +420,13 @@ model CartReminder {
 
   @@index([email])
 }
+
+model PageView {
+  id          String   @id @default(cuid())
+  path        String   // page path, e.g. /, /products, /p/some-slug
+  visitorHash String   // sha256(ip + user-agent + day) — approx unique visitors, privacy-safe
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+}
