@@ -5,7 +5,7 @@ import { getCart } from "@/lib/cart";
 import Logo from "@/components/Logo";
 import SearchBox from "@/components/SearchBox";
 import AccountMenu from "@/components/AccountMenu";
-import MobileMenu from "@/components/MobileMenu";
+import SiteMenu from "@/components/SiteMenu";
 import CartIconButton from "@/components/CartIconButton";
 import DealsTicker from "@/components/DealsTicker";
 import HeaderZuzuButton from "@/components/HeaderZuzuButton";
@@ -32,7 +32,7 @@ export default async function SiteHeader() {
       <DealsTicker />
       <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 shadow-lg shadow-zinc-900/5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
         <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
-          <MobileMenu locale={locale} />
+          <SiteMenu locale={locale} />
           <Logo tagline="Discover More. Shop Smarter." />
           <SearchBox className="hidden min-w-0 flex-1 md:block" placeholder={t(locale, "search.placeholder")} />
           <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
