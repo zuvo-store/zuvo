@@ -57,7 +57,7 @@ export default function AIChatPage() {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-[#fef9f3]">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#fef9f3]">
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-orange-100 bg-white/90 px-4 py-3 backdrop-blur">
         <a href="/" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-lg hover:bg-gray-200" title="Back">
