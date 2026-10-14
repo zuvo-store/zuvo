@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function CopyButton({ text }: { text: string }) {
+export default function CopyButton({ text, compact = false }: { text: string; compact?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -25,9 +25,9 @@ export default function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={copy}
-      className={`shrink-0 rounded-xl px-4 py-2 text-xs font-extrabold shadow-sm transition active:scale-95 ${
-        copied ? "bg-green-500 text-white" : "bg-zinc-900 text-white hover:bg-zinc-700"
-      }`}
+      className={`shrink-0 rounded-xl font-extrabold shadow-sm transition active:scale-95 ${
+        compact ? "px-3 py-1.5 text-[11px]" : "px-4 py-2 text-xs"
+      } ${copied ? "bg-green-500 text-white" : "bg-zinc-900 text-white hover:bg-zinc-700"}`}
     >
       {copied ? "✓ Copied!" : "Copy"}
     </button>

@@ -89,40 +89,38 @@ export default async function VouchersPage() {
             return (
               <div
                 key={v.id}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 shadow-sm ring-1 ring-orange-200"
+                className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 shadow-sm ring-1 ring-orange-200"
               >
-                <div className="flex">
-                  {/* Main part */}
-                  <div className="min-w-0 flex-1 p-4 sm:p-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={meta.tone}>{meta.label}</Badge>
-                      {v.personal ? <Badge tone="blue">👤 Just for you</Badge> : null}
+                <div className="flex items-stretch">
+                  {/* Main part — compact coupon body */}
+                  <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge tone={meta.tone}>{meta.label}</Badge>
+                        {v.personal ? <Badge tone="blue">👤 Just for you</Badge> : null}
+                      </div>
+                      <p className="mt-1 text-xl font-black tracking-tight text-orange-600">
+                        {v.discountType === "PERCENT"
+                          ? `${v.discountValue}% OFF`
+                          : `${formatUSD(v.discountValue)} OFF`}
+                        <span className="ml-2 align-middle font-mono text-xs font-bold tracking-widest text-zinc-900">{v.code}</span>
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        {v.title ? `${v.title} • ` : ""}
+                        {v.minOrderCents > 0 ? <>Min {formatUSD(v.minOrderCents)}</> : "No minimum"}
+                        {" • "}📅 {v.endsAt ? `till ${fmtDate(v.endsAt)}` : "No expiry"}
+                      </p>
                     </div>
-                    <p className="mt-2 text-3xl font-black tracking-tight text-orange-600">
-                      {v.discountType === "PERCENT"
-                        ? `${v.discountValue}% OFF`
-                        : `${formatUSD(v.discountValue)} OFF`}
-                    </p>
-                    {v.title ? <p className="mt-1 truncate text-sm font-medium text-zinc-700">{v.title}</p> : null}
-                    <p className="mt-1.5 font-mono text-sm font-bold tracking-widest text-zinc-900">{v.code}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {v.minOrderCents > 0 ? <>Min order {formatUSD(v.minOrderCents)}</> : "No minimum order"}
-                      {v.usageLimit ? <> • {Math.max(0, v.usageLimit - v.usedCount)} left</> : null}
-                    </p>
-                    <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-zinc-700">
-                      <span aria-hidden="true">📅</span>
-                      {v.endsAt ? `Valid till ${fmtDate(v.endsAt)}` : "No expiry"}
-                    </p>
                   </div>
                   {/* Perforated divider with ticket notches */}
                   <div aria-hidden="true" className="relative w-0 shrink-0 border-l-2 border-dashed border-orange-300">
-                    <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-white" />
-                    <span className="absolute -bottom-3 -left-3 h-6 w-6 rounded-full bg-white" />
+                    <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-white" />
+                    <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-white" />
                   </div>
-                  {/* Stub */}
-                  <div className="flex w-[112px] shrink-0 flex-col justify-center gap-2 p-3">
-                    <CopyButton text={v.code!} />
-                    <UseVoucherButton code={v.code!} />
+                  {/* Stub — buttons side by side */}
+                  <div className="flex shrink-0 items-center gap-2 px-3">
+                    <CopyButton text={v.code!} compact />
+                    <UseVoucherButton code={v.code!} compact />
                   </div>
                 </div>
               </div>

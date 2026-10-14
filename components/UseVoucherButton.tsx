@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 
 /** Saves the voucher code for checkout, then takes the shopper home to start shopping. */
-export default function UseVoucherButton({ code }: { code: string }) {
+export default function UseVoucherButton({ code, compact = false }: { code: string; compact?: boolean }) {
   const router = useRouter();
 
   function useNow() {
@@ -19,7 +19,9 @@ export default function UseVoucherButton({ code }: { code: string }) {
     <button
       type="button"
       onClick={useNow}
-      className="w-full rounded-xl bg-orange-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-orange-700 active:scale-95"
+      className={`rounded-xl bg-orange-600 font-extrabold text-white shadow-sm transition hover:bg-orange-700 active:scale-95 ${
+        compact ? "px-3 py-1.5 text-[11px]" : "w-full px-4 py-2.5 text-xs"
+      }`}
     >
       🎯 Use now
     </button>
