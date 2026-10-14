@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -23,6 +23,19 @@ type Msg = {
 };
 
 const QUICK_REPLIES = ["🔥 Show deals", "🎁 Gift ideas", "🚚 Delivery info", "⭐ ZUZU coins"];
+
+/** Render **bold** as <strong>; unmatched/empty asterisks stay as plain text. */
+function renderRichText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    const m = part.match(/^\*\*([^*]+)\*\*$/);
+    return m ? (
+      <strong key={i}>{m[1]}</strong>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    );
+  });
+}
 
 function ProductCards({ products }: { products: ProductCard[] }) {
   if (!products || products.length === 0) return null;
@@ -278,7 +291,7 @@ export default function AIAssistant() {
                       : "rounded-bl-md bg-white text-zinc-800 ring-1 ring-zinc-100"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{m.text}</p>
+                  <p className="whitespace-pre-wrap">{m.from === "zuzu" ? renderRichText(m.text) : m.text}</p>
                   {m.from === "zuzu" && <ProductCards products={m.products ?? []} />}
                 </div>
               </div>
