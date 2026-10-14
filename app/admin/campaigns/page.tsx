@@ -204,10 +204,25 @@ function statusOf(c: CampaignRow, now: Date): { label: string; tone: "green" | "
   return { label: "🔴 LIVE", tone: "green" };
 }
 
+type StatusFilter = "" | "live" | "scheduled" | "paused" | "ended";
+const STATUS_FILTERS: StatusFilter[] = ["live", "scheduled", "paused", "ended"];
+
+function statusKey(c: CampaignRow, now: Date): Exclude<StatusFilter, ""> {
+  if (!c.active) return "paused";
+  if (now < c.startsAt) return "scheduled";
+  if (now > c.endsAt) return "ended";
+  return "live";
+}
+
+function statusFilterOf(raw: string | null | undefined): StatusFilter {
+  return (STATUS_FILTERS as string[]).includes(raw ?? "") ? (raw as StatusFilter) : "";
+}
+
 export default async function AdminCampaignsPage({ searchParams }: { searchParams: SearchParams }) {
   await requireAdminPage();
   const sp = await searchParams;
   const editId = qp(sp, "edit");
+  const s = statusFilterOf(qp(sp, "s"));
   const now = new Date();
   const campaigns = await db.campaign.findMany({
     orderBy: { startsAt: "desc" },
@@ -215,6 +230,25 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
   });
   const categories = await db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
   const editing = editId ? (campaigns.find((c) => c.id === editId) ?? null) : null;
+
+  const counts: Record<Exclude<StatusFilter, "">, number> = { live: 0, scheduled: 0, paused: 0, ended: 0 };
+  for (const c of campaigns) counts[statusKey(c, now)]++;
+  const shown = s ? campaigns.filter((c) => statusKey(c, now) === s) : campaigns;
+
+  const tileHref = (target: StatusFilter) => {
+    const p = new URLSearchParams();
+    // Clicking the active card clears the filter (toggle).
+    if (target && target !== s) p.set("s", target);
+    const qs = p.toString();
+    return qs ? `/admin/campaigns?${qs}` : "/admin/campaigns";
+  };
+  const tiles = [
+    { icon: "📋", label: "Total campaigns", value: String(campaigns.length), href: tileHref(""), active: s === "" },
+    { icon: "🔴", label: "Live", value: String(counts.live), href: tileHref("live"), active: s === "live" },
+    { icon: "📅", label: "Scheduled", value: String(counts.scheduled), href: tileHref("scheduled"), active: s === "scheduled" },
+    { icon: "⏸️", label: "Paused", value: String(counts.paused), href: tileHref("paused"), active: s === "paused" },
+    { icon: "🏁", label: "Ended", value: String(counts.ended), href: tileHref("ended"), active: s === "ended" },
+  ];
 
   return (
     <div>
@@ -228,7 +262,26 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
 
       <CampaignForm campaign={editing} categories={categories} />
 
-      <h2 className="mb-3 text-lg font-bold text-zinc-900">All campaigns</h2>
+      <h2 className="mb-3 text-lg font-bold text-zinc-900">
+        All campaigns
+        {s ? <span className="ml-2 text-sm font-medium text-zinc-500">({shown.length} shown)</span> : null}
+      </h2>
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {tiles.map((t) => {
+          const inner = (
+            <div className={`h-full rounded-3xl bg-white p-4 shadow-sm ring-1 transition ${
+              t.active ? "ring-2 ring-orange-500" : "ring-zinc-100 hover:shadow-md"
+            }`}>
+              <span className="text-xl">{t.icon}</span>
+              <p className="mt-2 text-lg font-extrabold text-zinc-900">{t.value}</p>
+              <p className="text-xs font-medium text-zinc-500">{t.label}</p>
+            </div>
+          );
+          return (
+            <Link key={t.label} href={t.href} className="block h-full">{inner}</Link>
+          );
+        })}
+      </div>
       <div className={tableWrapCls}>
         <table className={tableCls}>
           <thead>
@@ -242,7 +295,7 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
             </tr>
           </thead>
           <tbody>
-            {campaigns.map((c) => {
+            {shown.map((c) => {
               const st = statusOf(c, now);
               return (
                 <tr key={c.id}>
@@ -294,8 +347,8 @@ export default async function AdminCampaignsPage({ searchParams }: { searchParam
                 </tr>
               );
             })}
-            {campaigns.length === 0 ? (
-              <tr><td className={tdCls} colSpan={6}>No campaigns yet — launch your first sale above! 🎉</td></tr>
+            {shown.length === 0 ? (
+              <tr><td className={tdCls} colSpan={6}>{s ? "No campaigns match this filter." : "No campaigns yet — launch your first sale above! 🎉"}</td></tr>
             ) : null}
           </tbody>
         </table>

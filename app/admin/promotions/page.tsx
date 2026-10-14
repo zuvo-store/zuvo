@@ -21,6 +21,25 @@ import { qp, fmtDate, tableWrapCls, tableCls, thCls, tdCls, btnSm, type SearchPa
 
 const DISCOUNT_TYPES = ["PERCENT", "FIXED"];
 
+type PromoRow = {
+  id: string; active: boolean; startsAt: Date | null; endsAt: Date | null;
+};
+
+type PromoFilter = "" | "active" | "scheduled" | "off" | "expired";
+const PROMO_FILTERS: PromoFilter[] = ["active", "scheduled", "off", "expired"];
+
+// Single status per promotion (priority: off → scheduled → expired → active).
+function promoStatus(p: PromoRow, now: Date): Exclude<PromoFilter, ""> {
+  if (!p.active) return "off";
+  if (p.startsAt && now < p.startsAt) return "scheduled";
+  if (p.endsAt && now > p.endsAt) return "expired";
+  return "active";
+}
+
+function promoFilterOf(raw: string | null | undefined): PromoFilter {
+  return (PROMO_FILTERS as string[]).includes(raw ?? "") ? (raw as PromoFilter) : "";
+}
+
 function parsePromotion(fd: FormData) {
   const str = (k: string) => {
     const v = fd.get(k);
@@ -203,6 +222,8 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
   await requireAdminPage(); // must run before any data fetch (see lib/auth.ts)
   const sp = await searchParams;
   const editId = qp(sp, "edit");
+  const f = promoFilterOf(qp(sp, "f"));
+  const now = new Date();
   const promotions = await db.promotion.findMany({
     orderBy: { createdAt: "desc" },
     include: { user: { select: { name: true, email: true } } },
@@ -214,6 +235,25 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
     take: 200,
   });
   const editing = editId ? promotions.find((p) => p.id === editId) ?? null : null;
+
+  const counts: Record<Exclude<PromoFilter, "">, number> = { active: 0, scheduled: 0, off: 0, expired: 0 };
+  for (const p of promotions) counts[promoStatus(p, now)]++;
+  const shown = f ? promotions.filter((p) => promoStatus(p, now) === f) : promotions;
+
+  const tileHref = (target: PromoFilter) => {
+    const p = new URLSearchParams();
+    // Clicking the active card clears the filter (toggle).
+    if (target && target !== f) p.set("f", target);
+    const qs = p.toString();
+    return qs ? `/admin/promotions?${qs}` : "/admin/promotions";
+  };
+  const tiles = [
+    { icon: "🎟️", label: "Total promotions", value: String(promotions.length), href: tileHref(""), active: f === "" },
+    { icon: "🔴", label: "Active", value: String(counts.active), href: tileHref("active"), active: f === "active" },
+    { icon: "📅", label: "Scheduled", value: String(counts.scheduled), href: tileHref("scheduled"), active: f === "scheduled" },
+    { icon: "⏸️", label: "Off", value: String(counts.off), href: tileHref("off"), active: f === "off" },
+    { icon: "🏁", label: "Expired", value: String(counts.expired), href: tileHref("expired"), active: f === "expired" },
+  ];
 
   return (
     <div>
@@ -227,7 +267,26 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
 
       <PromotionForm promo={editing} customers={customers} />
 
-      <h2 className="mb-3 text-lg font-bold text-zinc-900">All promotions</h2>
+      <h2 className="mb-3 text-lg font-bold text-zinc-900">
+        All promotions
+        {f ? <span className="ml-2 text-sm font-medium text-zinc-500">({shown.length} shown)</span> : null}
+      </h2>
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {tiles.map((t) => {
+          const inner = (
+            <div className={`h-full rounded-3xl bg-white p-4 shadow-sm ring-1 transition ${
+              t.active ? "ring-2 ring-orange-500" : "ring-zinc-100 hover:shadow-md"
+            }`}>
+              <span className="text-xl">{t.icon}</span>
+              <p className="mt-2 text-lg font-extrabold text-zinc-900">{t.value}</p>
+              <p className="text-xs font-medium text-zinc-500">{t.label}</p>
+            </div>
+          );
+          return (
+            <Link key={t.label} href={t.href} className="block h-full">{inner}</Link>
+          );
+        })}
+      </div>
       <div className={tableWrapCls}>
         <table className={tableCls}>
           <thead>
@@ -244,7 +303,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {promotions.map((p) => (
+            {shown.map((p) => (
               <tr key={p.id} className="hover:bg-zinc-50">
                 <td className={tdCls}><span className="font-mono text-xs font-semibold">{p.code ?? "—"}</span></td>
                 <td className={tdCls}>{p.title}</td>
@@ -280,6 +339,15 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
                 </td>
               </tr>
             ))}
+            {shown.length === 0 && (
+              <tr>
+                <td className={tdCls} colSpan={9}>
+                  <p className="px-4 py-10 text-center text-sm text-zinc-400">
+                    {f ? "No promotions match this filter." : "No promotions yet."}
+                  </p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

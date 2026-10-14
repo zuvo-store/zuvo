@@ -14,6 +14,19 @@ import { qp, pageNumber, tableWrapCls, tableCls, thCls, tdCls, type SearchParams
 
 const PAGE_SIZE = 20;
 
+type StatFilter = "active" | "inactive" | "out" | "low" | "deal" | "featured" | "";
+
+function statFilterOf(raw: string | undefined): StatFilter {
+  return raw === "active" ||
+    raw === "inactive" ||
+    raw === "out" ||
+    raw === "low" ||
+    raw === "deal" ||
+    raw === "featured"
+    ? raw
+    : "";
+}
+
 async function toggleFlag(formData: FormData) {
   "use server";
   const id = String(formData.get("id") ?? "");
@@ -87,9 +100,10 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   await requireAdminPage(); // must run before any data fetch (see lib/auth.ts)
   const sp = await searchParams;
   const q = (qp(sp, "q") ?? "").trim();
+  const f = statFilterOf(qp(sp, "f"));
   const page = pageNumber(sp);
 
-  const where = q
+  const searchWhere = q
     ? {
         OR: [
           { name: { contains: q } },
@@ -99,9 +113,41 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
         ],
       }
     : {};
+  const filterWhere =
+    f === "active"
+      ? { active: true }
+      : f === "inactive"
+        ? { active: false }
+        : f === "out"
+          ? { stock: 0 }
+          : f === "low"
+            ? { stock: { gt: 0, lt: 10 } }
+            : f === "deal"
+              ? { deal: true }
+              : f === "featured"
+                ? { featured: true }
+                : {};
+  const where = { AND: [searchWhere, filterWhere] };
 
-  const [total, products] = await Promise.all([
+  const [
+    total,
+    totalAll,
+    activeCount,
+    inactiveCount,
+    outCount,
+    lowCount,
+    dealCount,
+    featuredCount,
+    products,
+  ] = await Promise.all([
     db.product.count({ where }),
+    db.product.count(),
+    db.product.count({ where: { active: true } }),
+    db.product.count({ where: { active: false } }),
+    db.product.count({ where: { stock: 0 } }),
+    db.product.count({ where: { stock: { gt: 0, lt: 10 } } }),
+    db.product.count({ where: { deal: true } }),
+    db.product.count({ where: { featured: true } }),
     db.product.findMany({
       where,
       orderBy: { updatedAt: "desc" },
@@ -112,12 +158,36 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const tileHref = (target: StatFilter) => {
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    // Clicking the active card clears the filter (toggle).
+    if (target && target !== f) p.set("f", target);
+    const qs = p.toString();
+    return qs ? `/admin/products?${qs}` : "/admin/products";
+  };
+
+  const tiles = [
+    { icon: "📦", label: "Total products", value: String(totalAll), href: tileHref(""), active: f === "" },
+    { icon: "✅", label: "Active", value: String(activeCount), href: tileHref("active"), active: f === "active" },
+    { icon: "❌", label: "Inactive", value: String(inactiveCount), href: tileHref("inactive"), active: f === "inactive" },
+    { icon: "🔴", label: "Out of stock", value: String(outCount), href: tileHref("out"), active: f === "out" },
+    { icon: "🟡", label: "Low stock", value: String(lowCount), href: tileHref("low"), active: f === "low" },
+    { icon: "🏷️", label: "On deal", value: String(dealCount), href: tileHref("deal"), active: f === "deal" },
+    { icon: "⭐", label: "Featured", value: String(featuredCount), href: tileHref("featured"), active: f === "featured" },
+  ];
+
+  const filtered = q || f;
+
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Products</h1>
-          <p className="mt-1 text-sm text-zinc-500">{total} product{total === 1 ? "" : "s"}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {total} product{total === 1 ? "" : "s"}
+            {filtered ? " matching filters" : ""}
+          </p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/products/bulk" className={btnSecondary}>
@@ -131,7 +201,28 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
 
       <FormError message={qp(sp, "error")} />
 
+      {/* Summary cards */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        {tiles.map((t) => {
+          const inner = (
+            <div className={`h-full rounded-3xl bg-white p-4 shadow-sm ring-1 transition ${
+              t.active ? "ring-2 ring-orange-500" : "ring-zinc-100 hover:shadow-md"
+            }`}>
+              <span className="text-xl">{t.icon}</span>
+              <p className="mt-2 text-lg font-extrabold text-zinc-900">{t.value}</p>
+              <p className="text-xs font-medium text-zinc-500">{t.label}</p>
+            </div>
+          );
+          return (
+            <Link key={t.label} href={t.href} className="block h-full">
+              {inner}
+            </Link>
+          );
+        })}
+      </div>
+
       <form method="get" className="mb-4 flex gap-2">
+        {f ? <input type="hidden" name="f" value={f} /> : null}
         <input
           name="q"
           defaultValue={q}
@@ -141,7 +232,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
         <button type="submit" className={btnSecondary}>
           Search
         </button>
-        {q ? (
+        {filtered ? (
           <Link href="/admin/products" className={btnSecondary}>
             Clear
           </Link>
@@ -151,7 +242,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
       {products.length === 0 ? (
         <EmptyState
           title="No products found"
-          message={q ? "Try a different search term." : "Create your first product to get started."}
+          message={filtered ? "Try a different search term or clear the filters." : "Create your first product to get started."}
           actionHref="/admin/products/new"
           actionLabel="New product"
         />
