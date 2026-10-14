@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { inputCls, btn } from "@/components/ui";
 import VoucherPicker from "@/components/VoucherPicker";
@@ -58,6 +58,20 @@ export default function CheckoutForm({
   const [giftWrap, setGiftWrap] = useState(initialGiftWrap);
   const [giftMessage, setGiftMessage] = useState(initialGiftMessage);
   const [pending, setPending] = useState(false);
+
+  // Pick up a voucher code saved from the My Vouchers page ("Use now")
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("zuvo-pending-promo");
+      if (saved && !promoCode.trim()) {
+        setPromoCode(saved);
+        localStorage.removeItem("zuvo-pending-promo");
+      }
+    } catch {
+      /* storage unavailable */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   const setC = (k: keyof typeof contact) => (e: React.ChangeEvent<HTMLInputElement>) =>

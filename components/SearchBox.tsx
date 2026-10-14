@@ -94,7 +94,7 @@ export default function SearchBox({ className = "", placeholder = "Search produc
         <label htmlFor={listId} className="sr-only">
           Search products
         </label>
-        <div className="flex w-full items-center overflow-hidden rounded-full border border-zinc-200 bg-white transition focus-within:border-transparent focus-within:ring-2 focus-within:ring-orange-500">
+        <div className="flex w-full items-center overflow-hidden rounded-full border border-zinc-200 bg-white transition focus-within:border-orange-500">
           <input
             id={listId}
             type="search"
