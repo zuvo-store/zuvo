@@ -7,9 +7,14 @@ import { requireAdminPage } from "@/lib/auth";
 import { qp, pageNumber, fmtDate, tableWrapCls, tableCls, thCls, tdCls } from "../_helpers";
 import AdjustStockModal from "./AdjustStockModal";
 
-type SP = { q?: string; cat?: string; from?: string; to?: string; view?: string; mtype?: string; page?: string };
+type SP = { q?: string; cat?: string; from?: string; to?: string; view?: string; mtype?: string; page?: string; stock?: string; sort?: string; dir?: string };
 
 const PAGE_SIZE = 20;
+const STOCK_FILTERS = ["out", "low", "in"] as const;
+type StockFilter = (typeof STOCK_FILTERS)[number] | "";
+const SORT_KEYS = ["name", "price", "stock", "value"] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+const DEFAULT_SORT: SortKey = "name";
 const MOVE_TYPES = ["PURCHASE", "SALE", "DAMAGE", "MISSING", "RETURN", "ADJUSTMENT"] as const;
 const TYPE_META: Record<string, { icon: string; tone: string; label: string }> = {
   PURCHASE: { icon: "📥", tone: "green", label: "Purchase" },
@@ -31,6 +36,10 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
   const cat = sp.cat ?? "";
   const view = sp.view === "movements" ? "movements" : "stock";
   const mtype = (MOVE_TYPES as readonly string[]).includes(sp.mtype ?? "") ? sp.mtype! : "";
+  const stockFilter: StockFilter = (STOCK_FILTERS as readonly string[]).includes(sp.stock ?? "") ? (sp.stock as StockFilter) : "";
+  const sort: SortKey = (SORT_KEYS as readonly string[]).includes(sp.sort ?? "") ? (sp.sort as SortKey) : DEFAULT_SORT;
+  const dir: "asc" | "desc" = sp.dir === "desc" ? "desc" : "asc";
+  const sortActive = sort !== DEFAULT_SORT || dir !== "asc";
   const page = pageNumber(sp);
   const now = new Date();
   const fromStr = sp.from ?? isoDay(new Date(now.getTime() - 29 * 864e5));
@@ -71,6 +80,11 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
   const baseParams = new URLSearchParams();
   if (q) baseParams.set("q", q);
   if (cat) baseParams.set("cat", cat);
+  if (stockFilter) baseParams.set("stock", stockFilter);
+  if (sortActive) {
+    baseParams.set("sort", sort);
+    baseParams.set("dir", dir);
+  }
   baseParams.set("from", fromStr);
   baseParams.set("to", toStr);
 
@@ -154,36 +168,78 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
       </div>
     );
   } else {
-    const where = {
-      ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
-      ...(cat ? { categoryId: cat } : {}),
-    };
+  // Sortable header cell for the stock table: toggles asc/desc on click.
+  const SortTh = ({ label, sortKey }: { label: string; sortKey: SortKey }) => {
+    const active = sort === sortKey;
+    const p = new URLSearchParams(baseParams);
+    p.set("view", "stock");
+    p.set("sort", sortKey);
+    p.set("dir", active && dir === "asc" ? "desc" : "asc");
+    return (
+      <th className={thCls}>
+        <Link href={`/admin/inventory?${p.toString()}`} className="inline-flex items-center gap-1 transition hover:text-zinc-900">
+          {label}
+          {active && <span className="text-[10px] text-orange-600">{dir === "asc" ? "▲" : "▼"}</span>}
+        </Link>
+      </th>
+    );
+  };
+
+  const stockWhere = {
+    ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+    ...(cat ? { categoryId: cat } : {}),
+    ...(stockFilter === "out" ? { stock: 0 } : {}),
+    ...(stockFilter === "low" ? { stock: { gt: 0, lt: 10 } } : {}),
+    ...(stockFilter === "in" ? { stock: { gte: 10 } } : {}),
+  };
+  const stockInclude = { category: { select: { name: true } }, variants: { select: { id: true } } } as const;
+  let stockTotal = 0;
+  let stockProducts: { id: string; name: string; priceCents: number; stock: number; category: { name: string }; variants: { id: string }[] }[] = [];
+  if (sort === "value") {
+    // Value is computed (stock × priceCents), so sort in JS after fetching.
+    const all = await db.product.findMany({ where: stockWhere, include: stockInclude });
+    const mul = dir === "desc" ? -1 : 1;
+    all.sort((a, b) => mul * (a.stock * a.priceCents - b.stock * b.priceCents));
+    stockTotal = all.length;
+    stockProducts = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  } else {
+    const orderBy = sort === "price" ? { priceCents: dir } : sort === "stock" ? { stock: dir } : { name: dir };
     const [total, products] = await Promise.all([
-      db.product.count({ where }),
+      db.product.count({ where: stockWhere }),
       db.product.findMany({
-        where,
-        include: { category: { select: { name: true } }, variants: { select: { id: true } } },
-        orderBy: { name: "asc" },
+        where: stockWhere,
+        include: stockInclude,
+        orderBy,
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
       }),
     ]);
-    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    listContent = (
+    stockTotal = total;
+    stockProducts = products;
+  }
+  totalPages = Math.max(1, Math.ceil(stockTotal / PAGE_SIZE));
+  const filteringActive = Boolean(q || cat || stockFilter || sortActive);
+  listContent = (
+    <div>
+      {filteringActive && (
+        <p className="mb-2 text-xs font-semibold text-zinc-500">
+          Showing {stockProducts.length} of {stockTotal.toLocaleString()} products
+        </p>
+      )}
       <div className={tableWrapCls}>
         <table className={tableCls}>
           <thead>
             <tr>
-              <th className={thCls}>Product</th>
+              <SortTh label="Product" sortKey="name" />
               <th className={thCls}>Category</th>
-              <th className={thCls}>Price</th>
-              <th className={thCls}>Stock</th>
-              <th className={thCls}>Value</th>
+              <SortTh label="Price" sortKey="price" />
+              <SortTh label="Stock" sortKey="stock" />
+              <SortTh label="Value" sortKey="value" />
               <th className={thCls}>Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {products.map((p) => (
+            {stockProducts.map((p) => (
               <tr key={p.id} className="hover:bg-zinc-50">
                 <td className={tdCls}>
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-zinc-900 hover:text-orange-700 hover:underline">
@@ -206,11 +262,12 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
             ))}
           </tbody>
         </table>
-        {products.length === 0 && (
+        {stockProducts.length === 0 && (
           <p className="px-4 py-10 text-center text-sm text-zinc-400">No products found.</p>
         )}
       </div>
-    );
+    </div>
+  );
   }
 
   const pageHref = (pg: number) => {
@@ -271,6 +328,23 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
             ))}
           </select>
         </label>
+        {view === "stock" && (
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-zinc-500">Stock status</span>
+            <select name="stock" defaultValue={stockFilter} className={inputCls}>
+              <option value="">All stock levels</option>
+              <option value="out">🔴 Out of stock</option>
+              <option value="low">🟡 Low stock</option>
+              <option value="in">🟢 In stock</option>
+            </select>
+          </label>
+        )}
+        {view === "stock" && sortActive && (
+          <>
+            <input type="hidden" name="sort" value={sort} />
+            <input type="hidden" name="dir" value={dir} />
+          </>
+        )}
         <label className="block">
           <span className="mb-1 block text-xs font-bold text-zinc-500">From</span>
           <input type="date" name="from" defaultValue={fromStr} max={toStr} className={inputCls} />
@@ -280,8 +354,8 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
           <input type="date" name="to" defaultValue={toStr} min={fromStr} max={isoDay(new Date())} className={inputCls} />
         </label>
         <button type="submit" className={btnPrimary}>Apply</button>
-        {(q || cat || mtype) && (
-          <Link href="/admin/inventory" className="px-2 py-2 text-sm font-bold text-zinc-500 hover:text-zinc-800">
+        {(q || cat || mtype || stockFilter || sortActive) && (
+          <Link href={view === "movements" ? "/admin/inventory?view=movements" : "/admin/inventory"} className="px-2 py-2 text-sm font-bold text-zinc-500 hover:text-zinc-800">
             Clear
           </Link>
         )}
