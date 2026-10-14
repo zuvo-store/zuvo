@@ -65,20 +65,31 @@ function ProductCards({ products }: { products: ProductCard[] }) {
 export default function AIAssistant() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [waving, setWaving] = useState(false);
   const [talking, setTalking] = useState(false);
   const [input, setInput] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
+  // Close with fly-back animation toward the floating button
+  function closePanel() {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 280);
+  }
+
   // Close panel when clicking anywhere outside (standard behavior)
   useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) closePanel();
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closePanel();
     }
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -227,10 +238,10 @@ export default function AIAssistant() {
           {/* Click-outside-to-close overlay (transparent; panel + button stay above it) */}
           <div
             aria-hidden="true"
-            onClick={() => setOpen(false)}
+            onClick={() => closePanel()}
             className="fixed inset-0 cursor-default"
           />
-          <div className="ai-chat-panel relative z-[1] mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100">
+          <div className={`ai-chat-panel relative z-[1] mb-3 flex h-[min(480px,calc(100vh-140px))] max-h-[480px] w-[340px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-orange-50 to-white shadow-2xl ring-1 ring-orange-100 transition-all duration-300 ease-in origin-bottom-right ${closing ? "translate-y-16 scale-50 opacity-0" : ""}`}>
           {/* Header */}
           <div className="flex items-center gap-3 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -248,7 +259,7 @@ export default function AIAssistant() {
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => closePanel()}
               aria-label="Close chat"
               className="rounded-full p-1.5 text-white/90 transition hover:bg-white/20"
             >
