@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   }
   const order = await db.order.findUnique({
     where: { orderNumber },
-    include: { user: { select: { email: true } }, items: true, payments: { select: { provider: true }, orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { user: { select: { email: true } }, items: { include: { product: { select: { slug: true } } } }, payments: { select: { provider: true }, orderBy: { createdAt: "desc" }, take: 1 } },
   });
   const matches =
     order &&
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       currency: order.currency,
       createdAt: order.createdAt,
       deliveryLabel: order.deliveryLabel,
-      items: order.items.map((i) => ({ name: i.name, variantLabel: i.variantLabel, qty: i.qty })),
+      items: order.items.map((i) => ({ name: i.name, variantLabel: i.variantLabel, qty: i.qty, slug: i.product?.slug ?? null })),
     },
   });
 }

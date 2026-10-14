@@ -26,7 +26,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const user = await requireUser();
   const order = await db.order.findUnique({
     where: { id },
-    include: { items: true, payments: { orderBy: { createdAt: "desc" } } },
+    include: { items: { include: { product: { select: { slug: true } } } }, payments: { orderBy: { createdAt: "desc" } } },
   });
   if (!order || order.userId !== user.id) notFound();
 
@@ -126,23 +126,37 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <section className={cardCls}>
           <h2 className="mb-4 text-lg font-semibold text-zinc-900">Items</h2>
           <ul className="divide-y divide-zinc-100">
-            {order.items.map((item) => (
-              <li key={item.id} className="flex items-center gap-4 py-3">
-                {item.image ? (
-                  <img src={item.image} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
-                ) : (
-                  <div className="h-14 w-14 rounded-lg bg-zinc-100" aria-hidden />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-900">{item.name}</p>
-                  {item.variantLabel && <p className="text-sm text-zinc-500">{item.variantLabel}</p>}
-                  <p className="text-sm text-zinc-500">
-                    {item.qty} × {formatUSD(item.unitPriceCents)}
-                  </p>
-                </div>
-                <p className="font-semibold text-zinc-900">{formatUSD(item.lineTotalCents)}</p>
-              </li>
-            ))}
+            {order.items.map((item) => {
+              const href = item.product?.slug ? `/product/${item.product.slug}` : null;
+              const inner = (
+                <>
+                  {item.image ? (
+                    <img src={item.image} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-lg bg-zinc-100" aria-hidden />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-zinc-900 group-hover:text-orange-600 group-hover:underline">{item.name}</p>
+                    {item.variantLabel && <p className="text-sm text-zinc-500">{item.variantLabel}</p>}
+                    <p className="text-sm text-zinc-500">
+                      {item.qty} × {formatUSD(item.unitPriceCents)}
+                    </p>
+                  </div>
+                  <p className="font-semibold text-zinc-900">{formatUSD(item.lineTotalCents)}</p>
+                </>
+              );
+              return (
+                <li key={item.id}>
+                  {href ? (
+                    <Link href={href} className="group flex items-center gap-4 py-3">
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-4 py-3">{inner}</div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
           <dl className="mt-4 space-y-2 border-t border-zinc-200 pt-4 text-sm">
             <div className="flex justify-between">

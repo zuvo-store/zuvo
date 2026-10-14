@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatUSD } from "@/lib/money";
 import { btn, inputCls, Field, FormError, cardCls } from "@/components/ui";
 
@@ -49,6 +50,7 @@ type TrackedOrder = {
     name: string;
     variantLabel?: string | null;
     image?: string | null;
+    slug?: string | null;
     qty: number;
     unitPriceCents?: number;
     lineTotalCents?: number;
@@ -244,33 +246,46 @@ export default function TrackOrderForm({ initialOrderNumber = "" }: { initialOrd
             <div className={`${cardCls} mt-4 p-5`}>
               <h3 className="font-semibold text-zinc-900">Items</h3>
               <ul className="mt-3 divide-y divide-zinc-100">
-                {order.items.map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 py-3">
-                    {item.image ? (
-                      <img src={item.image} alt="" aria-hidden="true" className="h-14 w-14 rounded-lg bg-zinc-100 object-cover" />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-zinc-100 text-lg font-bold text-zinc-300">
-                        {item.name.charAt(0)}
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-zinc-900">{item.name}</p>
-                      {item.variantLabel && (
-                        <p className="text-xs text-zinc-500">{item.variantLabel}</p>
+                {order.items.map((item, i) => {
+                  const itemInner = (
+                    <>
+                      {item.image ? (
+                        <img src={item.image} alt="" aria-hidden="true" className="h-14 w-14 rounded-lg bg-zinc-100 object-cover" />
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-zinc-100 text-lg font-bold text-zinc-300">
+                          {item.name.charAt(0)}
+                        </div>
                       )}
-                      <p className="text-xs text-zinc-500">Qty {item.qty}</p>
-                    </div>
-                    {typeof item.lineTotalCents === "number" ? (
-                      <p className="text-sm font-semibold text-zinc-900">
-                        {formatUSD(item.lineTotalCents)}
-                      </p>
-                    ) : typeof item.unitPriceCents === "number" ? (
-                      <p className="text-sm font-semibold text-zinc-900">
-                        {formatUSD(item.unitPriceCents * item.qty)}
-                      </p>
-                    ) : null}
-                  </li>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-zinc-900 group-hover:text-orange-600 group-hover:underline">{item.name}</p>
+                        {item.variantLabel && (
+                          <p className="text-xs text-zinc-500">{item.variantLabel}</p>
+                        )}
+                        <p className="text-xs text-zinc-500">Qty {item.qty}</p>
+                      </div>
+                      {typeof item.lineTotalCents === "number" ? (
+                        <p className="text-sm font-semibold text-zinc-900">
+                          {formatUSD(item.lineTotalCents)}
+                        </p>
+                      ) : typeof item.unitPriceCents === "number" ? (
+                        <p className="text-sm font-semibold text-zinc-900">
+                          {formatUSD(item.unitPriceCents * item.qty)}
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                  return (
+                    <li key={i}>
+                      {item.slug ? (
+                        <Link href={`/product/${item.slug}`} className="group flex items-center gap-4 py-3">
+                          {itemInner}
+                        </Link>
+                      ) : (
+                        <div className="flex items-center gap-4 py-3">{itemInner}</div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
               <dl className="mt-4 space-y-1 border-t border-zinc-100 pt-4 text-sm">
                 {typeof order.subtotalCents === "number" && (
