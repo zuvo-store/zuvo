@@ -81,7 +81,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               }`}>
                 <span className="text-xl">{c.icon}</span>
                 <p className="mt-2 text-lg font-extrabold text-zinc-900">
-                  {c.count} order{c.count === 1 ? "" : "s"}
+                  {c.count.toLocaleString()}
                 </p>
                 <p className="text-xs font-medium text-zinc-500">{c.label}</p>
                 <p className="text-xs font-bold text-zinc-700">{formatUSD(c.sum)}</p>
