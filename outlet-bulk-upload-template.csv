@@ -1,0 +1,4 @@
+name,slug,sku,brand,category_slug,price,original_price,cost,stock,short_desc,description,images,attributes,variant_name,variant_values,variant_price_deltas,variant_stocks,active,featured,deal
+Winter Wool Socks,,OUT-001,MyOutlet,fashion,4.99,9.99,2.50,0,"Warm wool socks","Soft warm winter socks for daily wear. Ideal for cold days.",,"color:Grey|material:Wool",,,,,1,0,0
+Cotton T-Shirt,,OUT-002,MyOutlet,fashion,12.99,,7.00,100,"Everyday cotton tee","Comfortable everyday cotton t-shirt with a classic fit.",,"color:White|material:Cotton|fit:Regular",Size,S|M|L|XL,0|0|2|2,10|20|20|15,1,0,0
+Bluetooth Speaker Mini,,OUT-003,MyOutlet,electronics,24.99,39.99,15.00,0,"Portable mini speaker","Small portable bluetooth speaker with strong bass. Great for travel.",,"color:Black|bluetooth:5.3",,,,,1,1,1

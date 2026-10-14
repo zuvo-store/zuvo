@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loadStripe, type Stripe, type StripeCardElement } from "@stripe/stripe-js";
 import { formatUSD } from "@/lib/money";
 import { inputCls, btn } from "@/components/ui";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { DemoScenario } from "@/lib/payments";
 
 type Props = {
@@ -29,6 +30,7 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
   const [pending, setPending] = useState(false);
   const [isPendingPayment, setIsPendingPayment] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [codConfirm, setCodConfirm] = useState(false);
 
   async function pay() {
     setError(null);
@@ -215,9 +217,18 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
           <p className="mb-4 text-sm font-semibold text-green-900">
             Pay {formatUSD(totalCents)} in cash when your order arrives.
           </p>
-          <button type="button" onClick={placeCodOrder} disabled={pending} className={`${btn} w-full sm:w-auto`}>
+          <button type="button" onClick={() => setCodConfirm(true)} disabled={pending} className={`${btn} w-full sm:w-auto`}>
             {pending ? "Placing order…" : `Place order — pay ${formatUSD(totalCents)} on delivery`}
           </button>
+          <ConfirmDialog
+            open={codConfirm}
+            title="Confirm your order"
+            message={`Place this order with Cash on Delivery? You'll pay ${formatUSD(totalCents)} in cash when your order arrives.`}
+            confirmLabel="Yes, place order"
+            loading={pending}
+            onConfirm={() => { setCodConfirm(false); placeCodOrder(); }}
+            onCancel={() => setCodConfirm(false)}
+          />
         </div>
       ) : method === "stripe" ? (
         stripePublishableKey ? (

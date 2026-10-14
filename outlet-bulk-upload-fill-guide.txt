@@ -1,0 +1,26 @@
+# ZUVO Bulk Upload — Fill Guide (100 outlet items)
+
+Route: Admin → Products → Bulk upload (3 example rows already in the CSV — copy their pattern)
+
+## Valid category_slug values (don't change spelling)
+electronics | home-living | fashion | beauty | sports-outdoors | accessories | kitchen | toys-hobbies
+
+## Column rules
+- name: required — row is skipped if empty.
+- slug: leave EMPTY → auto-generated from name. Only fill if you want a custom URL.
+- category_slug: MUST match one of the 8 above, otherwise that row is SKIPPED (with a warning).
+- price: required, must be > 0 (dollars, e.g. 19.99). Rows with 0/bad price are SKIPPED.
+- stock: 0 is totally fine! Uploads normally, shows "Out of stock" on the live store
+  and with a red badge + in the Out-of-stock filter on the admin Inventory page.
+- images: pipe-separated paths like /p/a.jpg|/p/b.jpg — leave empty if no photos yet.
+- attributes: pipe-separated key:value like color:Red|material:Cotton
+- variants: variant_name + variant_values (pipe-separated, e.g. S|M|L) + optional
+  variant_price_deltas (dollars) + optional variant_stocks per value.
+- active / featured / deal: 1 = on, 0 = off (also accepts true/yes/y).
+- Max file size 2 MB. Duplicate slugs are skipped (safe to re-upload).
+
+## Tips for the 100 items
+- Keep `deal` = 1 only for real discounts (original_price filled).
+- `featured` = 1 puts it in the homepage Featured section — use sparingly.
+- `cost` feeds the Profit report — fill it if you want real profit numbers later.
+- After upload, admin Inventory → "Out of stock" filter shows all 0-qty items at a glance.
