@@ -9,6 +9,8 @@ type Msg = {
   uploadUrl?: string; // user-uploaded image
 };
 
+const SUGGESTIONS = ["Fashion ideas 💡", "Gift ideas 🎁", "Today's deals 🔥", "Style tips 👗"];
+
 export default function AIChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -82,7 +84,7 @@ export default function AIChatPage() {
               Kuch bhi pucho — shopping help, fashion ideas, gift suggestions, ya bas gappein! 🛍️
             </p>
             <div className="mx-auto mt-4 flex max-w-sm flex-wrap justify-center gap-2">
-              {["Fashion ideas 💡", "Gift ideas 🎁", "Today's deals 🔥", "Style tips 👗"].map((s) => (
+              {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s.replace(/ [^ ]*$/, ""))}
@@ -131,6 +133,21 @@ export default function AIChatPage() {
 
       {/* Input */}
       <div className="shrink-0 border-t border-orange-100 bg-white">
+      {/* Suggestion chips — always visible above the input, even mid-chat */}
+      <div className="mx-auto w-full max-w-3xl overflow-x-auto px-3 pt-2">
+        <div className="flex gap-1.5">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => send(s.replace(/ [^ ]*$/, ""))}
+              className="shrink-0 rounded-full bg-orange-100 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-200"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
         className="mx-auto flex w-full max-w-3xl items-center gap-2 px-3 py-3"
