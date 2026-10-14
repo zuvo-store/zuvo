@@ -34,37 +34,128 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
   const sp = await searchParams;
   const page = pageNumber(sp);
 
-  const [total, payments] = await Promise.all([
+  const VALID_STATUSES = ["SUCCEEDED", "REFUNDED", "PENDING"] as const;
+  const VALID_PROVIDERS = ["stripe", "demo", "cod"] as const;
+  const rawFstatus = qp(sp, "fstatus") ?? "";
+  const rawFprovider = qp(sp, "fprovider") ?? "";
+  const fstatus = (VALID_STATUSES as readonly string[]).includes(rawFstatus) ? rawFstatus : "";
+  const fprovider = (VALID_PROVIDERS as readonly string[]).includes(rawFprovider) ? rawFprovider : "";
+
+  const where = {
+    ...(fstatus ? { status: fstatus } : {}),
+    ...(fprovider ? { provider: fprovider } : {}),
+  };
+
+  const [grandTotal, total, payments, statusGroups, providerGroups] = await Promise.all([
     db.payment.count(),
+    db.payment.count({ where }),
     db.payment.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: { order: { select: { id: true, orderNumber: true, status: true } } },
     }),
+    db.payment.groupBy({ by: ["status"], _count: { _all: true }, _sum: { amountCents: true } }),
+    db.payment.groupBy({ by: ["provider"], _count: { _all: true }, _sum: { amountCents: true } }),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const statusAgg: Record<string, { count: number; sum: number }> = {};
+  for (const g of statusGroups) statusAgg[g.status] = { count: g._count._all, sum: g._sum.amountCents ?? 0 };
+  const providerAgg: Record<string, { count: number; sum: number }> = {};
+  for (const g of providerGroups) providerAgg[g.provider] = { count: g._count._all, sum: g._sum.amountCents ?? 0 };
+
+  // Card href: toggle the filter off when clicking the active card, preserve the other filter.
+  const cardHref = (kind: "fstatus" | "fprovider", value: string) => {
+    const cur = kind === "fstatus" ? fstatus : fprovider;
+    const otherKind = kind === "fstatus" ? "fprovider" : "fstatus";
+    const other = kind === "fstatus" ? fprovider : fstatus;
+    const p = new URLSearchParams();
+    if (cur !== value) p.set(kind, value); // clicking inactive card sets it; active card toggles off
+    if (other) p.set(otherKind, other);
+    const qs = p.toString();
+    return qs ? `/admin/payments?${qs}` : "/admin/payments";
+  };
+
+  const agg = (map: Record<string, { count: number; sum: number }>, key: string) =>
+    map[key] ?? { count: 0, sum: 0 };
+  const cards = [
+    { icon: "✅", label: "Succeeded", ...agg(statusAgg, "SUCCEEDED"), kind: "fstatus" as const, val: "SUCCEEDED", active: fstatus === "SUCCEEDED" },
+    { icon: "↩️", label: "Refunded", ...agg(statusAgg, "REFUNDED"), kind: "fstatus" as const, val: "REFUNDED", active: fstatus === "REFUNDED" },
+    { icon: "⏳", label: "Pending", ...agg(statusAgg, "PENDING"), kind: "fstatus" as const, val: "PENDING", active: fstatus === "PENDING" },
+    { icon: "💳", label: "Stripe", ...agg(providerAgg, "stripe"), kind: "fprovider" as const, val: "stripe", active: fprovider === "stripe" },
+    { icon: "🎭", label: "Demo", ...agg(providerAgg, "demo"), kind: "fprovider" as const, val: "demo", active: fprovider === "demo" },
+    { icon: "💵", label: "COD", ...agg(providerAgg, "cod"), kind: "fprovider" as const, val: "cod", active: fprovider === "cod" },
+  ];
+
+  const filterDesc = [
+    fstatus ? `status: ${fstatus}` : null,
+    fprovider ? `provider: ${fprovider}` : null,
+  ].filter(Boolean).join(", ");
 
   return (
     <div>
       <SectionTitle title="Payments" />
       <p className="mb-4 text-sm text-zinc-500">
-        {total} payment{total === 1 ? "" : "s"} — demo provider only.
+        {total} payment{total === 1 ? "" : "s"}
+        {filterDesc ? ` — ${filterDesc}` : ""}
+        {(fstatus || fprovider) && (
+          <Link href="/admin/payments" className="ml-2 font-bold text-orange-700 hover:underline">
+            Clear filters ✕
+          </Link>
+        )}
       </p>
       <FormError message={qp(sp, "error")} />
 
+      {grandTotal > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {cards.map((c) => {
+            const inner = (
+              <div className={`h-full rounded-3xl bg-white p-4 shadow-sm ring-1 transition ${
+                c.active ? "ring-2 ring-orange-500" : "ring-zinc-100 hover:shadow-md"
+              }`}>
+                <span className="text-xl">{c.icon}</span>
+                <p className="mt-2 text-lg font-extrabold text-zinc-900">
+                  {c.count} payment{c.count === 1 ? "" : "s"}
+                </p>
+                <p className="text-xs font-medium text-zinc-500">{c.label}</p>
+                <p className="text-xs font-bold text-zinc-700">{formatUSD(c.sum)}</p>
+              </div>
+            );
+            return (
+              <Link key={c.label} href={cardHref(c.kind, c.val)} className="block h-full" scroll={false}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       {total === 0 ? (
+        grandTotal === 0 ? (
         <div className={cardCls + " p-10 text-center"}>
           <p className="text-4xl">💳</p>
           <p className="mt-2 text-lg font-bold text-zinc-900">No payments yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
-            Payments appear here once customers complete checkout. This store uses the demo
-            payment provider — no real money moves.
+            Payments appear here once customers complete checkout.
           </p>
           <Link href="/admin/orders" className="mt-4 inline-block rounded-full bg-zinc-900 px-6 py-2 text-sm font-bold text-white hover:bg-zinc-700">
             View orders →
           </Link>
         </div>
+        ) : (
+        <div className={cardCls + " p-10 text-center"}>
+          <p className="text-4xl">🔍</p>
+          <p className="mt-2 text-lg font-bold text-zinc-900">No payments match these filters</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+            Try a different status or provider combination.
+          </p>
+          <Link href="/admin/payments" className="mt-4 inline-block rounded-full bg-zinc-900 px-6 py-2 text-sm font-bold text-white hover:bg-zinc-700">
+            Clear filters
+          </Link>
+        </div>
+        )
       ) : (
       <div className={tableWrapCls}>
         <table className={tableCls}>
