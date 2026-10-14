@@ -31,6 +31,11 @@ export default async function SiteHeader() {
     );
   }
 
+  // Search bar only makes sense on shopping pages — hide it on account,
+  // checkout, and utility pages where it is just noise.
+  const HIDE_SEARCH_PREFIXES = ["/account", "/checkout", "/cart", "/rewards", "/track-order"];
+  const showSearch = !HIDE_SEARCH_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+
   const [announcements, user, cart, locale] = await Promise.all([
     getAnnouncements(),
     getSessionUser(),
@@ -52,9 +57,11 @@ export default async function SiteHeader() {
         <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-3 px-3 sm:px-4">
           <SiteMenu locale={locale} />
           <Logo tagline="Discover More. Shop Smarter." className="[&>span:last-child]:hidden lg:[&>span:last-child]:block" />
-          <div className="hidden min-w-0 flex-1 px-2 md:block">
-            <SearchBox placeholder={t(locale, "search.placeholder")} />
-          </div>
+          {showSearch ? (
+            <div className="hidden min-w-0 flex-1 px-2 md:block">
+              <SearchBox placeholder={t(locale, "search.placeholder")} />
+            </div>
+          ) : null}
           <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
             {NAV.map((item) => (
               <Link
@@ -92,9 +99,11 @@ export default async function SiteHeader() {
             />
           </div>
         </div>
-        <div className="border-t border-zinc-100 px-4 py-2 md:hidden">
-          <SearchBox placeholder={t(locale, "search.placeholder")} />
-        </div>
+        {showSearch ? (
+          <div className="border-t border-zinc-100 px-4 py-2 md:hidden">
+            <SearchBox placeholder={t(locale, "search.placeholder")} />
+          </div>
+        ) : null}
       </header>
     </>
   );
