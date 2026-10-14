@@ -152,17 +152,17 @@ export default function CheckoutForm({
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className={sectionTitle}>Contact information</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-name" className={fieldLabel}>Full name</label>
             <input id="co-name" className={inputCls} value={contact.name} onChange={setC("name")}
               autoComplete="name" required disabled={pending} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-email" className={fieldLabel}>Email</label>
             <input id="co-email" type="email" className={inputCls} value={contact.email} onChange={setC("email")}
               autoComplete="email" required disabled={pending} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-phone" className={fieldLabel}>Phone (optional)</label>
             <input id="co-phone" type="tel" className={inputCls} value={contact.phone} onChange={setC("phone")}
               autoComplete="tel" disabled={pending} />
@@ -192,32 +192,32 @@ export default function CheckoutForm({
           )}
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-country" className={fieldLabel}>Country</label>
             <input id="co-country" className={inputCls} value={address.country} onChange={setA("country")}
               autoComplete="country-name" required disabled={pending} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-state" className={fieldLabel}>State / Province</label>
             <input id="co-state" className={inputCls} value={address.state} onChange={setA("state")}
               autoComplete="address-level1" required disabled={pending} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-city" className={fieldLabel}>City</label>
             <input id="co-city" className={inputCls} value={address.city} onChange={setA("city")}
               autoComplete="address-level2" required disabled={pending} />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="co-postal" className={fieldLabel}>Postal code</label>
             <input id="co-postal" className={inputCls} value={address.postalCode} onChange={setA("postalCode")}
               autoComplete="postal-code" required disabled={pending} />
           </div>
-          <div className="sm:col-span-2">
+          <div className="min-w-0 sm:col-span-2">
             <label htmlFor="co-street" className={fieldLabel}>Street address</label>
             <input id="co-street" className={inputCls} value={address.street} onChange={setA("street")}
               autoComplete="street-address" required disabled={pending} />
           </div>
-          <div className="sm:col-span-2">
+          <div className="min-w-0 sm:col-span-2">
             <label htmlFor="co-apt" className={fieldLabel}>Apartment, suite, etc. (optional)</label>
             <input id="co-apt" className={inputCls} value={address.apartment} onChange={setA("apartment")}
               disabled={pending} />

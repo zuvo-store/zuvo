@@ -149,7 +149,7 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
             <input
               type="radio"
               name="payment-method"
-              className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-orange-600"
               checked={method === "card"}
               onChange={() => setMethod("card")}
               disabled={pending}
@@ -169,7 +169,7 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
             <input
               type="radio"
               name="payment-method"
-              className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-orange-600"
               checked={method === "cod"}
               onChange={() => setMethod("cod")}
               disabled={pending}
@@ -189,7 +189,7 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
             <input
               type="radio"
               name="payment-method"
-              className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-orange-600"
               checked={method === "stripe"}
               onChange={() => setMethod("stripe")}
               disabled={pending}
@@ -292,7 +292,7 @@ export default function PaymentClient({ orderNumber, totalCents, scenarioLabels,
               <input
                 type="radio"
                 name="demo-scenario"
-                className={inputCls + " mt-0.5 h-4 w-4 accent-orange-600"}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-orange-600"
                 checked={scenario === opt.value}
                 onChange={() => setScenario(opt.value)}
                 disabled={pending}
