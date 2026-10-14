@@ -64,7 +64,7 @@ export default async function ReviewPage() {
       </section>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <section className={cardCls}>
+        <section className={cardCls + " min-w-0"}>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-zinc-900">Contact</h2>
             <Link href="/checkout" className="text-sm font-medium text-orange-600 hover:text-orange-700">
@@ -75,7 +75,7 @@ export default async function ReviewPage() {
           <p className="text-sm text-zinc-700">{contact.email}</p>
           {contact.phone && <p className="text-sm text-zinc-700">{contact.phone}</p>}
         </section>
-        <section className={cardCls}>
+        <section className={cardCls + " min-w-0"}>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-zinc-900">Shipping</h2>
             <Link href="/checkout" className="text-sm font-medium text-orange-600 hover:text-orange-700">
@@ -89,7 +89,7 @@ export default async function ReviewPage() {
           </p>
           <p className="text-sm text-zinc-700">{address.country}</p>
         </section>
-        <section className={cardCls}>
+        <section className={cardCls + " min-w-0"}>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-zinc-900">Delivery</h2>
             <Link href="/checkout" className="text-sm font-medium text-orange-600 hover:text-orange-700">

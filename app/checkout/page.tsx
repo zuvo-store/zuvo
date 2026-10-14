@@ -58,7 +58,7 @@ export default async function CheckoutPage() {
         <CheckoutSteps current={1} />
       </div>
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div>
+        <div className="min-w-0">
           <CheckoutForm
         initialContact={{
           name: contactJson.name ?? user?.name ?? "",
@@ -81,7 +81,7 @@ export default async function CheckoutPage() {
         giftWrapCents={giftWrapCents}
       />
         </div>
-        <aside className="h-fit rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-100 lg:sticky lg:top-24">
+        <aside className="h-fit min-w-0 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-100 lg:sticky lg:top-24">
           <h2 className="mb-4 text-base font-extrabold text-zinc-900">
             Order summary ({cart.count} item{cart.count === 1 ? "" : "s"})
           </h2>

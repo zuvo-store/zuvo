@@ -284,7 +284,7 @@ export default function CheckoutForm({
             onChange={(e) => setGiftWrap(e.target.checked)}
             disabled={pending}
           />
-          <span>
+          <span className="min-w-0">
             <span className="block font-semibold text-zinc-900">{`🎁 Gift wrap this order (+$${(giftWrapCents / 100).toFixed(2)})`}</span>
             <span className="block text-sm text-zinc-600">Beautiful gift packaging with a personal note.</span>
           </span>
