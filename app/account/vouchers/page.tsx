@@ -91,6 +91,9 @@ export default async function VouchersPage() {
                 key={v.id}
                 className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 shadow-sm ring-1 ring-orange-200"
               >
+                {/* Side notches — ticket cut-outs on outer edges */}
+                <span aria-hidden="true" className="absolute -left-3 top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-full bg-white ring-1 ring-orange-200" />
+                <span aria-hidden="true" className="absolute -right-3 top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-full bg-white ring-1 ring-orange-200" />
                 <div className="flex items-stretch">
                   {/* Main part — compact coupon body */}
                   <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
@@ -112,10 +115,10 @@ export default async function VouchersPage() {
                       </p>
                     </div>
                   </div>
-                  {/* Perforated divider with ticket notches */}
+                  {/* Perforated divider with deeper ticket notches */}
                   <div aria-hidden="true" className="relative w-0 shrink-0 border-l-2 border-dashed border-orange-300">
-                    <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-white" />
-                    <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-white" />
+                    <span className="absolute -left-3.5 -top-3.5 h-7 w-7 rounded-full bg-white" />
+                    <span className="absolute -bottom-3.5 -left-3.5 h-7 w-7 rounded-full bg-white" />
                   </div>
                   {/* Stub — buttons side by side */}
                   <div className="flex shrink-0 items-center gap-2 px-3">

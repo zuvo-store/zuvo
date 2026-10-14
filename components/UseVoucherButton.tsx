@@ -23,7 +23,7 @@ export default function UseVoucherButton({ code, compact = false }: { code: stri
         compact ? "px-3 py-1.5 text-[11px]" : "w-full px-4 py-2.5 text-xs"
       }`}
     >
-      🎯 Use now
+      Use
     </button>
   );
 }
