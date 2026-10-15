@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { getOrCreateDraftOrder, rebuildDraftOrder } from "@/lib/checkout";
-import { SCENARIO_LABELS } from "@/lib/payments";
 import CheckoutSteps from "@/components/CheckoutSteps";
 import PaymentClient from "./PaymentClient";
 
@@ -26,7 +25,6 @@ export default async function PaymentPage() {
       <PaymentClient
         orderNumber={order.orderNumber}
         totalCents={order.totalCents}
-        scenarioLabels={SCENARIO_LABELS}
         stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? null}
       />
     </main>
