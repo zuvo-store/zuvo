@@ -222,16 +222,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p className="text-sm text-zinc-500">No payment attempts yet.</p>
             ) : (
               <ul className="space-y-3">
-                {order.payments.map((p) => (
+                {order.payments.map((p) => {
+                  // Treat lingering PENDING payments as cancelled when the order itself was cancelled
+                  const displayStatus = order.status === "CANCELLED" && p.status === "PENDING" ? "CANCELLED" : p.status;
+                  return (
                   <li key={p.id} className="text-sm">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-zinc-900">{formatUSD(p.amountCents)}</span>
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          PAYMENT_TONE[p.status] ?? "bg-zinc-100 text-zinc-700"
+                          PAYMENT_TONE[displayStatus] ?? "bg-zinc-100 text-zinc-700"
                         }`}
                       >
-                        {p.status}
+                        {displayStatus}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-zinc-500">
@@ -243,7 +246,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         </>
                       )}
                     </p>
-                    {p.provider === "cod" ? (
+                    {p.provider === "cod" && order.status !== "CANCELLED" ? (
                       <p className="mt-1 rounded-lg bg-green-50 px-2 py-1 text-xs font-medium text-green-800">
                         💵 Cash on Delivery — pay {formatUSD(p.amountCents)} in cash when your order arrives.
                       </p>
@@ -255,19 +258,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       <p className="text-xs text-zinc-500">Demo scenario: {p.scenario}</p>
                     )}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
         </div>
       </div>
 
-      {/* Support chat for this order */}
-      <section className={`${cardCls} mt-6`}>
-        <h2 className="mb-1 text-base font-extrabold text-zinc-900">💬 Chat with support</h2>
-        <p className="mb-3 text-sm text-zinc-500">Questions about this order? Message us right here.</p>
-        <OrderChat orderId={order.id} />
-      </section>
+      {/* Support chat for this order — hidden once cancelled */}
+      {order.status !== "CANCELLED" ? (
+        <section className={`${cardCls} mt-6`}>
+          <h2 className="mb-1 text-base font-extrabold text-zinc-900">💬 Chat with support</h2>
+          <p className="mb-3 text-sm text-zinc-500">Questions about this order? Message us right here.</p>
+          <OrderChat orderId={order.id} />
+        </section>
+      ) : null}
     </main>
   );
 }

@@ -54,6 +54,13 @@ export async function POST(
         },
       });
 
+      // Mark any pending payments as cancelled so they don't linger as PENDING
+      // in payment reports or on the order page.
+      await tx.payment.updateMany({
+        where: { orderId: order.id, status: "PENDING" },
+        data: { status: "CANCELLED" },
+      });
+
       // Restore stock for each item (tolerant of deleted products/variants)
       for (const item of order.items) {
         try {
